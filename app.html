@@ -4680,7 +4680,7 @@ function renderStats(){
   if(sync.state==='synced'){
     ac.append(el('p',{class:'small'},'Signed in'+(ME&&ME.name?' as '+ME.name:'')+'. Your progress is saved to your account and syncs to any device where you sign in.'), el('div',{class:'row'}, el('button',{class:'ghost',onclick:signOut},'Sign out')));
     const nick=el('input',{type:'text',id:'nickInput',maxlength:'24',placeholder:'Nickname for the leaderboard','aria-label':'Nickname'}); nick.value=S.nick||'';
-    ac.append(el('div',{class:'inrow'}, nick, el('button',{onclick:()=>{ S.nick=nick.value.trim().slice(0,24); save(); pushScore(true); toast('Nickname saved'); }},'Save nickname')));
+    ac.append(el('div',{class:'inrow'}, nick, el('button',{onclick:()=>{ S.nick=nick.value.trim().slice(0,24); save(); clearTimeout(sync.timer); pushProgress(); toast('Nickname saved'); }},'Save nickname')));
     const lbBox=el('div',{class:'lb'}, el('p',{class:'small'},'Loading leaderboard…')); ac.append(lbBox); loadLeaderboard(lbBox);
   } else if(sync.state==='readonly'){
     ac.append(el('p',{class:'small'},'You are signed in, but this share level cannot save progress to an account, so progress stays on this device. Ask the owner to invite you by email as an editor.'));
@@ -5195,7 +5195,7 @@ function renderAccount(){
   }
 }
 const SUPA={"url": "https://vfrrzrkiamsnyesqevwl.supabase.co", "key": "sb_publishable_NbyHQeXmH1ovRyHYOmFMXA_OEub4F2z"};
-let SB=null; const AUTH={open:false, busy:false, err:'', mode:'in', email:''};
+let SB=null; const AUTH={open:false, busy:false, err:'', mode:'in', email:'', code:''};
 function supaReady(){ return !!(SUPA.url&&SUPA.key&&!/^__/.test(SUPA.url)); }
 function waitSupabase(){ return new Promise(res=>{ if(window.supabase&&window.supabase.createClient) return res(true); const sc=document.getElementById('supabasejs'); if(!sc) return res(false); sc.addEventListener('load',()=>res(!!(window.supabase&&window.supabase.createClient))); sc.addEventListener('error',()=>res(false)); setTimeout(()=>res(!!(window.supabase&&window.supabase.createClient)),10000); }); }
 function supaErr(e){ const c=(e&&e.code)||''; const err=new Error((e&&e.message)||'Request failed'); err.code=(c==='42501'||c==='PGRST301')?'invalid_argument':c; return err; }
@@ -5203,7 +5203,7 @@ function supaErr(e){ const c=(e&&e.code)||''; const err=new Error((e&&e.message)
 function supaShim(client, uid){
   return {
     doc(path){
-      if(path.startsWith('scores/')) return { async set(d){ const row={user_id:uid, nick:String(d.nick||'').slice(0,24), xp:d.xp|0, level:d.level|0, title:String(d.title||''), streak:d.streak|0, mastered:d.mastered|0, total:d.total|0, updated_at:new Date().toISOString()}; const {error}=await client.from('scores').upsert(row); if(error) throw supaErr(error); } };
+      if(path.startsWith('scores/')) return { async set(){ /* the leaderboard row is computed on the server from the progress row */ } };
       return {
         async get(){ const {data,error}=await client.from('progress').select('doc').eq('user_id',uid).maybeSingle(); if(error) throw supaErr(error); return {exists:!!data, data:()=>data?data.doc:null}; },
         async set(d){ const {error}=await client.from('progress').upsert({user_id:uid, doc:d, updated_at:new Date().toISOString()}); if(error) throw supaErr(error); }
@@ -5231,10 +5231,18 @@ async function initSync(){
     await startSync(data.session);
   }catch(e){ sync.state='local'; renderAccount(); }
 }
-async function signIn(email,pw,create){
+function friendlyAuthError(e, create){
+  const m=(e&&e.message)||'';
+  if(/Database error saving new user/i.test(m)) return 'That class code is wrong. Ask whoever gave you the site link.';
+  if(/already registered|already been registered/i.test(m)) return 'That email already has an account. Switch to Sign in.';
+  if(/Invalid login credentials/i.test(m)) return 'Wrong email or password.';
+  if(/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
+  return m||'Something went wrong.';
+}
+async function signIn(email,pw,create,code){
   if(!SB){ if(!(await waitSupabase())) throw new Error('Could not load the sign-in service. Check your connection.'); SB=window.supabase.createClient(SUPA.url,SUPA.key); }
-  const r=create? await SB.auth.signUp({email,password:pw}) : await SB.auth.signInWithPassword({email,password:pw});
-  if(r.error) throw r.error;
+  const r=create? await SB.auth.signUp({email,password:pw,options:{data:{class_code:String(code||'').trim().toUpperCase()}}}) : await SB.auth.signInWithPassword({email,password:pw});
+  if(r.error) throw new Error(friendlyAuthError(r.error, create));
   if(!r.data||!r.data.session) throw new Error(create?'Account created. Check your email for a confirmation link, then sign in.':'Could not sign in.');
   await startSync(r.data.session);
 }
@@ -5243,11 +5251,12 @@ function authForm(){
   const box=el('form',{class:'authbox'});
   box.append(el('div',{class:'row'}, seg([['in','Sign in'],['up','Create account']], AUTH.mode, v=>{ AUTH.mode=v; AUTH.err=''; renderAccount(); renderAuthPanels(); })));
   const em=el('input',{type:'email',name:'email',placeholder:'Email',autocomplete:'email',required:'','aria-label':'Email',value:AUTH.email||''}); const pw=el('input',{type:'password',name:'password',placeholder:AUTH.mode==='up'?'Choose a password (6+ characters)':'Password',autocomplete:AUTH.mode==='up'?'new-password':'current-password',minlength:'6',required:'','aria-label':'Password'});
+  const code=AUTH.mode==='up'? el('input',{type:'text',name:'code',placeholder:'Class code',autocomplete:'off',autocapitalize:'characters',spellcheck:'false',required:'','aria-label':'Class code',value:AUTH.code||''}) : null;
   const btn=el('button',{class:'primary',type:'submit',disabled:AUTH.busy?'':null}, AUTH.busy?'One moment…':(AUTH.mode==='up'?'Create account':'Sign in'));
-  box.addEventListener('submit',async e=>{ e.preventDefault(); if(AUTH.busy) return; AUTH.busy=true; AUTH.err=''; AUTH.email=em.value.trim(); btn.disabled=true; btn.textContent='One moment…'; const create=AUTH.mode==='up'; try{ await signIn(AUTH.email, pw.value, create); AUTH.busy=false; toast(create?'Account created. Your progress now saves to it.':'Signed in. Progress merged.','gold'); renderAuthPanels(); }catch(err){ AUTH.err=(err&&err.message)||'Something went wrong.'; AUTH.busy=false; btn.disabled=false; btn.textContent=create?'Create account':'Sign in'; let ep=box.querySelector('.err'); if(!ep){ ep=el('p',{class:'small err',role:'alert'}); box.insertBefore(ep, box.lastElementChild); } ep.textContent=AUTH.err; } });
-  box.append(el('div',{class:'inrow'}, em, pw, btn));
+  box.addEventListener('submit',async e=>{ e.preventDefault(); if(AUTH.busy) return; AUTH.busy=true; AUTH.err=''; AUTH.email=em.value.trim(); if(code) AUTH.code=code.value.trim().toUpperCase(); btn.disabled=true; btn.textContent='One moment…'; const create=AUTH.mode==='up'; try{ await signIn(AUTH.email, pw.value, create, AUTH.code); AUTH.busy=false; toast(create?'Account created. Your progress now saves to it.':'Signed in. Progress merged.','gold'); renderAuthPanels(); }catch(err){ AUTH.err=(err&&err.message)||'Something went wrong.'; AUTH.busy=false; btn.disabled=false; btn.textContent=create?'Create account':'Sign in'; let ep=box.querySelector('.err'); if(!ep){ ep=el('p',{class:'small err',role:'alert'}); box.insertBefore(ep, box.lastElementChild); } ep.textContent=AUTH.err; } });
+  box.append(el('div',{class:'inrow'}, em, pw, ...(code?[code]:[]), btn));
   if(AUTH.err) box.append(el('p',{class:'small err',role:'alert'}, AUTH.err));
-  box.append(el('p',{class:'small'}, AUTH.mode==='up'?'Only your email and your study progress are stored (Supabase, Sydney). No confirmation email is needed.':'Forgot your password? Message the site owner for now; a reset link is on the list.'));
+  box.append(el('p',{class:'small'}, AUTH.mode==='up'?'You need the class code from whoever shared the site. Only your email and your study progress are stored (Supabase, Sydney). No confirmation email is needed.':'Forgot your password? Message the site owner for now; a reset link is on the list.'));
   return box;
 }
 function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e){} } }
