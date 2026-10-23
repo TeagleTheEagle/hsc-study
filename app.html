@@ -6,6 +6,7 @@
 <meta name="description" content="HSC Business Studies study set: 644 flashcards, learn and test modes, an exam guide, ratio drill, and every HSC past paper 2015 to 2025 marked against the official criteria.">
 <meta name="theme-color" content="#1F6F8B">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<script id="supabasejs" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" crossorigin="anonymous" defer></script>
 <title>Study set · HSC Business Hub</title>
 </head>
 <body>
@@ -280,6 +281,7 @@ textarea.long{min-height:18rem}
 .dl{display:grid;gap:.3rem;padding-top:.3rem}
 .dl a{color:var(--accent);text-underline-offset:3px;min-height:36px;display:flex;align-items:center;overflow-wrap:anywhere}
 details.peek{background:none}
+.authbox{display:grid;gap:.5rem;margin-top:.4rem;width:100%} .authbox input{font:inherit;font-size:1rem;padding:.5rem .8rem;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);min-width:0;flex:1 1 12rem} .authbox .err{color:#B42318} .account{flex-wrap:wrap}
 .homelink{color:inherit;text-decoration:none} .homelink:hover{text-decoration:underline} .titlebar h1 .sub{font-weight:400;color:var(--muted);font-size:.95rem}
 .keypanel input[type=password]{font:inherit;font-size:1rem;padding:.5rem .8rem;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);width:22rem;max-width:100%}
 .panel.selfmark{border-color:var(--mid)}
@@ -4676,14 +4678,14 @@ function renderStats(){
   // account + leaderboard
   const ac=el('div',{class:'panel'}, el('h2',{},'Account and leaderboard'));
   if(sync.state==='synced'){
-    ac.append(el('p',{class:'small'},'Signed in. Your progress is saved to your account and syncs to any device where you open this page signed in.'));
+    ac.append(el('p',{class:'small'},'Signed in'+(ME&&ME.name?' as '+ME.name:'')+'. Your progress is saved to your account and syncs to any device where you sign in.'), el('div',{class:'row'}, el('button',{class:'ghost',onclick:signOut},'Sign out')));
     const nick=el('input',{type:'text',id:'nickInput',maxlength:'24',placeholder:'Nickname for the leaderboard','aria-label':'Nickname'}); nick.value=S.nick||'';
     ac.append(el('div',{class:'inrow'}, nick, el('button',{onclick:()=>{ S.nick=nick.value.trim().slice(0,24); save(); pushScore(true); toast('Nickname saved'); }},'Save nickname')));
     const lbBox=el('div',{class:'lb'}, el('p',{class:'small'},'Loading leaderboard…')); ac.append(lbBox); loadLeaderboard(lbBox);
   } else if(sync.state==='readonly'){
     ac.append(el('p',{class:'small'},'You are signed in, but this share level cannot save progress to an account, so progress stays on this device. Ask the owner to invite you by email as an editor.'));
   } else {
-    ac.append(el('p',{class:'small'},'On this website your progress is saved in this browser only. Account sync and the leaderboard live in the ', el('a',{href:CLAUDE_LINK,target:'_blank',rel:'noopener'},'Claude version'), ' for now.'));
+    if(supaReady()){ ac.append(el('p',{class:'small'},'Create a free account to save your progress to the cloud, continue on any device and join the leaderboard. Anything you have done in this browser is merged into the account the first time you sign in.'), authForm()); } else ac.append(el('p',{class:'small'},'On this website your progress is saved in this browser only. Account sync and the leaderboard live in the ', el('a',{href:CLAUDE_LINK,target:'_blank',rel:'noopener'},'Claude version'), ' for now.'));
   }
   v.append(ac);
   const bg=el('div',{class:'panel'}, el('h2',{},'Badges'));
@@ -5183,30 +5185,73 @@ function renderAccount(){
   if(SAVE_ERR){ a.append(el('span',{class:'pill'},'⚠ Not saving'), el('span',{},'This browser is refusing to store progress (private window or storage full), so nothing you do here will be kept.')); return; }
   if(sync.state==='synced'){
     const pill=el('span',{class:'pill on'}); if(ME&&ME.avatarUrl){ pill.append(el('img',{src:ME.avatarUrl,alt:''})); } pill.append(document.createTextNode('Signed in'+(ME&&ME.name?' as '+ME.name:'')));
-    a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'));
+    a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'), el('button',{class:'ghost',onclick:signOut},'Sign out'));
   } else if(sync.state==='readonly'){
     a.append(el('span',{class:'pill'},'Signed in · device only'), el('span',{},'This share level cannot save to an account. Progress stays on this device.'));
   } else if(sync.state==='loading'){
     a.append(el('span',{class:'pill'},'Checking account…'));
   } else {
-    a.append(el('span',{class:'pill'},'This device'), el('span',{},'Progress is saved in this browser. For account sync and the leaderboard, use the Claude version (link under Past papers).'));
+    if(supaReady()){ a.append(el('span',{class:'pill'},'Not signed in'), el('span',{},'Progress is saved in this browser only. '), el('button',{class:'ghost',onclick:()=>{ AUTH.open=!AUTH.open; renderAccount(); }}, AUTH.open?'Close':'Sign in or create an account')); if(AUTH.open) a.append(authForm()); } else a.append(el('span',{class:'pill'},'This device'), el('span',{},'Progress is saved in this browser. For account sync and the leaderboard, use the Claude version (link under Past papers).'));
   }
+}
+const SUPA={"url": "https://vfrrzrkiamsnyesqevwl.supabase.co", "key": "sb_publishable_NbyHQeXmH1ovRyHYOmFMXA_OEub4F2z"};
+let SB=null; const AUTH={open:false, busy:false, err:'', mode:'in', email:''};
+function supaReady(){ return !!(SUPA.url&&SUPA.key&&!/^__/.test(SUPA.url)); }
+function waitSupabase(){ return new Promise(res=>{ if(window.supabase&&window.supabase.createClient) return res(true); const sc=document.getElementById('supabasejs'); if(!sc) return res(false); sc.addEventListener('load',()=>res(!!(window.supabase&&window.supabase.createClient))); sc.addEventListener('error',()=>res(false)); setTimeout(()=>res(!!(window.supabase&&window.supabase.createClient)),10000); }); }
+function supaErr(e){ const c=(e&&e.code)||''; const err=new Error((e&&e.message)||'Request failed'); err.code=(c==='42501'||c==='PGRST301')?'invalid_argument':c; return err; }
+// The same doc()/collection() calls the Claude version makes, backed by the two Supabase tables.
+function supaShim(client, uid){
+  return {
+    doc(path){
+      if(path.startsWith('scores/')) return { async set(d){ const row={user_id:uid, nick:String(d.nick||'').slice(0,24), xp:d.xp|0, level:d.level|0, title:String(d.title||''), streak:d.streak|0, mastered:d.mastered|0, total:d.total|0, updated_at:new Date().toISOString()}; const {error}=await client.from('scores').upsert(row); if(error) throw supaErr(error); } };
+      return {
+        async get(){ const {data,error}=await client.from('progress').select('doc').eq('user_id',uid).maybeSingle(); if(error) throw supaErr(error); return {exists:!!data, data:()=>data?data.doc:null}; },
+        async set(d){ const {error}=await client.from('progress').upsert({user_id:uid, doc:d, updated_at:new Date().toISOString()}); if(error) throw supaErr(error); }
+      };
+    },
+    collection(name){ let lim=20; const q={ orderBy(){ return q; }, limit(n){ lim=n; return q; }, async get(){ const {data,error}=await client.from('scores').select('*').order('xp',{ascending:false}).limit(lim); if(error) throw supaErr(error); return {docs:(data||[]).map(r=>({id:r.user_id, data:()=>r}))}; } }; return q; }
+  };
+}
+async function startSync(session){
+  UID=session.user.id; DBH=supaShim(SB,UID); ME={name:session.user.email||''}; USERH={profiles:async()=>({}), me:async()=>ME};
+  sync.state='loading'; renderAccount();
+  const snap=await DBH.doc('data/users/'+UID+'/progress').get();
+  if(snap.exists){ mergeRemote(snap.data()); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+  sync.state='synced'; AUTH.open=false; AUTH.err=''; renderAccount(); render();
+  sync.lastHash=''; pushProgress();
 }
 async function initSync(){
   try{
-    if(!window.claude||typeof window.claude.use!=='function'){ renderAccount(); return; }
+    if(!supaReady()){ sync.state='local'; renderAccount(); return; }
     sync.state='loading'; renderAccount();
-    const [db,user]=await Promise.all([window.claude.use('db'), window.claude.use('user')]);
-    if(!db||!user){ sync.state='local'; renderAccount(); return; }
-    UID=await user.id(); if(!UID){ sync.state='local'; renderAccount(); return; }
-    DBH=db; USERH=user; ME=await user.me();
-    const snap=await db.doc('data/users/'+UID+'/progress').get();
-    if(snap.exists){ mergeRemote(snap.data()); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
-    sync.state='synced'; renderAccount(); render();
-    // first write proves the level: a refused write flips to device-only
-    sync.lastHash=''; pushProgress();
+    if(!(await waitSupabase())){ sync.state='local'; renderAccount(); return; }
+    SB=SB||window.supabase.createClient(SUPA.url,SUPA.key);
+    const {data}=await SB.auth.getSession();
+    if(!data||!data.session){ sync.state='local'; renderAccount(); return; }
+    await startSync(data.session);
   }catch(e){ sync.state='local'; renderAccount(); }
 }
+async function signIn(email,pw,create){
+  if(!SB){ if(!(await waitSupabase())) throw new Error('Could not load the sign-in service. Check your connection.'); SB=window.supabase.createClient(SUPA.url,SUPA.key); }
+  const r=create? await SB.auth.signUp({email,password:pw}) : await SB.auth.signInWithPassword({email,password:pw});
+  if(r.error) throw r.error;
+  if(!r.data||!r.data.session) throw new Error(create?'Account created. Check your email for a confirmation link, then sign in.':'Could not sign in.');
+  await startSync(r.data.session);
+}
+async function signOut(){ try{ clearTimeout(sync.timer); pushProgress(); await sync.chain; if(SB) await SB.auth.signOut(); }catch(e){} DBH=null; UID=null; USERH=null; ME=null; sync.state='local'; sync.lastHash=''; sync.lastScore=''; AUTH.open=false; renderAccount(); render(); toast('Signed out. Your progress stays in this browser too.'); }
+function authForm(){
+  const box=el('form',{class:'authbox'});
+  box.append(el('div',{class:'row'}, seg([['in','Sign in'],['up','Create account']], AUTH.mode, v=>{ AUTH.mode=v; AUTH.err=''; renderAccount(); renderAuthPanels(); })));
+  const em=el('input',{type:'email',name:'email',placeholder:'Email',autocomplete:'email',required:'','aria-label':'Email',value:AUTH.email||''}); const pw=el('input',{type:'password',name:'password',placeholder:AUTH.mode==='up'?'Choose a password (6+ characters)':'Password',autocomplete:AUTH.mode==='up'?'new-password':'current-password',minlength:'6',required:'','aria-label':'Password'});
+  const btn=el('button',{class:'primary',type:'submit',disabled:AUTH.busy?'':null}, AUTH.busy?'One moment…':(AUTH.mode==='up'?'Create account':'Sign in'));
+  box.addEventListener('submit',async e=>{ e.preventDefault(); if(AUTH.busy) return; AUTH.busy=true; AUTH.err=''; AUTH.email=em.value.trim(); btn.disabled=true; btn.textContent='One moment…'; const create=AUTH.mode==='up'; try{ await signIn(AUTH.email, pw.value, create); AUTH.busy=false; toast(create?'Account created. Your progress now saves to it.':'Signed in. Progress merged.','gold'); renderAuthPanels(); }catch(err){ AUTH.err=(err&&err.message)||'Something went wrong.'; AUTH.busy=false; btn.disabled=false; btn.textContent=create?'Create account':'Sign in'; let ep=box.querySelector('.err'); if(!ep){ ep=el('p',{class:'small err',role:'alert'}); box.insertBefore(ep, box.lastElementChild); } ep.textContent=AUTH.err; } });
+  box.append(el('div',{class:'inrow'}, em, pw, btn));
+  if(AUTH.err) box.append(el('p',{class:'small err',role:'alert'}, AUTH.err));
+  box.append(el('p',{class:'small'}, AUTH.mode==='up'?'Only your email and your study progress are stored (Supabase, Sydney). No confirmation email is needed.':'Forgot your password? Message the site owner for now; a reset link is on the list.'));
+  return box;
+}
+function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e){} } }
+
 if(location.hash==='#papers'){ S.mode='papers'; } else if(location.hash==='#ratio'){ S.mode='ratio'; } else if(location.hash==='#stats'){ S.mode='stats'; } else if(location.hash==='#guide'){ S.mode='guide'; }
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
