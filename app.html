@@ -62,6 +62,7 @@ header.top .wrap{padding-block:.6rem .5rem;display:grid;gap:.45rem}
 .mainnav{display:flex;gap:.15rem;overflow-x:auto;scrollbar-width:none}
 .mainnav::-webkit-scrollbar{display:none}
 .mainnav button{border:0;border-radius:10px;background:none;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto}
+.mainnav a.navlink{display:inline-flex;align-items:center;border-radius:10px;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto;text-decoration:none}
 .mainnav button[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
 .subbar{display:grid;gap:.4rem;padding-bottom:.4rem}
 .subbar[hidden]{display:none}
@@ -309,6 +310,7 @@ details.peek{background:none}
       <button data-section="practice">Ratios</button>
       <button data-section="papers">Past papers</button>
       <button data-section="guide">Exam guide</button>
+      <a class="navlink" href="resources.html">Resources</a>
       <button data-section="progress">Progress</button>
     </nav>
     <div class="subbar" id="subbar">
