@@ -9,3 +9,6 @@ routes = [
 
 [assets]
 directory = "./"
+
+# PR branches deploy with `wrangler preview`, which requires this block (it can stay empty).
+[previews]
