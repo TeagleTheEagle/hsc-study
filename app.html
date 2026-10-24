@@ -61,8 +61,8 @@ header.top .wrap{padding-block:.6rem .5rem;display:grid;gap:.45rem}
 
 .mainnav{display:flex;gap:.15rem;overflow-x:auto;scrollbar-width:none}
 .mainnav::-webkit-scrollbar{display:none}
-.mainnav button{border:0;border-radius:10px;background:none;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto}
 .mainnav a.navlink{display:inline-flex;align-items:center;border-radius:10px;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto;text-decoration:none}
+.mainnav button{border:0;border-radius:10px;background:none;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto}
 .mainnav button[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
 .subbar{display:grid;gap:.4rem;padding-bottom:.4rem}
 .subbar[hidden]{display:none}
@@ -296,6 +296,48 @@ details.peek{background:none}
 .homelink{color:inherit;text-decoration:none} .homelink:hover{text-decoration:underline} .titlebar h1 .sub{font-weight:400;color:var(--muted);font-size:.95rem}
 .keypanel input[type=password]{font:inherit;font-size:1rem;padding:.5rem .8rem;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);width:22rem;max-width:100%}
 .panel.selfmark{border-color:var(--mid)}
+
+/* library, sets, stars, retention */
+.chip.user:not([aria-pressed="true"]){background:var(--accent-soft)} .chip.lib{border:2px dashed var(--border);background:none}
+.starb{border:0;background:none;min-height:0;padding:0 .2rem;font-size:1.15rem;line-height:1;color:var(--muted);vertical-align:middle;border-radius:6px} .starb.on{color:var(--gold)} .starb:hover{color:var(--gold)} .starb:focus-visible{outline:2px solid var(--accent)}
+.poolrow{margin-bottom:.2rem}
+.setgrid,.recentgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:.8rem}
+.setcard{background:var(--surface-2);border-radius:14px;padding:.9rem 1rem;display:grid;gap:.55rem;align-content:start}
+.setcard.builtin{background:var(--surface);border:2px solid var(--border)}
+.setcard .title{font-weight:700;font-size:1.05rem;text-align:left;border:0;background:none;padding:0;min-height:0;color:var(--ink);line-height:1.3} .setcard button.title:hover{text-decoration:underline}
+.setcard .desc{margin:0}
+.setcard .row button{min-height:38px;padding:.3rem .7rem;font-size:.92rem}
+.setcard .more{border-top:1.5px solid var(--border);padding-top:.5rem}
+.setcard select{font:inherit;font-size:.92rem;min-height:38px;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 .5rem}
+.bar.mini{height:8px}
+.tagrow{gap:.3rem}
+.tagchip{min-height:30px;padding:.1rem .6rem;border-radius:999px;font-size:.85rem;background:var(--surface);border:1.5px solid var(--border)} .tagchip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);font-weight:700} .tagchip.static{cursor:default}
+button.danger{border-color:var(--warn);color:var(--warn)}
+.btnlink{display:inline-flex;align-items:center;min-height:38px;padding:.3rem .7rem;border:2px solid var(--border);border-radius:10px;text-decoration:none;color:inherit;font-size:.92rem;background:var(--surface)}
+.exportbox{display:grid;gap:.5rem} .exportbox textarea{min-height:4rem;font-size:.9rem}
+.folderedit{display:grid;gap:.5rem;border-top:1.5px solid var(--border);padding-top:.5rem} .folderedit input[type=text]{font:inherit;font-size:1rem;padding:.4rem .7rem;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);width:100%}
+.checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.3rem .8rem} .checklist label{display:flex;gap:.4rem;align-items:center;font-size:.95rem} .checklist input{width:18px;height:18px}
+.settitle{font:inherit;font-size:1.3rem;font-weight:700;padding:.5rem .8rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink);width:100%}
+.panel input[type=text],.panel input[type=search]{font:inherit;font-size:1rem;padding:.5rem .8rem;border:2px solid var(--border);border-radius:10px;background:var(--surface);color:var(--ink);min-width:0}
+.panel input.tiny{width:6rem}
+.edlist{display:grid;gap:.6rem;margin:.8rem 0}
+.edcard{background:var(--surface);border:2px solid var(--border);border-radius:14px;padding:.6rem .8rem;display:grid;gap:.4rem}
+.edtools{display:flex;align-items:center;gap:.2rem;flex-wrap:wrap} .edtools .idx{font-weight:700;color:var(--muted);min-width:1.6rem} .edtools button{min-height:34px;padding:0 .55rem;font-size:1rem}
+.edfields{display:grid;grid-template-columns:1fr 1fr;gap:.5rem} .edfields textarea{min-height:3.4rem;font-size:1rem}
+@media (max-width:640px){.edfields{grid-template-columns:1fr}}
+.imppanel,.aipanel{display:grid;gap:.6rem;background:var(--surface-2);border-radius:14px;padding:.9rem 1rem}
+.imppanel textarea,.aipanel textarea{min-height:7rem;font-size:.95rem;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.aipanel textarea{font-family:inherit}
+.improws{display:grid;gap:.25rem} .improw{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;font-size:.92rem;padding:.3rem .5rem;background:var(--surface);border-radius:8px} .improw.bad{outline:2px solid var(--warn)} .improw span{min-width:0;overflow-wrap:anywhere}
+.ailist{display:grid;gap:.3rem} .airow{display:grid;grid-template-columns:auto 1fr 1fr auto;gap:.6rem;align-items:start;padding:.45rem .6rem;background:var(--surface);border-radius:10px;font-size:.95rem} .airow .f{font-weight:700} .airow .b{color:var(--muted)} .airow input{width:18px;height:18px;margin-top:.2rem} .airow button{min-height:30px;padding:0 .5rem}
+@media (max-width:640px){.airow{grid-template-columns:auto 1fr auto} .airow .b{grid-column:2}}
+.chart svg{width:100%;height:auto;display:block} .chart{background:var(--surface-2);border-radius:12px;padding:.4rem .6rem}
+.ready.good{color:var(--good-deep,var(--good))} .ready.mid{color:var(--gold)}
+.pill.good{border-color:var(--good);background:var(--good-soft)} .pill.mid{border-color:var(--gold)}
+.readytable{display:grid;gap:.4rem} .readytable .deckrow{grid-template-columns:8rem 1fr auto}
+.sesslist{display:grid;gap:.3rem} .sesslist .rowx{display:grid;grid-template-columns:1fr auto auto auto auto;gap:.6rem;align-items:center;padding:.4rem .6rem;border-radius:10px;background:var(--surface-2);font-size:.92rem} .sesslist .sub{color:var(--muted)}
+@media (max-width:640px){.sesslist .rowx{grid-template-columns:1fr auto auto} .sesslist .sub{display:none} .readytable .deckrow{grid-template-columns:1fr auto} .readytable .deckrow .small{grid-column:1/-1}}
+.small.err{color:#B42318}
 </style>
 
 <header class="top">
@@ -310,8 +352,9 @@ details.peek{background:none}
       <button data-section="practice">Ratios</button>
       <button data-section="papers">Past papers</button>
       <button data-section="guide">Exam guide</button>
-      <a class="navlink" href="resources.html">Resources</a>
       <button data-section="progress">Progress</button>
+      <button data-section="library">Library</button>
+      <a class="navlink" href="resources.html">Resources</a>
     </nav>
     <div class="subbar" id="subbar">
       <div class="tabs" role="tablist" aria-label="Study mode">
@@ -331,7 +374,7 @@ details.peek{background:none}
   <div class="progress" id="progress"></div>
   <div id="view"></div>
   <div class="sr" aria-live="polite" id="live"></div>
-  <footer id="foot">Keyboard: <kbd>Space</kbd> flip · <kbd>←</kbd> still learning · <kbd>→</kbd> got it · <kbd>1</kbd>–<kbd>4</kbd> pick an answer · <kbd>Enter</kbd> next · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> check or mark a typed answer.</footer>
+  <footer id="foot">Keyboard: <kbd>Space</kbd> flip · <kbd>←</kbd> still learning · <kbd>→</kbd> got it · <kbd>1</kbd>–<kbd>4</kbd> pick an answer · <kbd>Enter</kbd> next · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> check or mark a typed answer · <kbd>S</kbd> star a card.</footer>
 </div></main>
 <canvas id="confetti" hidden></canvas>
 
@@ -4242,7 +4285,7 @@ function rvOf(c){ return S.rv&&S.rv[c.id]; }
 function mastered(c){ const r=rvOf(c); return status(c)==='k' && !!r && (r.days||[]).length>=3 && (r.iv||0)>=7; }
 function dueDay(d,n){ const x=new Date(d+'T00:00:00'); x.setDate(x.getDate()+n); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); }
 function isDue(c){ const r=rvOf(c); return !!r && r.due<=today(); }
-function dueCards(){ return CARDS.filter(isDue); }
+function dueCards(){ return allCards().filter(isDue); }
 function today(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function todayCount(){ return S.days[today()]||0; }
 
@@ -4250,7 +4293,7 @@ function todayCount(){ return S.days[today()]||0; }
 const $=s=>document.querySelector(s);
 const el=(tag,attrs={},...kids)=>{ const n=document.createElement(tag); for(const [k,v] of Object.entries(attrs)){ if(v==null)continue; if(k==='class')n.className=v; else if(k.startsWith('on'))n.addEventListener(k.slice(2),v); else if(k==='html')n.innerHTML=v; else n.setAttribute(k,v);} for(const k of kids){ if(k==null||k===false)continue; n.append(k.nodeType?k:document.createTextNode(k)); } return n; };
 function shuffled(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
-function deckCards(){ const d=DECKS.find(d=>d.id===S.deck)||DECKS[0]; return CARDS.filter(d.test); }
+function deckCards(){ const d=decks().find(d=>d.id===S.deck)||DECKS[0]; return (d.pool?d.pool():CARDS).filter(d.test); }
 function announce(t){ $('#live').textContent=t; }
 function prioritised(cards){ const w={l:0,u:1,k:2}; const sc=c=>isDue(c)?-1:w[status(c)]+(mastered(c)?1:0); return shuffled(cards).sort((a,b)=>sc(a)-sc(b)); }
 function pickRandom(a){ return a[Math.floor(Math.random()*a.length)]; }
@@ -4304,7 +4347,7 @@ const BADGES=[
   {id:'fullpaper', name:'Whole paper', desc:'Answer every question in one past paper', test:()=>PAPERS.some(p=>paperStatus(p).done===paperStatus(p).n)},
 ];
 function recordReview(c, ok, xpAmt){
-  const d=today();
+  const d=today(); trackSession(ok); noteRecent();
   if(S.lastDay!==d){ const y=new Date(); y.setDate(y.getDate()-1); const yd=y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); S.streak=(S.lastDay===yd)?S.streak+1:1; S.lastDay=d; }
   const before=todayCount(); S.days[d]=before+1; S.total++;
   const lvBefore=levelInfo().n;
@@ -4318,6 +4361,7 @@ function recordReview(c, ok, xpAmt){
   if(before<S.goal && S.days[d]>=S.goal){ toast(`Daily goal hit: ${S.goal} cards. ${pickRandom(CHEER)}`,'gold'); confetti(); }
   const lv=levelInfo(); if(lv.n>lvBefore){ toast(`Level up: you are now ${lv.name}.`,'gold'); confetti(); }
   for(const b of BADGES){ if(!S.badges[b.id] && b.test()){ S.badges[b.id]=d; toast(`Badge earned: ${b.name}`,'gold'); } }
+  snapshotHist();
   save(); renderStrip(); renderProgress();
 }
 let toastT=null;
@@ -4332,18 +4376,19 @@ function confetti(){
 }
 
 // ---------- header ----------
-const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress',today:'home',mistakes:'progress'};
-const SECTION_DEFAULT={home:'home',study:'flash',practice:'ratio',papers:'papers',guide:'guide',progress:'stats'};
+const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress',today:'home',mistakes:'progress',library:'library',editset:'library'};
+const SECTION_DEFAULT={home:'home',study:'flash',practice:'ratio',papers:'papers',guide:'guide',progress:'stats',library:'library'};
 function goMode(m){ S.mode=m; if(SECTION_OF[m]==='study') S.lastStudy=m; save(); render(); window.scrollTo({top:0}); }
 function renderDecks(){
   const sec=SECTION_OF[S.mode]||'home';
   document.querySelectorAll('#mainnav button').forEach(b=>{ b.setAttribute('aria-current', b.dataset.section===sec?'page':'false'); b.onclick=()=>goMode(b.dataset.section==='study'?(S.lastStudy||'flash'):SECTION_DEFAULT[b.dataset.section]); });
   $('#subbar').hidden=(sec!=='study');
   const box=$('#decks'); box.innerHTML='';
-  for(const d of DECKS){
-    const n=CARDS.filter(d.test).length;
-    box.append(el('button',{class:'chip'+(d.focus?' focus':''),'aria-pressed':String(S.deck===d.id),onclick:()=>{S.deck=d.id; save(); render();}}, d.name, el('span',{class:'n'}, String(n))));
+  for(const d of decks()){
+    const n=(d.pool?d.pool():CARDS).filter(d.test).length;
+    box.append(el('button',{class:'chip'+(d.focus?' focus':'')+(d.user?' user':''),'aria-pressed':String(S.deck===d.id),onclick:()=>{S.deck=d.id; save(); render();}}, d.name, el('span',{class:'n'}, String(n))));
   }
+  box.append(el('button',{class:'chip lib',onclick:()=>goMode('library')}, '＋ Your sets'));
   document.querySelectorAll('.tab').forEach(t=>{ t.setAttribute('aria-selected', String(t.dataset.mode===S.mode)); t.onclick=()=>goMode(t.dataset.mode); });
 }
 function renderStrip(){
@@ -4360,7 +4405,7 @@ function renderStrip(){
 const confirmReset={pending:false};
 function renderProgress(){
   const cards=deckCards(); const p=$('#progress'); p.innerHTML='';
-  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='mistakes'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
+  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='mistakes'||S.mode==='library'||S.mode==='editset'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
   const m=cards.filter(mastered).length, k=cards.filter(c=>status(c)==='k').length-m, l=cards.filter(c=>status(c)==='l').length, u=cards.length-k-l-m;
   const bar=el('div',{class:'bar',role:'img','aria-label':`${m} mastered, ${k} got it, ${l} still learning, ${u} not seen`});
   bar.append(el('span',{class:'m',style:`width:${100*m/cards.length}%`}), el('span',{class:'k',style:`width:${100*k/cards.length}%`}), el('span',{class:'l',style:`width:${100*l/cards.length}%`}));
@@ -4377,10 +4422,13 @@ function seg(opts,cur,on){ const s=el('div',{class:'seg',role:'group'}); for(con
 // ---------- flashcards ----------
 let F={list:[], i:0, flipped:false, key:'', typed:''};
 function flashList(){
-  let cards=deckCards();
+  let cards=(S.deck==='all'&&S.filter!=='all'&&S.filter!=='u')?allCards():deckCards();
   if(S.filter==='l') cards=cards.filter(c=>status(c)==='l');
   if(S.filter==='u') cards=cards.filter(c=>status(c)==='u');
   if(S.filter==='due') cards=cards.filter(isDue);
+  if(S.filter==='k') cards=cards.filter(c=>status(c)==='k');
+  if(S.filter==='star') cards=cards.filter(isStarred);
+  if(S.filter==='fade') cards=cards.filter(c=>{ const s=strength(c); return s!=null&&s<0.8; });
   return cards;
 }
 function renderFlash(){
@@ -4388,12 +4436,12 @@ function renderFlash(){
   const key=S.deck+'|'+S.filter+'|'+S.shuffle;
   if(F.key!==key){ let list=flashList(); if(S.shuffle) list=shuffled(list); F={list, i:S.pos[key]||0, flipped:false, key, typed:''}; if(F.i>=list.length) F.i=0; }
   v.append(el('div',{class:'row between'},
-    el('div',{class:'row'}, el('span',{class:'small'},'Study:'), seg([['all','All'],['due','Due'],['l','Still learning'],['u','Not seen']], S.filter, val=>{S.filter=val; save(); render();})),
+    el('div',{class:'row'}, el('span',{class:'small'},'Study:'), seg([['all','All'],['due','Due'],['l','Still learning'],['k','Know'],['u','Not seen'],['star','★ Starred'],['fade','Fading']], S.filter, val=>{S.filter=val; save(); render();})),
     el('button',{'aria-pressed':String(S.shuffle),onclick:()=>{S.shuffle=!S.shuffle; save(); render();}}, S.shuffle?'Shuffle: on':'Shuffle: off')));
-  if(!F.list.length){ v.append(el('div',{class:'empty'}, S.filter==='l'?'Nothing marked “still learning” in this deck. Nice.':S.filter==='due'?'Nothing due for review in this deck right now. Cards come back 1, 3 then 7 days after you get them right.':'Every card in this deck has been seen. Switch Study to All to go round again.')); return; }
+  if(!F.list.length){ v.append(el('div',{class:'empty'}, S.filter==='l'?'Nothing marked “still learning” in this deck. Nice.':S.filter==='due'?'Nothing due for review in this deck right now. Cards come back 1, 3 then 7 days after you get them right.':S.filter==='star'?'No starred cards here yet. Press ☆ on a card (or S) to star it.':S.filter==='fade'?'Nothing fading: every card you have seen here is still strong.':S.filter==='k'?'Nothing marked “got it” in this deck yet.':'Every card in this deck has been seen. Switch Study to All to go round again.')); return; }
   const c=F.list[F.i]; const st=status(c); const ms=mastered(c);
   const card=el('div',{class:'card'+(F.flipped?' flipped':'')+(ms?' mastered':st==='k'?' known':st==='l'?' learning':''),tabindex:'0',role:'button','aria-label':'Flip card',onclick:flip,onkeydown:e=>{ if(e.key==='Enter'){e.preventDefault();flip();} }},
-    el('div',{class:'lab'}, el('span',{}, F.flipped?'Answer':'Question'), el('span',{class:'deck'}, ms?el('span',{class:'badge'},'Mastered'):c.t)),
+    el('div',{class:'lab'}, el('span',{}, F.flipped?'Answer':'Question'), el('span',{class:'deck'}, ms?el('span',{class:'badge'},'Mastered'):c.t, ' ', starBtn(c))),
     el('div',{class:'txt'+(F.flipped?' ans':'')}, F.flipped?c.b:c.f),
     el('div',{class:'hint'}, F.flipped?'Tap to see the question again':'Tap or press Space to show the answer'));
   v.append(card);
@@ -4418,9 +4466,9 @@ function move(d,keep){ const n=F.list.length; if(!n)return; F.i=(F.i+d+n)%n; F.f
 
 // ---------- learn ----------
 let L=null;
-function startLearn(){ const pool=prioritised(deckCards()).slice(0,20); L={q:pool, i:0, right:0, done:false, picked:null, opts:null, typed:'', checked:null, deck:S.deck, combo:0}; }
+function startLearn(){ const pool=prioritised(poolCards()).slice(0,20); L={q:pool, i:0, right:0, done:false, picked:null, opts:null, typed:'', checked:null, deck:S.deck, combo:0}; }
 function makeOptions(c){
-  const same=CARDS.filter(x=>x.t===c.t && x.id!==c.id);
+  let same=allCards().filter(x=>x.t===c.t && x.id!==c.id); if(same.length<3) same=same.concat(shuffled(CARDS.filter(x=>x.t!==c.t)).slice(0,3));
   const head=c.f.split(/[:?]/)[0].toLowerCase();
   const similar=shuffled(same.filter(x=>x.f.toLowerCase().startsWith(head)&&head.length>4));
   const rest=shuffled(same.filter(x=>!similar.includes(x)));
@@ -4429,7 +4477,8 @@ function makeOptions(c){
 function renderLearn(){
   const v=$('#view'); v.innerHTML='';
   if(!L || L.deck!==S.deck){ startLearn(); }
-  if(!L.q.length){ v.append(el('div',{class:'empty'},'No cards in this deck.')); return; }
+  v.append(poolSeg());
+  if(!L.q.length){ v.append(el('div',{class:'empty'},poolEmpty())); return; }
   v.append(el('div',{class:'row between'},
     el('div',{class:'row'}, seg([['mc','Multiple choice'],['type','Type the answer']], S.learnType, val=>{S.learnType=val; save(); L.opts=null; L.picked=null; L.checked=null; L.typed=''; render();}),
       S.learnType==='mc'?seg([['term','Pick the question'],['def','Pick the answer']], S.learnDir, val=>{S.learnDir=val; save(); L.opts=null; L.picked=null; render();}):null),
@@ -4442,7 +4491,7 @@ function renderLearn(){
   }
   const c=L.q[L.i];
   if(S.learnType==='type'){
-    v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), el('span',{class:'deck'},c.t)), el('div',{class:'txt'},c.f)));
+    v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), deckLab(c)), el('div',{class:'txt'},c.f)));
     if(!L.checked){
       const ta=el('textarea',{id:'learnTyped',placeholder:'Type your answer, then press Check (or Ctrl+Enter).','aria-label':'Your answer',oninput:e=>{L.typed=e.target.value;},onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); checkLearn(); } }});
       ta.value=L.typed; v.append(el('div',{class:'typebox'}, ta));
@@ -4458,7 +4507,7 @@ function renderLearn(){
   }
   if(!L.opts) L.opts=makeOptions(c);
   const showDef=S.learnDir==='term';
-  v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{}, showDef?'Which question does this answer?':'Which is the answer?'), el('span',{class:'deck'},c.t)), el('div',{class:'txt'+(showDef?' ans':'')}, showDef?c.b:c.f)));
+  v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{}, showDef?'Which question does this answer?':'Which is the answer?'), deckLab(c)), el('div',{class:'txt'+(showDef?' ans':'')}, showDef?c.b:c.f)));
   const opts=el('div',{class:'opts'});
   L.opts.forEach((o,k)=>{
     const cls='opt'+(L.picked!=null?(o.id===c.id?' right':(L.picked===k?' wrong':'')):'');
@@ -4475,15 +4524,15 @@ function nextLearn(){ if(!L||L.picked==null)return; L.i++; L.picked=null; L.opts
 
 // ---------- test ----------
 let T=null;
-function startTest(){ const pool=prioritised(deckCards()).slice(0,S.testN); T={q:pool,i:0,right:0,revealed:false,missed:[],done:false,deck:S.deck,started:false,typed:'',cmp:null}; }
+function startTest(){ const pool=prioritised(poolCards()).slice(0,S.testN); T={q:pool,i:0,right:0,revealed:false,missed:[],done:false,deck:S.deck,started:false,typed:'',cmp:null}; }
 function renderCardTest(){
   const v=$('#view'); v.innerHTML='';
   if(!T||T.deck!==S.deck){ startTest(); }
   if(!T.started){
     v.append(el('div',{class:'panel'}, el('h2',{},'Flashcard test'), testKindSeg(),
       el('p',{},'Each question comes up on its own. Type your answer in the box, or write it on paper and leave the box empty. Then check it against the model answer and mark yourself. Missed cards go back to “still learning”.'),
-      el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[10,'10'],[20,'20']], S.testN, val=>{S.testN=val; save(); startTest(); render();})),
-      el('button',{class:'primary',onclick:()=>{T.started=true; render();}}, `Start ${Math.min(S.testN,T.q.length)}-question test`)));
+      el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[10,'10'],[20,'20']], S.testN, val=>{S.testN=val; save(); startTest(); render();})), poolSeg(),
+      T.q.length?el('button',{class:'primary',onclick:()=>{T.started=true; render();}}, `Start ${Math.min(S.testN,T.q.length)}-question test`):el('p',{class:'small'},poolEmpty())));
     return;
   }
   if(T.done){
@@ -4494,7 +4543,7 @@ function renderCardTest(){
   }
   const c=T.q[T.i];
   v.append(el('div',{class:'row between'}, el('span',{class:'tally'},`Question ${T.i+1} of ${T.q.length}`), el('span',{class:'tally'},`${T.right} right so far`)));
-  v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), el('span',{class:'deck'},c.t)), el('div',{class:'txt'},c.f)));
+  v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), deckLab(c)), el('div',{class:'txt'},c.f)));
   if(!T.revealed){
     const ta=el('textarea',{id:'testTyped',placeholder:'Type your answer here (or write on paper and leave this empty).','aria-label':'Your answer',oninput:e=>{T.typed=e.target.value;},onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); revealTest(); } }});
     ta.value=T.typed; v.append(el('div',{class:'typebox'}, ta));
@@ -4646,7 +4695,7 @@ function missRow(r, part, rc){
 // ---------- mistake notebook ----------
 let MF={topic:'all', kind:'all'};
 function mistakeQs(){ const out=[]; for(const r of qIndex()){ const rc=rec(r.p,r.it,r.part); if(!rc||typeof rc.m!=='number'||rc.m/r.max>=0.6) continue; const ir=itemRow(r.p.id,r.it.id); out.push({r:Object.assign({}, r, {topic: r.topic==='Other'&&ir?ir.topic:r.topic}), part:r.part, rc}); } return out.sort((a,b)=>(b.rc.t||0)-(a.rc.t||0)); }
-function mistakeCards(){ return CARDS.filter(c=>status(c)==='l'); }
+function mistakeCards(){ return allCards().filter(c=>status(c)==='l'); }
 function cardTopic(c){ return c.t==='Key words'?'Other':c.t; }
 function renderMistakes(){
   const v=$('#view'); v.innerHTML='';
@@ -4691,7 +4740,7 @@ function tsStep(){ return TS.steps[TS.i]; }
 function tsNext(){ const st=tsStep(); if(st&&(st.k==='mc'||st.k==='sa')){ const r=itemRow(st.pid,st.iid); const part=st.k==='sa'?r.it.parts.find(x=>x.p===st.part):null; const rc=rec(r.p,r.it,part); const max=part?part.marks:1; TS.res[TS.i]={k:st.k, ok:!!rc&&typeof rc.m==='number'&&rc.m/max>=0.6, m:rc&&typeof rc.m==='number'?rc.m:null, max}; }
   TS.i++; TS.shown=false; if(TS.i>=TS.steps.length) tsFinish(); render(); window.scrollTo({top:0}); }
 function tsShow(){ TS.shown=true; render(); }
-function tsCard(ok){ const c=BYID[tsStep().id]; recordReview(c, ok, 10); TS.res[TS.i]={k:'card', ok}; tsNext(); }
+function tsCard(ok){ const c=cardById(tsStep().id); recordReview(c, ok, 10); TS.res[TS.i]={k:'card', ok}; tsNext(); }
 function tsFinish(){ TS.done=true; TS.t1=Date.now(); const rs=TS.res.filter(Boolean); const n=rs.length, right=rs.filter(r=>r.ok).length; S.lastSession={d:today(), n, right, topic:TS.topic}; save(); if(n&&right/n>=0.7) confetti(); }
 function renderToday(){
   const v=$('#view'); v.innerHTML='';
@@ -4713,8 +4762,8 @@ function renderToday(){
   v.append(el('div',{class:'row between'}, el('span',{class:'tally'}, `Step ${TS.i+1} of ${TS.steps.length} · ${st.why}`), el('button',{class:'ghost',onclick:()=>{ tsFinish(); render(); }},'Stop here')));
   v.append(el('div',{class:'stepbar'}, el('span',{style:`width:${100*TS.i/TS.steps.length}%`})));
   if(st.k==='card'){
-    const c=BYID[st.id]; if(!c){ tsNext(); return; }
-    v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), el('span',{class:'deck'},c.t)), el('div',{class:'txt'},c.f)));
+    const c=cardById(st.id); if(!c){ tsNext(); return; }
+    v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), deckLab(c)), el('div',{class:'txt'},c.f)));
     if(!TS.shown) v.append(el('div',{class:'nav'}, el('span',{class:'kbd'},'Space to show'), el('button',{class:'primary',onclick:tsShow},'Show answer')));
     else { v.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Answer'), c.b)); v.append(el('div',{class:'judge'}, el('button',{class:'learn',onclick:()=>tsCard(false)},'✗ Missed it'), el('button',{class:'know',onclick:()=>tsCard(true)},'✓ Got it'))); }
     return;
@@ -4741,7 +4790,7 @@ function renderTodayDone(v){
   const wrong=rs.filter(r=>!r.ok);
   if(wrong.length){
     const ul=el('ul',{class:'missed'});
-    for(const r of wrong){ const st=TS.steps[r.i]; if(st.k==='card'){ const c=BYID[st.id]; if(c) ul.append(el('li',{}, el('div',{class:'q'},c.f), el('div',{class:'a'},c.b))); } else { const ir=itemRow(st.pid,st.iid); if(!ir) continue; const it=ir.it; if(st.k==='mc'){ const keys=(String(it.key||'').match(/[A-D]/g)||[]); ul.append(el('li',{}, el('div',{class:'q'},it.stem), el('div',{class:'a'},'Answer: '+keys.map(k=>optLine(it,k)).join(' or ')))); } else { const pt=it.parts.find(x=>x.p===st.part); ul.append(el('li',{}, el('div',{class:'q'},pt?pt.text:''), el('div',{class:'a'}, pt&&pt.sample?'Sample answer: '+pt.sample:'See the criteria in the mistake notebook.'))); } } }
+    for(const r of wrong){ const st=TS.steps[r.i]; if(st.k==='card'){ const c=cardById(st.id); if(c) ul.append(el('li',{}, el('div',{class:'q'},c.f), el('div',{class:'a'},c.b))); } else { const ir=itemRow(st.pid,st.iid); if(!ir) continue; const it=ir.it; if(st.k==='mc'){ const keys=(String(it.key||'').match(/[A-D]/g)||[]); ul.append(el('li',{}, el('div',{class:'q'},it.stem), el('div',{class:'a'},'Answer: '+keys.map(k=>optLine(it,k)).join(' or ')))); } else { const pt=it.parts.find(x=>x.p===st.part); ul.append(el('li',{}, el('div',{class:'q'},pt?pt.text:''), el('div',{class:'a'}, pt&&pt.sample?'Sample answer: '+pt.sample:'See the criteria in the mistake notebook.'))); } } }
     box.append(el('h3',{},'Fix these tomorrow'), el('p',{class:'small'},'They are in your mistake notebook, and the cards come back in your due reviews.'), ul);
   } else box.append(el('p',{},'Nothing missed. Tomorrow’s session will move on to new cards.'));
   box.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ TS=null; goMode('home'); }},'Back to Home'), wrong.length?el('button',{onclick:()=>goMode('mistakes')},'Mistake notebook'):null, el('button',{class:'ghost',onclick:()=>{ TS=null; render(); }},'Another session')));
@@ -4750,11 +4799,11 @@ function renderTodayDone(v){
 
 // ---------- match ----------
 let M=null;
-function startMatch(){ const pool=prioritised(deckCards()).slice(0,5); M={pairs:pool, left:shuffled(pool), right:shuffled(pool), selQ:null, selA:null, done:0, start:null, elapsed:0, penalty:0, finished:false, deck:S.deck, timer:null}; }
+function startMatch(){ const pool=prioritised(poolCards()).slice(0,5); M={pairs:pool, left:shuffled(pool), right:shuffled(pool), selQ:null, selA:null, done:0, start:null, elapsed:0, penalty:0, finished:false, deck:S.deck, timer:null}; }
 function renderMatch(){
   const v=$('#view'); v.innerHTML='';
   if(!M||M.deck!==S.deck||M.finished&&M.restart){ startMatch(); }
-  if(M.pairs.length<5){ v.append(el('div',{class:'empty'},'This deck needs at least 5 cards for Match.')); return; }
+  if(M.pairs.length<5){ v.append(poolSeg(), el('div',{class:'empty'},(S.pool||'all')==='all'?'This deck needs at least 5 cards for Match.':poolEmpty())); return; }
   const best=S.best[S.deck];
   const secs=((M.elapsed+M.penalty)/1000).toFixed(1);
   v.append(el('div',{class:'row between'}, el('div',{class:'row'}, el('span',{class:'timer',id:'matchTimer'}, secs+'s'), M.penalty?el('span',{class:'small'},`(+${M.penalty/1000}s for misses)`):null), el('span',{class:'tally'}, best?`Best for this deck: ${best.toFixed(1)}s`:'No best time yet')));
@@ -4762,7 +4811,7 @@ function renderMatch(){
     v.append(el('div',{class:'panel'}, el('h2',{}, (best&&M.final<=best)?'New best time.':pickRandom(CHEER)), el('div',{class:'score'}, M.final.toFixed(1)+'s'), el('p',{},'Five pairs matched. The timer counts from your first tap; each wrong match adds 2 seconds.'), el('button',{class:'primary',onclick:()=>{startMatch(); renderMatch();}},'Play again')));
     return;
   }
-  v.append(el('p',{class:'small'},'Tap a question, then tap its answer. Timer starts on your first tap.'));
+  v.append(el('div',{class:'row between'}, el('p',{class:'small'},'Tap a question, then tap its answer. Timer starts on your first tap.'), poolSeg()));
   const grid=el('div',{class:'match'});
   const colQ=el('div',{class:'col'}), colA=el('div',{class:'col'});
   M.left.forEach(c=>colQ.append(el('button',{class:'tile q'+(M.matched&&M.matched.has(c.id)?' done':''),'aria-pressed':String(M.selQ===c.id),'data-q':c.id,onclick:()=>tapMatch('q',c.id)}, c.f)));
@@ -4773,7 +4822,7 @@ function tapMatch(kind,id){
   if(!M.start){ M.start=performance.now(); M.matched=new Set(); M.timer=setInterval(()=>{ M.elapsed=performance.now()-M.start; const t=$('#matchTimer'); if(t)t.textContent=((M.elapsed+M.penalty)/1000).toFixed(1)+'s'; },100); }
   if(kind==='q') M.selQ=(M.selQ===id?null:id); else M.selA=(M.selA===id?null:id);
   if(M.selQ&&M.selA){
-    if(M.selQ===M.selA){ M.matched.add(id); M.done++; M.selQ=M.selA=null; recordReview(BYID[id], true, 6);
+    if(M.selQ===M.selA){ M.matched.add(id); M.done++; M.selQ=M.selA=null; recordReview(cardById(id), true, 6);
       if(M.done===5){ clearInterval(M.timer); M.elapsed=performance.now()-M.start; M.final=(M.elapsed+M.penalty)/1000; const b=S.best[S.deck]; if(!b||M.final<b){ S.best[S.deck]=M.final; } M.finished=true; M.restart=true; S.xp+=30; save(); confetti(); renderStrip(); for(const bd of BADGES){ if(!S.badges[bd.id]&&bd.test()){ S.badges[bd.id]=today(); toast(`Badge earned: ${bd.name}`,'gold'); save(); } } }
     } else { M.penalty+=2000; const q=document.querySelector(`[data-q="${M.selQ}"]`), a=document.querySelector(`[data-a="${M.selA}"]`); [q,a].forEach(t=>{ if(t){ t.classList.add('bad'); setTimeout(()=>t.classList.remove('bad'),300); } }); M.selQ=M.selA=null; setTimeout(renderMatch,300); return; }
   }
@@ -4918,6 +4967,7 @@ function renderStats(){
   { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
   const dueN=dueCards().length, week=CARDS.filter(c=>{ const r=rvOf(c); return !!r&&r.due>today()&&r.due<=dueDay(today(),7); }).length;
   v.append(el('div',{class:'panel'}, el('h2',{},'Spaced reviews'), el('div',{class:'grid2'}, el('div',{class:'stat'}, el('b',{},String(dueN)), el('span',{},'cards due today')), el('div',{class:'stat'}, el('b',{},String(week)), el('span',{},'due in the next 7 days'))), el('p',{class:'small'},'Each card you get right comes back later: after 1 day, then 3, then 7 and so on. A wrong answer brings it back today. Mastered means remembered on 3 separate days and not due again for at least a week.'), el('div',{class:'row'}, el('button',{class:'primary',disabled:dueN?null:'',onclick:()=>{ S.filter='due'; S.deck='all'; goMode('flash'); }}, dueN?`Review ${dueN} due now`:'Nothing due right now'))));
+  v.append(retentionPanel());
   const dk=el('div',{class:'panel'}, el('h2',{},'Progress by topic'));
   for(const d of DECKS.slice(1)){ const cs=CARDS.filter(d.test); const k=cs.filter(c=>status(c)==='k').length, m=cs.filter(mastered).length, l=cs.filter(c=>status(c)==='l').length; const pct=Math.round(100*k/cs.length);
     dk.append(el('div',{class:'deckrow'}, el('span',{},d.name), el('div',{class:'bar'}, el('span',{class:'m',style:`width:${100*m/cs.length}%`}), el('span',{class:'k',style:`width:${100*(k-m)/cs.length}%`}), el('span',{class:'l',style:`width:${100*l/cs.length}%`})), el('span',{class:'pct'},pct+'%'))); }
@@ -5286,12 +5336,14 @@ function renderHome(){
   acts.append(action('Learn', `Weakest topic first: ${weak.d.name} (${weak.pct}% got it)`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
   acts.append(action('Ratio drill', 'All 7 ratios with exam-style figures and interpretation', ()=>goMode('ratio')));
   acts.append(action('Match', '5 pairs against the clock', ()=>goMode('match')));
+  { const ns=Object.keys(S.sets).length, nst=starredCards().length; acts.append(action('Library', ns||nst?`${ns} set${ns===1?'':'s'} of your own · ${nst} starred card${nst===1?'':'s'}`:'Make your own sets, import from Quizlet, star hard cards', ()=>goMode('library'))); }
   acts.append(action('Exam guide', 'Exam structure, what each band looks like, the 35 NESA key words', ()=>goMode('guide')));
   v.append(el('div',{class:'panel'}, el('h2',{},'Jump in'), acts));
   const prog=el('div',{class:'panel'}, el('h2',{},'Where you stand'));
   for(const r of topicRows()) prog.append(deckBar(r));
   let pq=0,pg=0,pm=0; for(const p of PAPERS){ const st=paperStatus(p); pq+=pItems(p).filter(x=>itemStatus(p,x.it).done).length; pg+=st.got; pm+=st.max; }
   prog.append(el('div',{class:'deckrow'}, el('span',{},'Past papers'), el('span',{class:'small'}, pq?`${pq} questions marked · ${pg}/${pm} marks (${Math.round(100*pg/Math.max(1,pm))}%)`:'No questions marked yet'), el('span',{})));
+  prog.append(retentionRow());
   prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
   v.append(prog);
   v.append(planPanel(days));
@@ -5372,13 +5424,14 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ renderDecks(); renderStrip(); renderProgress(); ({flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes})[S.mode](); }
+function render(){ renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes})[S.mode](); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
     if(e.key===' '){ e.preventDefault(); flip(); }
     else if(e.key==='ArrowLeft'||e.key==='1'){ e.preventDefault(); judge('l'); }
     else if(e.key==='ArrowRight'||e.key==='2'){ e.preventDefault(); judge('k'); }
+    else if(e.key==='s'||e.key==='S'){ e.preventDefault(); if(F.list.length){ toggleStar(F.list[F.i]); render(); } }
   } else if(S.mode==='learn'){
     if(S.learnType==='mc'){ if(/^[1-4]$/.test(e.key)){ e.preventDefault(); pick(Number(e.key)-1); } else if(e.key==='Enter'){ e.preventDefault(); nextLearn(); } }
     else if(L&&L.checked){ if(e.key==='ArrowLeft'||e.key==='1'){ e.preventDefault(); learnTypedResult(false);} else if(e.key==='ArrowRight'||e.key==='2'||e.key==='Enter'){ e.preventDefault(); learnTypedResult(true);} }
@@ -5398,10 +5451,352 @@ document.addEventListener('keydown',e=>{
   }
 });
 
+// ---------- library: your own sets, imports, folders, tags, stars, retention ----------
+for(const k of ['sets','setsDel','folders','foldersDel','star','unstar','hist']) if(!S[k]||typeof S[k]!=='object'||Array.isArray(S[k])) S[k]={};
+if(!Array.isArray(S.sess)) S.sess=[];
+if(!Array.isArray(S.recent)) S.recent=[];
+if(!S.pool) S.pool='all';
+const MAX_USER_CARDS=3000;
+function uid(){ return 'u'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+let UC=null, UBY=null;
+function invalidateCards(){ UC=null; UBY=null; }
+function userCards(){ if(UC) return UC; UC=[]; UBY={}; for(const s of Object.values(S.sets)){ if(!s||!Array.isArray(s.cards)) continue; for(const c of s.cards){ if(!c||typeof c!=='object') continue; if(!c.id) c.id=uid(); c.t=s.name||'My set'; c.sid=s.id; UC.push(c); UBY[c.id]=c; } } return UC; }
+function allCards(){ return CARDS.concat(userCards()); }
+function cardById(id){ if(BYID[id]) return BYID[id]; userCards(); return UBY[id]; }
+function isStarred(c){ const id=typeof c==='string'?c:c.id; return (S.star[id]||0)>(S.unstar[id]||0); }
+function toggleStar(c){ if(!c) return; if(isStarred(c)){ S.unstar[c.id]=Date.now(); } else { S.star[c.id]=Date.now(); } save(); announce(isStarred(c)?'Starred':'Star removed'); }
+function starredCards(){ return allCards().filter(isStarred); }
+function starBtn(c){ const on=isStarred(c); return el('button',{class:'starb'+(on?' on':''),'aria-pressed':String(on),'aria-label':on?'Remove star':'Star this card',title:on?'Starred (press S)':'Star this card (press S)',onclick:e=>{ e.stopPropagation(); e.preventDefault(); toggleStar(c); render(); }}, on?'★':'☆'); }
+function deckLab(c){ return el('span',{class:'deck'}, c.t, ' ', starBtn(c)); }
+function setsSorted(){ return Object.values(S.sets).filter(s=>s&&s.id).sort((a,b)=>(b.updated||0)-(a.updated||0)); }
+function setCards(s){ userCards(); return (s.cards||[]).filter(c=>c&&c.id); }
+function itemCards(id){ if(String(id).startsWith('set:')){ const s=S.sets[id.slice(4)]; return s?setCards(s):[]; } if(id==='starred') return starredCards(); const d=DECKS.find(d=>d.id===id); return d?CARDS.filter(d.test):[]; }
+function itemName(id){ if(String(id).startsWith('set:')){ const s=S.sets[id.slice(4)]; return s?(s.name||'Untitled set'):'(deleted set)'; } if(id==='starred') return '★ Starred'; const d=DECKS.find(d=>d.id===id); return d?d.name:id; }
+function folderCards(f){ const seen=new Set(), out=[]; for(const it of f.items||[]){ for(const c of itemCards(it)){ if(!seen.has(c.id)){ seen.add(c.id); out.push(c); } } } return out; }
+function decks(){
+  const out=DECKS.slice();
+  if(starredCards().length) out.push({id:'starred', name:'★ Starred', focus:true, pool:allCards, test:isStarred});
+  for(const s of setsSorted()) out.push({id:'set:'+s.id, name:s.name||'Untitled set', user:true, pool:userCards, test:c=>c.sid===s.id});
+  for(const f of Object.values(S.folders)){ if(f&&f.id) out.push({id:'folder:'+f.id, name:'📁 '+(f.name||'Folder'), user:true, pool:()=>folderCards(f), test:()=>true}); }
+  return out;
+}
+function deckCardsOf(id){ const d=decks().find(d=>d.id===id); if(!d) return []; return (d.pool?d.pool():CARDS).filter(d.test); }
+function deckName(id){ const d=decks().find(d=>d.id===id); return d?d.name:'All'; }
+function poolCards(){ let cs=deckCards(); if(S.pool==='l') cs=cs.filter(c=>status(c)==='l'); else if(S.pool==='star') cs=cs.filter(isStarred); return cs; }
+function poolSeg(){ return el('div',{class:'row poolrow'}, el('span',{class:'small'},'Cards:'), seg([['all','All'],['l','Still learning'],['star','★ Starred']], S.pool||'all', v=>{ S.pool=v; save(); L=null; T=null; M=null; render(); })); }
+function poolEmpty(){ return S.pool==='l'?'Nothing in this deck is marked still learning. Switch Cards to All.':S.pool==='star'?'No starred cards in this deck yet. Star a card with ☆ in Flashcards, or switch Cards to All.':'No cards in this deck yet.'; }
+function noteRecent(){ const id=S.deck||'all'; S.recent=[{d:id,t:Date.now()}].concat(S.recent.filter(r=>r&&r.d!==id)).slice(0,10); }
+function trackSession(ok){ const now=Date.now(); const last=S.sess[S.sess.length-1]; if(last&&now-last.b<10*60*1000){ last.b=now; last.n++; if(ok) last.r++; } else { S.sess.push({a:now,b:now,n:1,r:ok?1:0,m:S.mode,d:S.deck}); if(S.sess.length>100) S.sess=S.sess.slice(-100); } }
+function sessMinutes(s){ return Math.max((s.b-s.a)/60000, s.n*0.25); }
+function timeStudied(){ return S.sess.reduce((a,s)=>a+sessMinutes(s),0); }
+
+// memory strength: 0.9 at the planned review date, falling after it; a wrong answer leaves a weak, fast-fading trace
+function daysBetween(a,b){ return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/86400000); }
+function strength(c, at){
+  const r=rvOf(c), st=status(c); const d=at||today();
+  if(!r){ return st==='u'?null:st==='k'?0.6:0.2; }
+  const e=Math.max(0, daysBetween(r.last||d, d));
+  if(!r.n||!r.iv) return 0.35*Math.pow(0.9, e);
+  return Math.pow(0.9, e/Math.max(1,r.iv));
+}
+function simStrength(h, D){ let n=0, iv=0, last=''; for(const [d,ok] of h||[]){ if(d>D) break; if(ok){ if(last!==d){ n++; iv=n===1?1:n===2?3:Math.min(60,Math.round(Math.max(1,iv)*2.3)); } } else { n=0; iv=0; } last=d; } if(!last) return null; const e=daysBetween(last,D); return n?Math.pow(0.9, e/Math.max(1,iv)):0.35*Math.pow(0.9,e); }
+function readiness(cards){
+  let seen=0, sum=0, strong=0, fading=0, weak=0;
+  for(const c of cards){ const s=strength(c); if(s==null) continue; seen++; sum+=s; if(s>=0.8) strong++; else if(s>=0.5) fading++; else weak++; }
+  const ret=seen?sum/seen:0, cov=cards.length?seen/cards.length:0;
+  const lab= !cards.length?['No cards','']: cov>=0.9&&ret>=0.85?['Exam ready','good']: cov>=0.7&&ret>=0.7?['Nearly there','mid']: seen?['Keep building','']:['Not started',''];
+  return {n:cards.length, seen, unseen:cards.length-seen, ret, cov, strong, fading, weak, label:lab[0], cls:lab[1]};
+}
+function snapshotHist(){ const d=today(); const all=allCards(); const r=readiness(all); const m=all.filter(mastered).length, k=all.filter(c=>status(c)==='k').length, l=all.filter(c=>status(c)==='l').length; S.hist[d]={ret:Math.round(r.ret*1000)/1000, m, k, l, s:r.seen, n:S.days[d]||0, st:Object.keys(S.star).filter(isStarred).length}; const keys=Object.keys(S.hist).sort(); if(keys.length>120) for(const key of keys.slice(0,keys.length-120)) delete S.hist[key]; }
+function retentionSeries(days){
+  const all=allCards(); const out=[]; const t=today(); const first=Object.keys(S.days).sort()[0];
+  for(let i=days-1;i>=0;i--){ const d=dueDay(t,-i); if(first&&d<first) continue;
+    if(d===t){ out.push({d, v:readiness(all).ret, real:true}); continue; }
+    if(S.hist[d]&&typeof S.hist[d].ret==='number'){ out.push({d, v:S.hist[d].ret, real:true}); continue; }
+    let sum=0, n=0; for(const c of all){ const r=rvOf(c); if(!r) continue; const s=simStrength(r.h, d); if(s==null) continue; sum+=s; n++; }
+    out.push({d, v:n?sum/n:null, real:false}); }
+  return out;
+}
+function accuracySeries(days){ const t=today(); const by={}; for(const c of allCards()){ const r=rvOf(c); for(const [d,ok] of (r&&r.h)||[]){ const o=by[d]||(by[d]={r:0,n:0}); o.n++; if(ok) o.r++; } } const out=[]; for(let i=days-1;i>=0;i--){ const d=dueDay(t,-i); const o=by[d]; out.push({d, n:S.days[d]||0, acc:o&&o.n?o.r/o.n:null}); } return out; }
+function recentlyForgotten(){ const t=today(), cut=dueDay(t,-14); return allCards().filter(c=>{ const r=rvOf(c); const h=(r&&r.h)||[]; if(h.length<2) return false; const last=h[h.length-1]; return last[1]===0&&last[0]>=cut&&h.slice(0,-1).some(x=>x[1]===1); }).sort((a,b)=>rvOf(b).last.localeCompare(rvOf(a).last)); }
+function shortDay(d){ const x=new Date(d+'T00:00:00'); return x.getDate()+' '+['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][x.getMonth()]; }
+function chartW(){ const v=document.querySelector('#view'); return Math.max(300, Math.min(600, ((v&&v.clientWidth)||600)-50)); }
+function lineChart(series){
+  const W=chartW(),H=170,L=34,R=10,Tp=12,B=28; const pts=series.filter(p=>p.v!=null); if(pts.length<2) return el('p',{class:'small'},'The retention line appears once you have studied on two or more days.');
+  const x=i=>L+(W-L-R)*(i/(series.length-1)), y=v=>Tp+(H-Tp-B)*(1-v);
+  let path='', area='', dots=''; series.forEach((p,i)=>{ if(p.v==null) return; const X=x(i).toFixed(1), Y=y(p.v).toFixed(1); path+=(path?' L':'M')+X+' '+Y; if(!area) area='M'+X+' '+y(0).toFixed(1); area+=' L'+X+' '+Y; if(p.real) dots+=`<circle cx="${X}" cy="${Y}" r="3" fill="var(--accent)"/>`; });
+  const lastI=series.map((p,i)=>p.v!=null?i:-1).filter(i=>i>=0).pop(); area+=' L'+x(lastI).toFixed(1)+' '+y(0).toFixed(1)+' Z';
+  let grid=''; for(const g of [0,0.5,0.85,1]) grid+=`<line x1="${L}" x2="${W-R}" y1="${y(g).toFixed(1)}" y2="${y(g).toFixed(1)}" stroke="var(--border)" stroke-dasharray="${g===0.85?'4 4':'0'}" stroke-width="1"/><text x="${L-6}" y="${(y(g)+4).toFixed(1)}" text-anchor="end" font-size="11" fill="var(--muted)">${Math.round(g*100)}%</text>`;
+  let labels=''; const step=Math.max(1,Math.round(series.length/5)); series.forEach((p,i)=>{ if(i%step===0||i===series.length-1) labels+=`<text x="${x(i).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)">${shortDay(p.d)}</text>`; });
+  const last=pts[pts.length-1];
+  return el('div',{class:'chart',role:'img','aria-label':`Estimated retention over the last ${series.length} days, now ${Math.round(last.v*100)}%`, html:`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${grid}<path d="${area}" fill="var(--accent-soft)" opacity=".7"/><path d="${path}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round"/>${dots}</svg>`});
+}
+function barChart(series){
+  const W=chartW(),H=150,L=10,R=10,Tp=14,B=40; const max=Math.max(1,...series.map(p=>p.n)); const bw=(W-L-R)/series.length;
+  let bars='', labels=''; series.forEach((p,i)=>{ const X=L+i*bw+bw*0.15, w=bw*0.7, h=(H-Tp-B)*(p.n/max), Y=Tp+(H-Tp-B)-h; const col=p.acc==null?'var(--border)':p.acc>=0.8?'var(--good)':p.acc>=0.5?'var(--gold)':'var(--warn)'; if(p.n) bars+=`<rect x="${X.toFixed(1)}" y="${Y.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(2,h).toFixed(1)}" rx="3" fill="${col}"/><text x="${(X+w/2).toFixed(1)}" y="${(Y-3).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--muted)">${p.n}</text>`; const acc=p.acc==null?'':Math.round(p.acc*100)+'%'; labels+=`<text x="${(X+w/2).toFixed(1)}" y="${H-24}" text-anchor="middle" font-size="10" fill="var(--ink)" font-weight="700">${acc}</text><text x="${(X+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="10" fill="var(--muted)">${shortDay(p.d).split(' ')[0]}</text>`; });
+  return el('div',{class:'chart',role:'img','aria-label':'Cards answered each day for the last two weeks, with accuracy', html:`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet">${bars}${labels}</svg>`});
+}
+function fmtMins(m){ if(m<60) return Math.round(m)+' min'; return Math.floor(m/60)+' h '+Math.round(m%60)+' min'; }
+function retentionPanel(){
+  const all=allCards(); const r=readiness(all); const pct=Math.round(r.ret*100);
+  const p=el('div',{class:'panel'}, el('h2',{},'Retention'));
+  p.append(el('div',{class:'grid2'},
+    el('div',{class:'stat'}, el('b',{}, r.seen?pct+'%':'–'), el('span',{},'estimated retention of the cards you have seen')),
+    el('div',{class:'stat'}, el('b',{class:'ready '+r.cls}, r.label), el('span',{}, r.seen?`${Math.round(r.cov*100)}% of cards seen · needs 90% seen and 85% retention`:'Answer some cards to get a reading')),
+    el('div',{class:'stat'}, el('b',{}, fmtMins(timeStudied())), el('span',{}, `studied in ${S.sess.length} session${S.sess.length===1?'':'s'} · ${S.total} answers`)),
+    el('div',{class:'stat'}, el('b',{}, String(starredCards().length)), el('span',{}, 'starred cards', starredCards().length?el('button',{class:'ghost',style:'min-height:28px;padding:0 .4rem;margin-left:.4rem;font-size:.9rem',onclick:()=>{ S.deck='starred'; S.filter='all'; goMode('flash'); }},'Study →'):null))));
+  const tot=Math.max(1,r.n);
+  const bar=el('div',{class:'bar',role:'img','aria-label':`${r.strong} strong, ${r.fading} fading, ${r.weak} weak, ${r.unseen} not seen`}, el('span',{class:'m',style:`width:${100*r.strong/tot}%`}), el('span',{class:'k',style:`width:${100*r.fading/tot}%`}), el('span',{class:'l',style:`width:${100*r.weak/tot}%`}));
+  p.append(bar, el('div',{class:'legend'}, el('span',{}, el('i',{class:'dot m'}), el('b',{},String(r.strong)), ' strong (80%+)'), el('span',{}, el('i',{class:'dot k'}), el('b',{},String(r.fading)), ' fading (50 to 80%)'), el('span',{}, el('i',{class:'dot l'}), el('b',{},String(r.weak)), ' weak'), el('span',{}, el('i',{class:'dot u'}), el('b',{},String(r.unseen)), ' not seen'),
+    (r.fading+r.weak)?el('button',{class:'ghost',style:'min-height:28px;padding:0 .3rem;font-size:.9rem',onclick:()=>{ S.deck='all'; S.filter='fade'; goMode('flash'); }}, `Review ${r.fading+r.weak} fading and weak cards`):null));
+  p.append(el('p',{class:'small'},'Memory strength is an estimate from your review history: a card sits near 90% on the day it is due and fades after that; a wrong answer drops it to weak. Mastered, got it and still learning are what you marked; strong, fading and weak are what the schedule predicts.'));
+  p.append(el('h3',{},'Retention over the last 30 days'), lineChart(retentionSeries(30)));
+  p.append(el('h3',{},'Answers per day and accuracy, last 14 days'), barChart(accuracySeries(14)));
+  const byDeck=el('div',{class:'readytable'}); const rows=[]; for(const d of DECKS.slice(1,5)) rows.push([d.name, readiness(CARDS.filter(d.test))]); for(const s of setsSorted()) rows.push([s.name||'Untitled set', readiness(setCards(s))]);
+  for(const [name,rr] of rows){ byDeck.append(el('div',{class:'deckrow'}, el('span',{},name), el('span',{class:'small'}, rr.seen?`${Math.round(rr.ret*100)}% retention · ${rr.strong}/${rr.n} strong`:'not started'), el('span',{class:'pill '+rr.cls}, rr.label))); }
+  p.append(el('h3',{},'Ready for the exam?'), byDeck);
+  const forgot=recentlyForgotten(); if(forgot.length){ const ul=el('ul',{class:'missed'}); for(const c of forgot.slice(0,6)) ul.append(el('li',{}, el('div',{class:'q'},c.f), el('div',{class:'a'},c.b))); p.append(el('h3',{},`Recently forgotten (${forgot.length})`), el('p',{class:'small'},'Cards you knew before and missed in the last two weeks. They are back in the still-learning queue.'), ul); }
+  const sess=S.sess.slice(-8).reverse(); if(sess.length){ const sl=el('div',{class:'sesslist'}); for(const s of sess){ const a=new Date(s.a); sl.append(el('div',{class:'rowx'}, el('span',{}, a.toLocaleDateString('en-AU',{weekday:'short',day:'numeric',month:'short'})+' '+a.toLocaleTimeString('en-AU',{hour:'numeric',minute:'2-digit'})), el('span',{}, fmtMins(sessMinutes(s))), el('span',{}, `${s.n} card${s.n===1?'':'s'}`), el('span',{class:'sub'}, s.n?Math.round(100*s.r/s.n)+'% right':''), el('span',{class:'sub'}, deckName(s.d||'all')))); } p.append(el('h3',{},'Recent sessions'), el('p',{class:'small'},'A session ends after ten minutes without an answer.'), sl); }
+  return p;
+}
+function retentionRow(){ const r=readiness(allCards()); return el('div',{class:'deckrow'}, el('span',{},'Retention'), el('span',{class:'small'}, r.seen?`${Math.round(r.ret*100)}% estimated · ${r.strong} strong, ${r.fading} fading, ${r.weak} weak`:'No reading yet'), el('span',{class:'pill '+r.cls}, r.label)); }
+
+// ---------- sets: create, import, edit, duplicate, export, share ----------
+function newSet(name, cards, extra){
+  const total=userCards().length+(cards?cards.length:0); if(total>MAX_USER_CARDS){ toast(`That would pass the limit of ${MAX_USER_CARDS} cards in your own sets.`); return null; }
+  const id=uid(); const now=Date.now();
+  S.sets[id]={id, name:(name||'').trim()||'Untitled set', desc:'', tags:[], cards:(cards||[]).map(c=>({id:uid(), f:String(c.f||'').trim(), b:String(c.b||'').trim()})), created:now, updated:now, ...(extra||{})};
+  invalidateCards(); save(); return S.sets[id];
+}
+function touchSet(s){ s.updated=Date.now(); invalidateCards(); schedSetSave(); }
+let setSaveT=null; function schedSetSave(){ clearTimeout(setSaveT); setSaveT=setTimeout(()=>{ save(); }, 400); }
+function deleteSet(id){ const s=S.sets[id]; if(!s) return; delete S.sets[id]; S.setsDel[id]=Date.now(); for(const f of Object.values(S.folders)){ if(f.items&&f.items.includes('set:'+id)){ f.items=f.items.filter(x=>x!=='set:'+id); f.updated=Date.now(); } } if(S.deck==='set:'+id) S.deck='all'; invalidateCards(); save(); }
+function duplicateSet(s){ const copy=newSet((s.name||'Untitled set')+' (copy)', setCards(s).map(c=>({f:c.f,b:c.b})), {desc:s.desc||'', tags:(s.tags||[]).slice()}); if(copy) toast('Set duplicated.'); return copy; }
+function exportText(s){ return setCards(s).map(c=>c.f.replace(/[\t\r\n]+/g,' ')+'\t'+c.b.replace(/[\t\r\n]+/g,' ')).join('\n'); }
+function b64e(str){ return btoa(unescape(encodeURIComponent(str))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+function b64d(str){ str=str.replace(/-/g,'+').replace(/_/g,'/'); while(str.length%4) str+='='; return decodeURIComponent(escape(atob(str))); }
+function shareLink(s){ const payload={n:s.name||'Untitled set', d:s.desc||'', g:s.tags||[], c:setCards(s).map(c=>[c.f,c.b])}; return location.origin+location.pathname+'#import='+b64e(JSON.stringify(payload)); }
+let PENDING_IMPORT=null;
+function readImportHash(){ try{ if(location.hash.startsWith('#import=')){ const o=JSON.parse(b64d(location.hash.slice(8))); if(o&&Array.isArray(o.c)){ PENDING_IMPORT={name:String(o.n||'Shared set').slice(0,80), desc:String(o.d||'').slice(0,400), tags:Array.isArray(o.g)?o.g.map(t=>String(t).slice(0,30)).slice(0,10):[], cards:o.c.filter(x=>Array.isArray(x)&&x[0]).map(x=>({f:String(x[0]).slice(0,600), b:String(x[1]||'').slice(0,1200)}))}; S.mode='library'; } history.replaceState(null,'',location.pathname+location.search+'#library'); } }catch(e){ PENDING_IMPORT=null; } }
+readImportHash();
+const SEP_T=[['tab','Tab'],['comma','Comma'],['dash','Dash ( - )'],['colon','Colon'],['custom','Custom']];
+const SEP_C=[['nl','New line'],['semi','Semicolon'],['blank','Blank line'],['custom','Custom']];
+function detectSepT(text){ const lines=text.split(/\r?\n/).filter(l=>l.trim()); if(!lines.length) return 'tab'; const n=lines.length; const cnt=re=>lines.filter(l=>re.test(l)).length; if(cnt(/\t/)>=n*0.6) return 'tab'; if(cnt(/\s[-–—]\s/)>=n*0.6) return 'dash'; if(cnt(/^[^:]{2,80}:\s/)>=n*0.6) return 'colon'; if(cnt(/,/)>=n*0.6) return 'comma'; return 'tab'; }
+function splitTerm(line, sepT, custom){
+  let i=-1, w=1;
+  if(sepT==='tab'){ i=line.indexOf('\t'); }
+  else if(sepT==='comma'){ const m=line.match(/^\s*"((?:[^"]|"")*)"\s*,\s*(.*)$/s); if(m) return [m[1].replace(/""/g,'"'), m[2].replace(/^"|"$/g,'').replace(/""/g,'"')]; i=line.indexOf(','); }
+  else if(sepT==='dash'){ const m=line.match(/\s[-–—]\s/); if(m){ i=m.index; w=m[0].length; } }
+  else if(sepT==='colon'){ i=line.indexOf(':'); }
+  else { const c=custom||''; if(c){ i=line.indexOf(c); w=c.length; } }
+  if(i<0) return [line, ''];
+  return [line.slice(0,i), line.slice(i+w)];
+}
+function parseImport(text, sepT, sepC, customT, customC){
+  const chunks= sepC==='nl'?text.split(/\r?\n/): sepC==='semi'?text.split(';'): sepC==='blank'?text.split(/\r?\n\s*\r?\n/): text.split(customC||'\n');
+  const rows=[];
+  for(let line of chunks){ line=line.replace(/^\s+|\s+$/g,''); if(!line) continue; const [f,b]=splitTerm(line, sepT, customT); const F=f.trim().replace(/^["']|["']$/g,''), B=b.trim().replace(/^["']|["']$/g,''); if(!F) continue; rows.push({f:F, b:B, bad:!B}); }
+  return rows;
+}
+const IMP={text:'', sepT:null, sepC:'nl', customT:'', customC:'', rows:[]};
+function importPanel(onAdd){
+  const box=el('div',{class:'imppanel'});
+  box.append(el('p',{class:'small'},'Paste from Quizlet (Export: tab between term and definition, new line between cards), a spreadsheet, Word or your notes. One card per line: term, then the answer.'));
+  const ta=el('textarea',{placeholder:'operations management\tManaging the processes that produce goods and services\nvalue adding\tIncreasing the value of a product by transforming inputs', 'aria-label':'Cards to import', rows:'6'}); ta.value=IMP.text;
+  const file=el('input',{type:'file',accept:'.txt,.csv,.tsv,.md,text/plain,text/csv','aria-label':'Or choose a text file',onchange:e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ ta.value=String(rd.result||''); IMP.text=ta.value; IMP.sepT=null; refresh(); }; rd.readAsText(f); }});
+  const prev=el('div',{class:'impprev'});
+  const tsegBox=el('div',{class:'row'}), csegBox=el('div',{class:'row'});
+  function refresh(){
+    IMP.text=ta.value; if(!IMP.sepT) IMP.sepT=detectSepT(IMP.text);
+    tsegBox.innerHTML=''; tsegBox.append(...[].filter.call([el('span',{class:'small'},'Between term and answer:'), seg(SEP_T, IMP.sepT, v=>{ IMP.sepT=v; refresh(); }), IMP.sepT==='custom'?el('input',{type:'text',class:'tiny',placeholder:'e.g. =','aria-label':'Custom separator',value:IMP.customT,oninput:e=>{ IMP.customT=e.target.value; refresh(); }}):null], Boolean));
+    csegBox.innerHTML=''; csegBox.append(...[].filter.call([el('span',{class:'small'},'Between cards:'), seg(SEP_C, IMP.sepC, v=>{ IMP.sepC=v; refresh(); }), IMP.sepC==='custom'?el('input',{type:'text',class:'tiny',placeholder:'e.g. ||','aria-label':'Custom card separator',value:IMP.customC,oninput:e=>{ IMP.customC=e.target.value; refresh(); }}):null], Boolean));
+    IMP.rows=parseImport(IMP.text, IMP.sepT, IMP.sepC, IMP.customT, IMP.customC);
+    prev.innerHTML=''; const good=IMP.rows.filter(r=>!r.bad).length, bad=IMP.rows.length-good;
+    if(!IMP.text.trim()){ prev.append(el('p',{class:'small'},'The preview appears here as you paste.')); return; }
+    prev.append(el('p',{class:'small'}, el('b',{},`${IMP.rows.length} card${IMP.rows.length===1?'':'s'} found`), bad?` · ${bad} with no answer (check the separator)`:''));
+    const tbl=el('div',{class:'improws'}); IMP.rows.slice(0,6).forEach(r=>tbl.append(el('div',{class:'improw'+(r.bad?' bad':'')}, el('span',{},r.f), el('span',{},r.b||'(no answer)')))); if(IMP.rows.length>6) tbl.append(el('div',{class:'small'},`… and ${IMP.rows.length-6} more`)); prev.append(tbl);
+    prev.append(el('button',{class:'primary',onclick:()=>{ const rows=IMP.rows.filter(r=>r.f); if(!rows.length) return; onAdd(rows.map(r=>({f:r.f,b:r.b}))); IMP.text=''; IMP.sepT=null; IMP.rows=[]; }}, `Add ${IMP.rows.length} card${IMP.rows.length===1?'':'s'}`));
+  }
+  ta.addEventListener('input',()=>{ IMP.sepT=null; refresh(); });
+  box.append(ta, el('div',{class:'row'}, el('label',{class:'small'},'Or choose a file: ', file)), tsegBox, csegBox, prev); refresh(); return box;
+}
+
+// ---------- AI: notes or a topic into cards ----------
+const AI={text:'', n:15, busy:false, err:'', out:null, picked:null};
+function aiPrompt(text, n, existing){
+  const topicMode=text.trim().length<160&&!/\n/.test(text.trim());
+  const subj=/business/i.test(text)||!/biolog|math|physic|chem|english|history|geograph|legal|econom|pdhpe|french|japanese/i.test(text)?'NSW HSC Business Studies':'the NSW HSC course the topic names';
+  return `You write study flashcards for a Year 12 student sitting ${subj}.
+${topicMode?`TOPIC: ${text.trim()}\nWrite ${n} flashcards that cover this topic the way the syllabus and HSC exam treat it: definitions, the key points under each dot point, advantages and disadvantages, and how it links to business outcomes.`:`NOTES:\n"""\n${text.trim().slice(0,12000)}\n"""\nTurn these notes into ${n} flashcards. Cover the whole of the notes evenly and keep the student's own terms and examples.`}
+Rules: the front is one specific question using an HSC directive verb (define, outline, describe, explain, distinguish, compare) or a key term; the back is the answer a marker would want, 1 to 2 sentences, at most 40 words, no filler. No numbering, no duplicates${existing&&existing.length?', and nothing already covered by these existing cards: '+existing.slice(0,60).map(c=>c.f).join(' | '):''}.
+Return only JSON: {"cards":[{"f":"front","b":"back"}]}`;
+}
+async function aiMakeCards(text, n, existing){
+  const s=await getSample(); if(!s) throw {code:'none'};
+  const res=await s.json(aiPrompt(text, n, existing), {modelTier:'default', cache:false});
+  const cards=((res&&res.cards)||[]).filter(c=>c&&c.f&&c.b).map(c=>({f:String(c.f).trim().slice(0,600), b:String(c.b).trim().slice(0,1200)}));
+  if(!cards.length) throw {code:'empty'};
+  return cards;
+}
+async function aiRedoCard(text, card){
+  const s=await getSample(); if(!s) throw {code:'none'};
+  const res=await s.json(`Rewrite this HSC study flashcard so it is sharper: a specific question on the front and a precise 1 to 2 sentence answer (max 40 words) on the back, based on these notes or topic: """${text.trim().slice(0,4000)}""". Current card: front "${card.f}", back "${card.b}". Return only JSON: {"f":"...","b":"..."}`, {modelTier:'default', cache:false});
+  if(!res||!res.f||!res.b) throw {code:'empty'}; return {f:String(res.f).trim().slice(0,600), b:String(res.b).trim().slice(0,1200)};
+}
+function aiUnavailableNote(){
+  const site=typeof SITE!=='undefined'&&SITE;
+  const p=el('div',{class:'small'}, site?'AI card making uses the same key as AI marking. Paste an Anthropic API key below (it stays in this browser) or ':'AI card making is not available in this view. ', site?null:'Open the ', el('a',{href:(typeof CLAUDE_LINK!=='undefined')?CLAUDE_LINK:'#',target:'_blank',rel:'noopener'},'Claude version'), site?'':' where it is built in, or paste your cards instead.');
+  if(site&&typeof apiKey==='function'){ const ki=el('input',{type:'password',placeholder:'sk-ant-…','aria-label':'Anthropic API key',autocomplete:'off'}); p.append(el('div',{class:'inrow',style:'margin-top:.4rem'}, ki, el('button',{onclick:()=>{ const v=ki.value.trim(); try{ if(v) localStorage.setItem('bss_apikey',v); }catch(e){} SAMPLE=undefined; AI.err=''; render(); }},'Save key'))); }
+  return p;
+}
+function aiPanel(onAdd, existing){
+  const box=el('div',{class:'aipanel'});
+  box.append(el('p',{class:'small'},'Paste your notes (or a chunk of a booklet) and the AI drafts cards from them. Or type a topic such as "Finance: liquidity and the current ratio" and it drafts a set from the syllabus. You pick which cards to keep and can edit every one afterwards.'));
+  const ta=el('textarea',{placeholder:'Paste notes here, or type a topic…','aria-label':'Notes or topic',rows:'5',oninput:e=>{ AI.text=e.target.value; }}); ta.value=AI.text;
+  const go=el('button',{class:'primary',disabled:AI.busy?'':null,onclick:async()=>{ if(AI.busy) return; if(!AI.text.trim()){ toast('Paste some notes or type a topic first.'); return; } AI.busy=true; AI.err=''; render(); try{ AI.out=await aiMakeCards(AI.text, AI.n, existing); AI.picked=AI.out.map(()=>true); }catch(e){ AI.out=null; AI.err=(e&&e.code==='none')?'none':(e&&e.code==='bad_key')?'That API key was rejected. Check it under Past papers › AI marking.':(e&&e.code==='network')?'No connection to the AI service.':(e&&e.code==='not_granted'||e&&e.code==='sampling_disabled')?'none':'The AI did not return usable cards. Try again or paste a smaller chunk.'; } AI.busy=false; render(); }}, AI.busy?'Drafting…':AI.out?'Draft again':'Draft cards');
+  box.append(ta, el('div',{class:'row'}, el('span',{class:'small'},'How many:'), seg([[8,'8'],[15,'15'],[25,'25'],[40,'40']], AI.n, v=>{ AI.n=v; render(); }), go));
+  if(AI.err==='none') box.append(aiUnavailableNote()); else if(AI.err) box.append(el('p',{class:'small err',role:'alert'}, AI.err));
+  if(AI.out){
+    const list=el('div',{class:'ailist'});
+    AI.out.forEach((c,i)=>{ const cb=el('input',{type:'checkbox','aria-label':'Keep this card'}); cb.checked=!!AI.picked[i]; cb.onchange=()=>{ AI.picked[i]=cb.checked; };
+      const redo=el('button',{class:'ghost',title:'Ask the AI for a sharper version of this card','aria-label':'Redraft this card',onclick:async()=>{ redo.disabled=true; redo.textContent='…'; try{ AI.out[i]=await aiRedoCard(AI.text, c); render(); }catch(e){ redo.disabled=false; redo.textContent='↻'; toast('Could not redraft that card.'); } }},'↻');
+      list.append(el('label',{class:'airow'}, cb, el('span',{class:'f'},c.f), el('span',{class:'b'},c.b), redo)); });
+    const n=()=>AI.picked.filter(Boolean).length;
+    box.append(el('p',{class:'small'}, el('b',{},`${AI.out.length} draft cards.`),' Untick any you do not want. These are AI drafts: check them against your notes or textbook.'), list,
+      el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ const keep=AI.out.filter((c,i)=>AI.picked[i]); if(!keep.length){ toast('Tick at least one card.'); return; } onAdd(keep); AI.out=null; AI.picked=null; }}, 'Add the ticked cards'), el('button',{class:'ghost',onclick:()=>{ AI.out=null; AI.picked=null; render(); }},'Discard drafts')));
+  }
+  return box;
+}
+
+// ---------- library page ----------
+const LIB={q:'', tag:'', panel:'', editFolder:null, confirmDel:null, menu:null};
+function allTags(){ const t=new Set(); for(const s of Object.values(S.sets)) for(const g of s.tags||[]) t.add(g); return [...t].sort(); }
+function miniBar(cards){ const n=Math.max(1,cards.length); const m=cards.filter(mastered).length, k=cards.filter(c=>status(c)==='k').length-m, l=cards.filter(c=>status(c)==='l').length; return el('div',{class:'bar mini',role:'img','aria-label':`${m} mastered, ${k} got it, ${l} still learning of ${cards.length}`}, el('span',{class:'m',style:`width:${100*m/n}%`}), el('span',{class:'k',style:`width:${100*k/n}%`}), el('span',{class:'l',style:`width:${100*l/n}%`})); }
+function studyBtns(deckId, small){ const go=m=>()=>{ S.deck=deckId; S.filter='all'; S.pool='all'; L=null; T=null; M=null; if(m==='test') S.testKind='cards'; goMode(m); }; return el('div',{class:'row'}, el('button',{class:small?'':'primary',onclick:go('flash')},'Flashcards'), el('button',{onclick:go('learn')},'Learn'), el('button',{onclick:go('test')},'Test'), el('button',{onclick:go('match')},'Match')); }
+function ago(t){ const m=(Date.now()-t)/60000; if(m<2) return 'just now'; if(m<60) return Math.round(m)+' min ago'; if(m<36*60) return Math.round(m/60)+' h ago'; return Math.round(m/1440)+' days ago'; }
+function setCard(s){
+  const cards=setCards(s); const r=readiness(cards);
+  const card=el('div',{class:'setcard'});
+  const title=el('button',{class:'title',onclick:()=>openSet(s.id)}, s.name||'Untitled set');
+  card.append(el('div',{class:'row between'}, title, el('span',{class:'small'}, `${cards.length} card${cards.length===1?'':'s'}`)));
+  if(s.desc) card.append(el('p',{class:'small desc'}, s.desc));
+  const meta=el('div',{class:'row tagrow'}); for(const g of s.tags||[]) meta.append(el('button',{class:'tagchip','aria-pressed':String(LIB.tag===g),onclick:()=>{ LIB.tag=LIB.tag===g?'':g; render(); }}, '#'+g)); const fl=Object.values(S.folders).filter(f=>(f.items||[]).includes('set:'+s.id)); for(const f of fl) meta.append(el('span',{class:'small'},'📁 '+f.name)); if(meta.childNodes.length) card.append(meta);
+  card.append(miniBar(cards), el('div',{class:'small'}, r.seen?`${Math.round(r.ret*100)}% retention · ${r.label}`:'Not studied yet', s.src==='ai'?' · AI drafted':s.src==='import'?' · imported':s.src==='shared'?' · shared with you':''));
+  const menu=el('div',{class:'row'}, studyBtns('set:'+s.id, true), el('button',{class:'ghost',onclick:()=>openSet(s.id)},'Edit'), el('button',{class:'ghost','aria-expanded':String(LIB.menu===s.id),onclick:()=>{ LIB.menu=LIB.menu===s.id?null:s.id; LIB.confirmDel=null; render(); }},'More ▾'));
+  card.append(menu);
+  if(LIB.menu===s.id){
+    const more=el('div',{class:'row more'});
+    more.append(el('button',{onclick:()=>{ const c=duplicateSet(s); if(c){ LIB.menu=null; render(); } }},'Duplicate'));
+    more.append(el('button',{onclick:()=>{ LIB.panel='export:'+s.id; render(); }},'Export / share'));
+    const fsel=el('select',{'aria-label':'Add to folder',onchange:e=>{ const v=e.target.value; if(v==='__new'){ const name=prompt('Folder name'); if(name&&name.trim()){ const f=newFolder(name); f.items.push('set:'+s.id); f.updated=Date.now(); save(); } } else if(v){ const f=S.folders[v]; if(f&&!(f.items||[]).includes('set:'+s.id)){ f.items=(f.items||[]).concat(['set:'+s.id]); f.updated=Date.now(); save(); toast('Added to '+f.name); } } render(); }}, el('option',{value:''},'Add to folder…'), ...Object.values(S.folders).map(f=>el('option',{value:f.id},f.name)), el('option',{value:'__new'},'＋ New folder'));
+    more.append(fsel);
+    more.append(el('button',{class:'danger',onclick:()=>{ if(LIB.confirmDel===s.id){ deleteSet(s.id); LIB.menu=null; LIB.confirmDel=null; toast('Set deleted.'); render(); } else { LIB.confirmDel=s.id; render(); } }}, LIB.confirmDel===s.id?'Tap again to delete for good':'Delete set'));
+    card.append(more);
+    if(LIB.panel==='export:'+s.id){ const txt=exportText(s); const ta=el('textarea',{readonly:'','aria-label':'Exported cards',rows:'5'}); ta.value=txt; const link=shareLink(s);
+      card.append(el('div',{class:'exportbox'}, el('p',{class:'small'},'Tab-separated, ready to paste into Quizlet (Import, keep the default Tab and New line) or a spreadsheet.'), ta,
+        el('div',{class:'row'}, el('button',{onclick:()=>{ navigator.clipboard&&navigator.clipboard.writeText(txt).then(()=>toast('Copied.'),()=>{ ta.select(); toast('Select the text and copy it.'); }); }},'Copy cards'),
+          el('a',{class:'btnlink',download:(s.name||'set').replace(/[^\w\- ]+/g,'').trim()+'.txt',href:'data:text/plain;charset=utf-8,'+encodeURIComponent(txt)},'Download .txt'),
+          el('button',{onclick:()=>{ navigator.clipboard&&navigator.clipboard.writeText(link).then(()=>toast('Share link copied. Anyone who opens it can add this set to their library.'),()=>toast('Could not copy. Use the box below.')); }},'Copy share link')),
+        el('p',{class:'small'}, link.length>8000?'This set is large, so the share link is long; some apps cut long links. Export and paste instead if it fails.':'The share link carries the cards inside it, so it works without an account.'))); }
+  }
+  return card;
+}
+function newFolder(name){ const id=uid(); S.folders[id]={id, name:(name||'Folder').trim().slice(0,60), items:[], created:Date.now(), updated:Date.now()}; save(); return S.folders[id]; }
+function deleteFolder(id){ delete S.folders[id]; S.foldersDel[id]=Date.now(); if(S.deck==='folder:'+id) S.deck='all'; save(); }
+function folderCard(f){
+  const cards=folderCards(f); const r=readiness(cards);
+  const card=el('div',{class:'setcard folder'});
+  card.append(el('div',{class:'row between'}, el('span',{class:'title'},'📁 '+f.name), el('span',{class:'small'}, `${(f.items||[]).length} set${(f.items||[]).length===1?'':'s'} · ${cards.length} cards`)));
+  const items=el('div',{class:'row tagrow'}); for(const it of f.items||[]) items.append(el('span',{class:'tagchip static'}, itemName(it))); if(!(f.items||[]).length) items.append(el('span',{class:'small'},'Empty. Add sets or topics with Edit.')); card.append(items);
+  card.append(miniBar(cards), el('div',{class:'small'}, r.seen?`${Math.round(r.ret*100)}% retention · ${r.label}`:'Not studied yet'));
+  card.append(el('div',{class:'row'}, cards.length?studyBtns('folder:'+f.id,true):null, el('button',{class:'ghost',onclick:()=>{ LIB.editFolder=LIB.editFolder===f.id?null:f.id; LIB.confirmDel=null; render(); }}, LIB.editFolder===f.id?'Close':'Edit')));
+  if(LIB.editFolder===f.id){
+    const ed=el('div',{class:'folderedit'});
+    const nm=el('input',{type:'text',value:f.name,'aria-label':'Folder name',maxlength:'60',oninput:e=>{ f.name=e.target.value; f.updated=Date.now(); schedSetSave(); }}); ed.append(el('label',{class:'small'},'Name ', nm));
+    const opts=[...setsSorted().map(s=>['set:'+s.id, s.name||'Untitled set']), ...DECKS.slice(1).map(d=>[d.id, d.name])]; if(starredCards().length) opts.push(['starred','★ Starred']);
+    const list=el('div',{class:'checklist'}); for(const [id,name] of opts){ const cb=el('input',{type:'checkbox'}); cb.checked=(f.items||[]).includes(id); cb.onchange=()=>{ f.items=cb.checked?(f.items||[]).concat([id]):(f.items||[]).filter(x=>x!==id); f.updated=Date.now(); save(); render(); }; list.append(el('label',{}, cb, ' ', name)); }
+    ed.append(el('p',{class:'small'},'Tick what goes in this folder. Studying the folder combines everything in it into one deck without changing the sets.'), list);
+    ed.append(el('div',{class:'row'}, el('button',{class:'danger',onclick:()=>{ if(LIB.confirmDel==='f'+f.id){ deleteFolder(f.id); LIB.editFolder=null; LIB.confirmDel=null; render(); } else { LIB.confirmDel='f'+f.id; render(); } }}, LIB.confirmDel==='f'+f.id?'Tap again to delete the folder':'Delete folder (keeps the sets)')));
+    card.append(ed);
+  }
+  return card;
+}
+function openSet(id){ S.edit=id; goMode('editset'); }
+function renderLibrary(){
+  const v=$('#view'); v.innerHTML='';
+  if(PENDING_IMPORT){ const pi=PENDING_IMPORT; v.append(el('div',{class:'panel hero'}, el('h2',{},'A set was shared with you'), el('p',{}, el('b',{},pi.name), ` · ${pi.cards.length} card${pi.cards.length===1?'':'s'}`, pi.desc?' · '+pi.desc:''), el('ul',{class:'missed'}, ...pi.cards.slice(0,3).map(c=>el('li',{}, el('div',{class:'q'},c.f), el('div',{class:'a'},c.b)))), el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ const s=newSet(pi.name, pi.cards, {desc:pi.desc, tags:pi.tags, src:'shared'}); PENDING_IMPORT=null; if(s){ toast('Added to your library.','gold'); openSet(s.id); } else render(); }},'Add to my library'), el('button',{class:'ghost',onclick:()=>{ PENDING_IMPORT=null; render(); }},'No thanks')))); }
+  const sets=setsSorted(); const tags=allTags();
+  const head=el('div',{class:'panel'}, el('div',{class:'row between'}, el('h2',{},'Your library'), el('div',{class:'row'},
+    el('button',{class:'primary',onclick:()=>{ const s=newSet('', []); if(s) openSet(s.id); }},'＋ New set'),
+    el('button',{'aria-expanded':String(LIB.panel==='import'),onclick:()=>{ LIB.panel=LIB.panel==='import'?'':'import'; render(); }},'Import'),
+    el('button',{'aria-expanded':String(LIB.panel==='ai'),onclick:()=>{ LIB.panel=LIB.panel==='ai'?'':'ai'; render(); }},'✦ Make with AI'),
+    el('button',{onclick:()=>{ const name=prompt('Folder name (for example "Finance revision")'); if(name&&name.trim()){ const f=newFolder(name); LIB.editFolder=f.id; render(); } }},'New folder'))));
+  if(LIB.panel==='import'){ head.append(el('h3',{},'Import a set'), importPanel(rows=>{ const s=newSet(IMP.name||'Imported set', rows, {src:'import'}); LIB.panel=''; if(s){ toast(`${rows.length} cards imported. Give the set a name.`,'gold'); openSet(s.id); } })); }
+  if(LIB.panel==='ai'){ head.append(el('h3',{},'Make a set with AI'), aiPanel(cards=>{ const name=AI.text.trim().length<80&&!/\n/.test(AI.text.trim())?AI.text.trim():'AI set '+shortDay(today()); const s=newSet(name, cards, {src:'ai'}); LIB.panel=''; if(s){ toast(`${cards.length} cards added.`,'gold'); openSet(s.id); } }, [])); }
+  v.append(head);
+  if(S.recent.length){ const rec=el('div',{class:'panel'}, el('h2',{},'Continue studying')); const grid=el('div',{class:'recentgrid'}); for(const r of S.recent.slice(0,6)){ const cards=deckCardsOf(r.d); if(!cards.length) continue; const rr=readiness(cards); grid.append(el('button',{class:'act',onclick:()=>{ S.deck=r.d; S.filter='all'; goMode(S.lastStudy&&SECTION_OF[S.lastStudy]==='study'?S.lastStudy:'flash'); }}, el('b',{}, deckName(r.d)), el('span',{}, `${cards.length} cards · ${ago(r.t)}`), miniBar(cards), el('span',{class:'small'}, rr.seen?`${Math.round(rr.ret*100)}% retention`:''))); } if(grid.childNodes.length){ rec.append(grid); v.append(rec); } }
+  const sp=el('div',{class:'panel'}); const srow=el('div',{class:'row between'}, el('h2',{},`Your sets (${sets.length})`));
+  if(sets.length>3||LIB.q) srow.append(el('input',{type:'search',class:'kwsearch',placeholder:'Search your sets','aria-label':'Search your sets',value:LIB.q,oninput:e=>{ LIB.q=e.target.value; renderSetGrid(); }}));
+  sp.append(srow);
+  if(tags.length){ const tr=el('div',{class:'row tagrow'}, el('span',{class:'small'},'Tags:'), el('button',{class:'tagchip','aria-pressed':String(!LIB.tag),onclick:()=>{ LIB.tag=''; render(); }},'All')); for(const g of tags) tr.append(el('button',{class:'tagchip','aria-pressed':String(LIB.tag===g),onclick:()=>{ LIB.tag=LIB.tag===g?'':g; render(); }},'#'+g)); sp.append(tr); }
+  const grid=el('div',{class:'setgrid',id:'setgrid'}); sp.append(grid);
+  function renderSetGrid(){ grid.innerHTML=''; const q=LIB.q.trim().toLowerCase(); const list=sets.filter(s=>(!LIB.tag||(s.tags||[]).includes(LIB.tag))&&(!q||(s.name||'').toLowerCase().includes(q)||(s.desc||'').toLowerCase().includes(q)||(s.tags||[]).some(t=>t.toLowerCase().includes(q))||setCards(s).some(c=>c.f.toLowerCase().includes(q))));
+    if(!sets.length){ grid.append(el('div',{class:'empty'}, el('p',{},'No sets of your own yet. The 644 Business cards are always here; your own sets sit beside them.'), el('p',{class:'small'},'Make one from scratch, paste a list from Quizlet or a spreadsheet, or let the AI draft cards from your notes.'))); return; }
+    if(!list.length){ grid.append(el('div',{class:'empty'},'No sets match.')); return; }
+    for(const s of list) grid.append(setCard(s)); }
+  renderSetGrid(); v.append(sp);
+  const folders=Object.values(S.folders).filter(f=>f&&f.id).sort((a,b)=>(b.updated||0)-(a.updated||0));
+  if(folders.length){ const fp=el('div',{class:'panel'}, el('h2',{},'Folders'), el('p',{class:'small'},'A folder groups sets and topics so you can study them as one combined deck.')); const fg=el('div',{class:'setgrid'}); for(const f of folders) fg.append(folderCard(f)); fp.append(fg); v.append(fp); }
+  const bp=el('div',{class:'panel'}, el('h2',{},'Business Studies decks'), el('p',{class:'small'},'The built-in cards, by topic. Star any card to collect it in ★ Starred.'));
+  const bg=el('div',{class:'setgrid'});
+  for(const d of DECKS.slice(1)){ const cards=CARDS.filter(d.test); const r=readiness(cards); bg.append(el('div',{class:'setcard builtin'}, el('div',{class:'row between'}, el('span',{class:'title'},d.name), el('span',{class:'small'},`${cards.length} cards`)), miniBar(cards), el('div',{class:'small'}, r.seen?`${Math.round(r.ret*100)}% retention · ${r.label}`:'Not studied yet'), studyBtns(d.id,true))); }
+  const st=starredCards(); bg.append(el('div',{class:'setcard builtin'}, el('div',{class:'row between'}, el('span',{class:'title'},'★ Starred'), el('span',{class:'small'},`${st.length} cards`)), st.length?miniBar(st):el('p',{class:'small'},'Press ☆ on any card (or S on the keyboard) to star it. Starred cards from every set study together here.'), st.length?studyBtns('starred',true):null));
+  bp.append(bg); v.append(bp);
+}
+
+// ---------- set editor ----------
+function renderEditSet(){
+  const v=$('#view'); v.innerHTML='';
+  const s=S.sets[S.edit]; if(!s){ goMode('library'); return; }
+  const cards=setCards(s);
+  const top=el('div',{class:'panel'});
+  top.append(el('div',{class:'row between'}, el('button',{class:'ghost',onclick:()=>goMode('library')},'← Library'), el('div',{class:'row'}, cards.length?studyBtns('set:'+s.id):null)));
+  const name=el('input',{type:'text',class:'settitle',placeholder:'Set title (for example "Finance: ratios")','aria-label':'Set title',maxlength:'80',value:s.name==='Untitled set'?'':s.name,oninput:e=>{ s.name=e.target.value.trim()||'Untitled set'; touchSet(s); }});
+  const desc=el('input',{type:'text',placeholder:'Description (optional)','aria-label':'Description',maxlength:'400',value:s.desc||'',oninput:e=>{ s.desc=e.target.value; touchSet(s); }});
+  const tags=el('input',{type:'text',placeholder:'Tags, comma separated (for example Finance, Trials, Weak)','aria-label':'Tags',value:(s.tags||[]).join(', '),onchange:e=>{ s.tags=[...new Set(e.target.value.split(',').map(t=>t.trim().replace(/^#/,'').slice(0,30)).filter(Boolean))].slice(0,12); touchSet(s); render(); }});
+  top.append(name, el('div',{class:'grid2'}, desc, tags));
+  top.append(el('p',{class:'small'}, `${cards.length} card${cards.length===1?'':'s'} · saved automatically as you type${sync.state==='synced'?' and synced to your account':''}.`));
+  v.append(top);
+  const list=el('div',{class:'edlist'});
+  function row(c, i){
+    const r=el('div',{class:'edcard'});
+    const f=el('textarea',{placeholder:'Term or question','aria-label':`Card ${i+1} front`,rows:'2',oninput:e=>{ c.f=e.target.value; touchSet(s); }}); f.value=c.f||'';
+    const b=el('textarea',{placeholder:'Definition or answer','aria-label':`Card ${i+1} back`,rows:'2',oninput:e=>{ c.b=e.target.value; touchSet(s); }}); b.value=c.b||'';
+    const tools=el('div',{class:'edtools'},
+      el('span',{class:'idx'},String(i+1)),
+      starBtn(c),
+      el('button',{class:'ghost','aria-label':'Move up',title:'Move up',disabled:i===0?'':null,onclick:()=>{ [s.cards[i-1],s.cards[i]]=[s.cards[i],s.cards[i-1]]; touchSet(s); render(); }},'↑'),
+      el('button',{class:'ghost','aria-label':'Move down',title:'Move down',disabled:i===s.cards.length-1?'':null,onclick:()=>{ [s.cards[i+1],s.cards[i]]=[s.cards[i],s.cards[i+1]]; touchSet(s); render(); }},'↓'),
+      el('button',{class:'ghost','aria-label':'Insert a card below',title:'Insert a card below',onclick:()=>{ if(userCards().length>=MAX_USER_CARDS){ toast('Card limit reached.'); return; } s.cards.splice(i+1,0,{id:uid(),f:'',b:''}); touchSet(s); render(); setTimeout(()=>{ const t=document.querySelectorAll('.edcard textarea')[(i+1)*2]; if(t) t.focus(); },0); }},'＋'),
+      el('button',{class:'ghost','aria-label':'Delete this card',title:'Delete this card',onclick:()=>{ s.cards.splice(i,1); delete S.p[c.id]; delete S.m[c.id]; delete S.rv[c.id]; touchSet(s); render(); }},'✕'));
+    r.append(tools, el('div',{class:'edfields'}, f, b)); return r;
+  }
+  s.cards.forEach((c,i)=>list.append(row(c,i)));
+  if(!s.cards.length) list.append(el('div',{class:'empty'},'No cards yet. Add one below, paste a list, or draft them with AI.'));
+  v.append(list);
+  const add=el('div',{class:'panel'});
+  add.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ if(userCards().length>=MAX_USER_CARDS){ toast('Card limit reached.'); return; } s.cards.push({id:uid(),f:'',b:''}); touchSet(s); render(); setTimeout(()=>{ const t=document.querySelectorAll('.edcard textarea'); if(t.length) t[t.length-2].focus(); },0); }},'＋ Add a card'),
+    el('button',{'aria-expanded':String(LIB.panel==='import'),onclick:()=>{ LIB.panel=LIB.panel==='import'?'':'import'; render(); }},'Paste or import cards'),
+    el('button',{'aria-expanded':String(LIB.panel==='ai'),onclick:()=>{ LIB.panel=LIB.panel==='ai'?'':'ai'; render(); }},'✦ Draft cards with AI')));
+  if(LIB.panel==='import') add.append(importPanel(rows=>{ if(userCards().length+rows.length>MAX_USER_CARDS){ toast('That would pass the card limit.'); return; } for(const r of rows) s.cards.push({id:uid(),f:r.f,b:r.b}); if(!s.src) s.src='import'; touchSet(s); LIB.panel=''; toast(`${rows.length} cards added.`,'gold'); render(); }));
+  if(LIB.panel==='ai') add.append(aiPanel(cs=>{ if(userCards().length+cs.length>MAX_USER_CARDS){ toast('That would pass the card limit.'); return; } for(const c of cs) s.cards.push({id:uid(),f:c.f,b:c.b}); if(!s.src) s.src='ai'; if(s.name==='Untitled set'&&AI.text.trim().length<80&&!/\n/.test(AI.text.trim())) s.name=AI.text.trim(); touchSet(s); LIB.panel=''; toast(`${cs.length} cards added.`,'gold'); render(); }, cards));
+  v.append(add);
+}
+
 // ---------- account sync (claude.ai sign-in via the db + user capabilities) ----------
 let DBH=null, UID=null, USERH=null, ME=null;
 const sync={state:'local', timer:null, chain:Promise.resolve(), lastHash:'', lastScore:''};
-function progressDoc(){ return {v:3, idv:2, rv:S.rv||{}, cfg:S.cfg||null, p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
+function progressDoc(){ return {v:4, idv:2, rv:S.rv||{}, cfg:S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
 function mergeRemote(r){
   if(!r||typeof r!=='object') return;
   migrateIds(r);
@@ -5416,13 +5811,22 @@ function mergeRemote(r){
   const badges=Object.assign({}, other.badges||{}, base.badges||{});
   const papers=Object.assign({}, S.papers||{}); for(const [k,val] of Object.entries(r.papers||{})){ if(!papers[k]||(val&&val.t||0)>(papers[k].t||0)) papers[k]=val; }
   const rv=Object.assign({}, S.rv||{}); const lastOf=x=>(x&&x.last)||((x&&x.h&&x.h.length)?x.h[x.h.length-1][0]:''); for(const [k,val] of Object.entries(r.rv||{})){ const cur=rv[k]; if(!cur||lastOf(val)>lastOf(cur)||(lastOf(val)===lastOf(cur)&&(val.n||0)>(cur.n||0))) rv[k]=val; }
+  // sets and folders: newest copy of each wins; a deletion beats anything older than it
+  const mergeColl=(mine, theirs, delMine, delTheirs)=>{ const out=Object.assign({}, mine||{}); for(const [id,val] of Object.entries(theirs||{})){ if(!val||typeof val!=='object') continue; const cur=out[id]; if(!cur||(val.updated||0)>(cur.updated||0)) out[id]=val; } const del=Object.assign({}, delMine||{}); for(const [id,t] of Object.entries(delTheirs||{})) del[id]=Math.max(t||0, del[id]||0); for(const [id,t] of Object.entries(del)){ if(out[id]&&(out[id].updated||0)<=t) delete out[id]; } return [out, del]; };
+  const [sets,setsDel]=mergeColl(S.sets, r.sets, S.setsDel, r.setsDel); const [folders,foldersDel]=mergeColl(S.folders, r.folders, S.foldersDel, r.foldersDel);
+  const maxMap=(a,b)=>{ const o=Object.assign({}, a||{}); for(const [k,t] of Object.entries(b||{})) o[k]=Math.max(t||0, o[k]||0); return o; };
+  const star=maxMap(S.star, r.star), unstar=maxMap(S.unstar, r.unstar);
+  const hist=Object.assign({}, r.hist||{}); for(const [d,h] of Object.entries(S.hist||{})){ if(!hist[d]||(h.n||0)>=(hist[d].n||0)) hist[d]=h; }
+  const seen=new Set(); const sess=(S.sess||[]).concat(r.sess||[]).filter(x=>x&&x.a&&!seen.has(x.a)&&seen.add(x.a)).sort((a,b)=>a.a-b.a).slice(-100);
+  const rseen=new Set(); const recent=(S.recent||[]).concat(r.recent||[]).filter(x=>x&&x.d).sort((a,b)=>(b.t||0)-(a.t||0)).filter(x=>!rseen.has(x.d)&&rseen.add(x.d)).slice(0,10);
+  Object.assign(S, {sets, setsDel, folders, foldersDel, star, unstar, hist, sess, recent}); invalidateCards();
   const later=((r.lastDay||'')>(S.lastDay||''))?r:S;
   Object.assign(S, {p, m, days, best, badges, xp:Math.max(S.xp||0, r.xp||0), total:Math.max(S.total||0, r.total||0), ratioRight:Math.max(S.ratioRight||0, r.ratioRight||0), streak:later.streak||0, lastDay:later.lastDay||'', goal:base.goal||S.goal, perfectTest:!!(S.perfectTest||r.perfectTest), nick:S.nick||r.nick||'', papers, rv, cfg:(remoteNewer&&r.cfg)?r.cfg:(S.cfg||r.cfg||null)});
 }
 function schedulePush(){ if(!DBH||!UID||sync.state!=='synced') return; clearTimeout(sync.timer); sync.timer=setTimeout(pushProgress, 1500); }
 function pushProgress(){
   if(!DBH||!UID||sync.state!=='synced') return;
-  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg]);
+  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent]);
   if(h===sync.lastHash) return; sync.lastHash=h;
   sync.chain=sync.chain.then(()=>DBH.doc('data/users/'+UID+'/progress').set(doc)).then(()=>{ pushScore(false); }).catch(e=>{ if(e&&e.code==='invalid_argument'){ sync.state='readonly'; renderAccount(); } });
 }
@@ -5523,6 +5927,7 @@ function authForm(){
 }
 function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e){} } }
 
+if(location.hash==='#library'){ S.mode='library'; }
 if(location.hash==='#papers'){ S.mode='papers'; } else if(location.hash==='#ratio'){ S.mode='ratio'; } else if(location.hash==='#stats'){ S.mode='stats'; } else if(location.hash==='#guide'){ S.mode='guide'; } else if(location.hash==='#today'){ S.mode='today'; } else if(location.hash==='#mistakes'){ S.mode='mistakes'; } else if(location.hash==='#test'){ S.mode='test'; S.testKind='exam'; }
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
