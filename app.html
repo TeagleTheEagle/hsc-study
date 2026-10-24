@@ -166,6 +166,16 @@ kbd{font-family:inherit;border:1px solid var(--border);border-bottom-width:2px;b
 .panel h2{font-size:1.2rem}
 .score{font-size:2.2rem;font-weight:700;font-variant-numeric:tabular-nums}
 .missed{display:grid;gap:.8rem;padding:0;margin:0;list-style:none}
+.mlist{display:grid;gap:1.1rem}
+.mrow{border-left:4px solid var(--warn);padding:.2rem 0 .2rem .9rem;display:grid;gap:.4rem;min-width:0}
+.mrow .mh{display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:baseline;justify-content:space-between}
+.mrow .mk{font-weight:700;font-variant-numeric:tabular-nums;color:var(--warn)}
+.mrow .q{font-weight:700;overflow-wrap:anywhere}
+.ans-line{font-size:.98rem;overflow-wrap:anywhere}
+.ans-line.bad{color:var(--warn)} .ans-line.good{color:var(--good-deep);font-weight:700}
+.stepbar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:.2rem 0 .4rem}
+.stepbar span{display:block;height:100%;background:var(--accent);transition:width .3s}
+.plainlist{margin:.2rem 0 .4rem;padding-left:1.2rem;display:grid;gap:.25rem}
 .missed li{border-left:4px solid var(--warn);padding:.2rem 0 .2rem .9rem}
 .missed .q{font-weight:700}
 .missed .a{color:var(--muted);font-size:.98rem}
@@ -4320,7 +4330,7 @@ function confetti(){
 }
 
 // ---------- header ----------
-const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress'};
+const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress',today:'home',mistakes:'progress'};
 const SECTION_DEFAULT={home:'home',study:'flash',practice:'ratio',papers:'papers',guide:'guide',progress:'stats'};
 function goMode(m){ S.mode=m; if(SECTION_OF[m]==='study') S.lastStudy=m; save(); render(); window.scrollTo({top:0}); }
 function renderDecks(){
@@ -4348,7 +4358,7 @@ function renderStrip(){
 const confirmReset={pending:false};
 function renderProgress(){
   const cards=deckCards(); const p=$('#progress'); p.innerHTML='';
-  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'){ return; }
+  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='mistakes'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
   const m=cards.filter(mastered).length, k=cards.filter(c=>status(c)==='k').length-m, l=cards.filter(c=>status(c)==='l').length, u=cards.length-k-l-m;
   const bar=el('div',{class:'bar',role:'img','aria-label':`${m} mastered, ${k} got it, ${l} still learning, ${u} not seen`});
   bar.append(el('span',{class:'m',style:`width:${100*m/cards.length}%`}), el('span',{class:'k',style:`width:${100*k/cards.length}%`}), el('span',{class:'l',style:`width:${100*l/cards.length}%`}));
@@ -4464,11 +4474,11 @@ function nextLearn(){ if(!L||L.picked==null)return; L.i++; L.picked=null; L.opts
 // ---------- test ----------
 let T=null;
 function startTest(){ const pool=prioritised(deckCards()).slice(0,S.testN); T={q:pool,i:0,right:0,revealed:false,missed:[],done:false,deck:S.deck,started:false,typed:'',cmp:null}; }
-function renderTest(){
+function renderCardTest(){
   const v=$('#view'); v.innerHTML='';
   if(!T||T.deck!==S.deck){ startTest(); }
   if(!T.started){
-    v.append(el('div',{class:'panel'}, el('h2',{},'Written test'),
+    v.append(el('div',{class:'panel'}, el('h2',{},'Flashcard test'), testKindSeg(),
       el('p',{},'Each question comes up on its own. Type your answer in the box, or write it on paper and leave the box empty. Then check it against the model answer and mark yourself. Missed cards go back to “still learning”.'),
       el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[10,'10'],[20,'20']], S.testN, val=>{S.testN=val; save(); startTest(); render();})),
       el('button',{class:'primary',onclick:()=>{T.started=true; render();}}, `Start ${Math.min(S.testN,T.q.length)}-question test`)));
@@ -4496,6 +4506,245 @@ function renderTest(){
 }
 function revealTest(){ if(!T||T.revealed)return; T.revealed=true; renderTest(); announce('Model answer: '+T.q[T.i].b); }
 function markTest(ok){ const c=T.q[T.i]; if(ok)T.right++; else T.missed.push(c); recordReview(c, ok, 20); T.i++; T.revealed=false; T.typed=''; if(T.i>=T.q.length){ T.done=true; if(T.right===T.q.length){ S.perfectTest=true; save(); } confetti(); } renderTest(); }
+
+// ---------- shared: real exam questions by topic ----------
+const TOPIC_NAME={Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'Human resources',Other:'General',all:'All topics'};
+const XTOPICS=[['all','All topics'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources']];
+function deckTopic(){ return ({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR',ratios:'Finance'})[S.deck]||'all'; }
+function itemIndex(){
+  if(itemIndex.cache) return itemIndex.cache; const rows=[];
+  for(const p of PAPERS){ for(const {s,it} of pItems(p)){
+    if(it.type!=='mc'&&it.type!=='sa') continue; let topic;
+    if(it.type==='mc') topic=coarseTopic(it.topic, it.stem+' '+(it.pre||'')+' '+(it.opts||[]).join(' '));
+    else { const cnt={}; for(const pt of it.parts){ const t=coarseTopic(pt.topic||it.topic||'', pt.text+' '+(it.stim||'')); cnt[t]=(cnt[t]||0)+1; } topic=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0]; }
+    if(topic==='Other'&&p.src==='riv') topic='Operations';
+    rows.push({p,s,it,type:it.type,topic,max:itemUnits(it).reduce((a,u)=>a+u.max,0)});
+  } }
+  return itemIndex.cache=rows;
+}
+function itemRow(pid,iid){ return itemIndex().find(r=>r.p.id===pid&&r.it.id===iid); }
+// weak first (about a third), then questions not done yet (real HSC before school papers), then the rest
+function pickItems(type, topic, n, avoid){
+  avoid=avoid||new Set();
+  const pool=itemIndex().filter(r=>r.type===type&&(topic==='all'||r.topic===topic)&&!avoid.has(r.p.id+'|'+r.it.id));
+  const weak=[], fresh=[], rest=[];
+  for(const r of shuffled(pool)){ const st=itemStatus(r.p,r.it); if(st.done&&st.got/st.max<0.6) weak.push(r); else if(!st.done) fresh.push(r); else rest.push(r); }
+  fresh.sort((a,b)=>(a.p.src==='nesa'?0:1)-(b.p.src==='nesa'?0:1));
+  const nWeak=Math.min(weak.length, Math.ceil(n*0.3)); const out=weak.slice(0,nWeak);
+  for(const r of fresh.concat(weak.slice(nWeak), rest)){ if(out.length>=n) break; out.push(r); }
+  return type==='mc'? shuffled(out) : out;
+}
+function clearItem(p,it){ for(const u of itemUnits(it)){ delete S.papers[rkey(p,it,u.part)]; delete SELF[rkey(p,it,u.part)]; } save(); }
+function provFactor(){ const c=S.cfg||{}; const base=Number(c.examMins)||180; return (base+base/30*(Number(c.extraPer30)||0))/base; }
+function paceMins(rows){ let m=0; for(const r of rows){ m+= r.type==='mc'? 1.5 : r.max*1.8; } return Math.max(1,Math.round(m*provFactor())); }
+function optLine(it,L){ const i='ABCD'.indexOf(L); return i>=0&&it.opts&&it.opts[i]? `${L}: ${it.opts[i]}` : (L||'none'); }
+function stimFor(card,it){ if(it.type==='mc'){ return; } if(it.stim) card.append(el('div',{class:'stim'}, paras(it.stim))); const im=pimgEl(it.img); if(im) card.append(im); }
+
+// ---------- Test: real HSC questions (default) or flashcard questions ----------
+let XT=null, XTIV=null;
+function testKindSeg(){ return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
+function renderTest(){ if((S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
+function xtRows(){ return XT.list.map(x=>itemRow(x.pid,x.iid)).filter(Boolean); }
+function xtNew(rows){ XT={list:rows.map(r=>({pid:r.p.id,iid:r.it.id})), i:0, started:true, done:false, t0:Date.now(), t1:null, fresh:{}}; }
+function xtStart(){
+  const t=S.xtTopic||'all', f=S.xtFmt||'mc'; let rows=[];
+  if(f==='mc') rows=pickItems('mc',t,S.xtN||10); else if(f==='sa') rows=pickItems('sa',t,S.xtSaN||1); else rows=pickItems('mc',t,10).concat(pickItems('sa',t,1));
+  if(!rows.length){ toast('No questions for that topic in this format yet. Try All topics.'); return; }
+  xtNew(rows); render(); window.scrollTo({top:0});
+}
+function xtClockText(){ const secs=Math.floor((Date.now()-XT.t0)/1000); return `${fmtClock(secs)} · exam pace ${paceMins(xtRows())} min`; }
+function xtClock(){ const sp=el('span',{class:'tally',id:'xtclock'}, xtClockText()); clearInterval(XTIV); XTIV=setInterval(()=>{ const e=document.getElementById('xtclock'); if(!e||!XT||XT.done){ clearInterval(XTIV); XTIV=null; return; } e.textContent=xtClockText(); },1000); return sp; }
+function renderExamTest(){
+  const v=$('#view'); v.innerHTML='';
+  if(!XT||!XT.started) return renderXtSetup(v);
+  if(XT.done) return renderXtResults(v);
+  const x=XT.list[XT.i]; const r=itemRow(x.pid,x.iid); if(!r){ XT.done=true; return renderExamTest(); }
+  const {p,s,it}=r;
+  if(!XT.fresh[XT.i]){ clearItem(p,it); XT.fresh[XT.i]=true; }
+  v.append(el('div',{class:'row between'}, el('span',{class:'tally'}, `Question ${XT.i+1} of ${XT.list.length}`), xtClock()));
+  v.append(el('div',{class:'stepbar'}, el('span',{style:`width:${100*XT.i/XT.list.length}%`})));
+  const card=el('div',{class:'panel q'});
+  card.append(el('div',{class:'lab'}, `${p.title} · ${s.name.replace(/ \(.*\)$/,'').replace(/^Section (\w+) · .*/,'Section $1')} · Question ${it.n} · ${it.type==='mc'?'1 mark':it.marks+' marks'}`, el('span',{class:'deck'}, TOPIC_NAME[r.topic]||r.topic)));
+  if(it.type==='mc') renderMC(card,p,it,[],0); else { stimFor(card,it); for(const pt of it.parts) card.append(typedUnit(p,it,pt)); }
+  v.append(card);
+  const st=itemStatus(p,it); const last=XT.i===XT.list.length-1;
+  v.append(el('div',{class:'nav'},
+    el('button',{class:'ghost',disabled:XT.i===0?'':null,onclick:()=>{ XT.i--; render(); window.scrollTo({top:0}); }},'‹ Back'),
+    el('button',{class:'ghost',onclick:()=>{ XT.done=true; XT.t1=Date.now(); render(); window.scrollTo({top:0}); }},'End test'),
+    el('button',{class:st.state==='done'?'primary':'',onclick:xtNext}, last?'Finish test':(st.state==='done'?'Next question ›':'Skip ›'))));
+}
+function xtNext(){ if(XT.i>=XT.list.length-1){ XT.done=true; XT.t1=Date.now(); } else XT.i++; render(); window.scrollTo({top:0}); }
+function renderXtSetup(v){
+  if(S.xtDeck!==S.deck){ S.xtTopic=deckTopic(); S.xtDeck=S.deck; }
+  const topic=S.xtTopic||'all', fmt=S.xtFmt||'mc';
+  const pool=t=>itemIndex().filter(r=>r.type===t&&(topic==='all'||r.topic===topic));
+  const mcPool=pool('mc'), saPool=pool('sa');
+  const weakN=mcPool.concat(saPool).filter(r=>{ const st=itemStatus(r.p,r.it); return st.done&&st.got/st.max<0.6; }).length;
+  const n= fmt==='mc'? Math.min(S.xtN||10, mcPool.length) : fmt==='sa'? Math.min(S.xtSaN||1, saPool.length) : Math.min(10,mcPool.length)+Math.min(1,saPool.length);
+  const est=fmt==='mc'? Array(n).fill({type:'mc'}) : fmt==='sa'? saPool.slice(0,n) : Array(Math.min(10,mcPool.length)).fill({type:'mc'}).concat(saPool.slice(0,1));
+  const what= fmt==='mc'? `${n} multiple-choice questions, the same style as Section I (20 questions, 1 mark each).` : fmt==='sa'? `${n} short-answer question${n===1?'':'s'} with a stimulus and parts, the same style as Section II. Written answers are marked against the official criteria.` : `10 multiple-choice questions and 1 short-answer question: a slice of Sections I and II.`;
+  const box=el('div',{class:'panel'}, el('h2',{},'Exam-style test'),
+    el('p',{},'Real questions from the HSC Business Studies exams (2015 to 2025) and Riverview Task 1, in the format you will see in the exam. Multiple choice marks itself. Short answers are marked against the official marking criteria, with the sample answer and what the markers said.'),
+    testKindSeg(),
+    el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(XTOPICS, topic, val=>{ S.xtTopic=val; S.xtDeck=S.deck; save(); render(); })),
+    el('div',{class:'row'}, el('span',{class:'small'},'Format:'), seg([['mc','Multiple choice'],['sa','Short answer'],['mini','Mini exam']], fmt, val=>{ S.xtFmt=val; save(); render(); })),
+    fmt==='mc'? el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[10,'10'],[20,'20 (a full Section I)']], S.xtN||10, val=>{ S.xtN=val; save(); render(); })) : fmt==='sa'? el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[1,'1'],[2,'2']], S.xtSaN||1, val=>{ S.xtSaN=val; save(); render(); })) : null,
+    el('p',{}, what),
+    el('p',{class:'small'}, `${mcPool.length} multiple choice and ${saPool.length} short-answer questions in ${TOPIC_NAME[topic].toLowerCase()==='all topics'?'all topics':TOPIC_NAME[topic]}. ${weakN?`${weakN} you got wrong before come back first. `:''}About ${paceMins(est)} minutes at exam pace${hasProv()?' with your extra time':''}.`),
+    el('button',{class:'primary',disabled:n?null:'',onclick:xtStart}, n?'Start the test':'No questions in this format for this topic'),
+    el('p',{class:'small'},'Business reports and essays are under Past papers, with a timed run.'));
+  v.append(box);
+}
+function renderXtResults(v){
+  let mcR=0, mcN=0, skipped=0, saG=0, saM=0; const missed=[]; const byT={};
+  for(const r of xtRows()){ const {p,it}=r; const t=r.topic; byT[t]=byT[t]||{g:0,m:0};
+    if(it.type==='mc'){ mcN++; const rc=rec(p,it,null); if(!rc||typeof rc.m!=='number'){ skipped++; missed.push({r,part:null,rc:null}); byT[t].m++; continue; } if(rc.m===1) mcR++; else missed.push({r,part:null,rc}); byT[t].g+=rc.m; byT[t].m++; }
+    else for(const u of itemUnits(it)){ const rc=rec(p,it,u.part); if(!rc||typeof rc.m!=='number'){ skipped++; continue; } saG+=rc.m; saM+=u.max; byT[t].g+=rc.m; byT[t].m+=u.max; if(rc.m/u.max<0.6) missed.push({r,part:u.part,rc}); }
+  }
+  const mins=Math.max(1,Math.round(((XT.t1||Date.now())-XT.t0)/60000)); const pace=paceMins(xtRows());
+  const tot=mcR+saG, max=mcN+saM; const pct=max?Math.round(100*tot/max):0;
+  const head=el('div',{class:'panel'}, el('h2',{}, pct>=80?'Strong result.':pct>=50?'Solid. Now fix the misses.':'Good practice. The misses are your study list.'),
+    el('div',{class:'grid2'},
+      mcN?el('div',{class:'stat'}, el('b',{},`${mcR} / ${mcN}`), el('span',{},'multiple choice')):null,
+      saM?el('div',{class:'stat'}, el('b',{},`${saG} / ${saM}`), el('span',{},'short-answer marks')):null,
+      el('div',{class:'stat'}, el('b',{},`${mins} min`), el('span',{}, `you took · exam pace ${pace} min`)),
+      skipped?el('div',{class:'stat'}, el('b',{},String(skipped)), el('span',{},'not answered')):null));
+  const tl=Object.entries(byT).filter(([t,x])=>x.m>0);
+  if(tl.length>1) head.append(el('div',{}, el('h3',{},'By topic'), ...tl.map(([t,x])=>el('div',{class:'deckrow'}, el('span',{},TOPIC_NAME[t]||t), el('div',{class:'bar'}, el('span',{class:'k',style:`width:${100*x.g/x.m}%`})), el('span',{class:'small'},`${x.g}/${x.m}`)))));
+  if(mins>pace*1.25) head.append(el('p',{class:'small'},`You took longer than exam pace. In the exam, move on after about ${Math.round(1.5*provFactor()*60)} seconds on a multiple-choice question and come back to it.`));
+  const items=[...new Map(missed.map(m=>[m.r.p.id+'|'+m.r.it.id,m.r])).values()];
+  head.append(el('div',{class:'row'},
+    items.length?el('button',{class:'primary',onclick:()=>{ xtNew(items); render(); window.scrollTo({top:0}); }}, `Redo the ${items.length} I missed`):null,
+    el('button',{class:items.length?'':'primary',onclick:()=>{ XT=null; xtStart(); }},'New test'),
+    el('button',{class:'ghost',onclick:()=>{ XT=null; render(); }},'Change topic or format'),
+    el('button',{class:'ghost',onclick:()=>goMode('mistakes')},'Mistake notebook')));
+  v.append(head);
+  if(missed.length){ const box=el('div',{class:'panel'}, el('h2',{},'What you missed'), el('div',{class:'mlist'}, ...missed.map(m=>missRow(m.r, m.part, m.rc)))); v.append(box); }
+}
+function missRow(r, part, rc){
+  const {p,it}=r; const max=part?part.marks:(it.type==='mc'?1:it.marks);
+  const box=el('div',{class:'mrow'});
+  box.append(el('div',{class:'mh'}, el('span',{class:'small'}, `${p.title} · Q${it.n}${part?'('+part.p+')':''} · ${TOPIC_NAME[r.topic]||r.topic}`), el('span',{class:'mk'}, rc&&typeof rc.m==='number'?`${rc.m} / ${max}`:'not answered')));
+  if(it.type==='mc'){
+    if(it.pre) box.append(el('div',{class:'small'}, it.pre));
+    box.append(el('div',{class:'q'}, it.stem));
+    const keys=(String(it.key||'').match(/[A-D]/g)||[]);
+    if(rc&&rc.c) box.append(el('div',{class:'ans-line bad'}, 'You chose '+optLine(it,rc.c)));
+    box.append(el('div',{class:'ans-line good'}, 'Answer: '+keys.map(k=>optLine(it,k)).join(' or ')));
+  } else {
+    box.append(el('div',{class:'q'}, part?part.text:it.text));
+    const unit=part||it; const d=el('details',{}, el('summary',{},'Criteria and sample answer'));
+    d.append(critList(unit.crit)); if(unit.sample) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Sample answer'), paras(unit.sample))); if(unit.could) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Answers could include'), paras(unit.could)));
+    if(rc&&rc.r&&rc.r.improvements&&rc.r.improvements.length) d.append(el('div',{}, el('b',{},'To get more marks'), ...rc.r.improvements.map(x=>el('p',{class:'bul'},'→ '+x))));
+    box.append(d);
+  }
+  return box;
+}
+
+// ---------- mistake notebook ----------
+let MF={topic:'all', kind:'all'};
+function mistakeQs(){ const out=[]; for(const r of qIndex()){ const rc=rec(r.p,r.it,r.part); if(!rc||typeof rc.m!=='number'||rc.m/r.max>=0.6) continue; const ir=itemRow(r.p.id,r.it.id); out.push({r:Object.assign({}, r, {topic: r.topic==='Other'&&ir?ir.topic:r.topic}), part:r.part, rc}); } return out.sort((a,b)=>(b.rc.t||0)-(a.rc.t||0)); }
+function mistakeCards(){ return CARDS.filter(c=>status(c)==='l'); }
+function cardTopic(c){ return c.t==='Key words'?'Other':c.t; }
+function renderMistakes(){
+  const v=$('#view'); v.innerHTML='';
+  const qs=mistakeQs().filter(m=>MF.topic==='all'||m.r.topic===MF.topic), cs=mistakeCards().filter(c=>MF.topic==='all'||cardTopic(c)===MF.topic);
+  const head=el('div',{class:'panel'}, el('h2',{},'Mistake notebook'),
+    el('p',{},'Everything you have got wrong, in one place: exam questions where you lost more than 40% of the marks, and flashcards you marked as missed. Get one right again and it drops out of the notebook.'),
+    el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(XTOPICS, MF.topic, val=>{ MF.topic=val; renderMistakes(); })),
+    el('div',{class:'row'}, el('span',{class:'small'},'Show:'), seg([['all','Everything'],['exam',`Exam questions (${qs.length})`],['cards',`Flashcards (${cs.length})`]], MF.kind, val=>{ MF.kind=val; renderMistakes(); })));
+  const redo=[...new Map(qs.filter(m=>m.r.type!=='long').map(m=>[m.r.p.id+'|'+m.r.it.id, itemRow(m.r.p.id,m.r.it.id)])).values()].filter(Boolean);
+  head.append(el('div',{class:'row'},
+    redo.length?el('button',{class:'primary',onclick:()=>{ S.testKind='exam'; xtNew(redo); goMode('test'); }}, `Redo ${redo.length} exam question${redo.length===1?'':'s'}`):null,
+    cs.length?el('button',{class:redo.length?'':'primary',onclick:()=>{ S.deck=({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR'})[MF.topic]||'all'; S.filter='l'; goMode('flash'); }}, `Study ${cs.length} flashcard${cs.length===1?'':'s'}`):null));
+  v.append(head);
+  if(!qs.length&&!cs.length){ v.append(el('div',{class:'panel'}, el('p',{}, MF.topic==='all'?'Nothing here yet. Wrong answers from tests, past papers, today’s session and flashcards land here automatically.':'Nothing to fix in this topic right now.'))); return; }
+  if(MF.kind!=='cards'&&qs.length){ const shown=qs.slice(0,40); v.append(el('div',{class:'panel'}, el('h2',{},'Exam questions'), el('div',{class:'mlist'}, ...shown.map(m=>{ const row=missRow(m.r,m.part,m.rc); row.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=m.r.p.id; S.pp.item=m.r.it.id; goMode('papers'); }},'Open in the paper ›'))); return row; })), qs.length>40?el('p',{class:'small'},`Showing the latest 40 of ${qs.length}.`):null)); }
+  if(MF.kind!=='exam'&&cs.length){ const shown=cs.slice(0,60); v.append(el('div',{class:'panel'}, el('h2',{},'Flashcards'), el('ul',{class:'missed'}, ...shown.map(c=>el('li',{}, el('div',{class:'q'},c.f), el('div',{class:'a'},c.b)))), cs.length>60?el('p',{class:'small'},`Showing 60 of ${cs.length}. Study them all with the button above.`):null)); }
+}
+
+// ---------- today's session ----------
+let TS=null;
+const TOPIC_ORDER=['Finance','Operations','Marketing','HR'];
+function topicStrength(t){
+  const cs=CARDS.filter(c=>c.t===t); let seen=0, ok=0;
+  for(const c of cs){ const r=rvOf(c); for(const h of ((r&&r.h)||[]).slice(-3)){ seen++; ok+=h[1]?1:0; } }
+  for(const r of qIndex()){ if(r.topic!==t) continue; const x=rec(r.p,r.it,r.part); if(x&&typeof x.m==='number'){ seen+=r.max; ok+=x.m; } }
+  const known=cs.length? cs.filter(c=>status(c)==='k').length/cs.length : 0;
+  return seen>=5? (ok/seen)*0.6+known*0.4 : known*0.5;
+}
+function weakestTopic(){ return TOPIC_ORDER.map(t=>[t,topicStrength(t)]).sort((a,b)=>a[1]-b[1])[0][0]; }
+function buildSession(topic){
+  const steps=[]; const due=shuffled(dueCards()).slice(0,10); const used=new Set(due.map(c=>c.id));
+  for(const c of due) steps.push({k:'card', id:c.id, why:'Due for review'});
+  for(const c of prioritised(CARDS.filter(c=>c.t===topic&&status(c)!=='k'&&!used.has(c.id))).slice(0,8)) steps.push({k:'card', id:c.id, why:`${TOPIC_NAME[topic]}: your weakest topic`});
+  for(const r of pickItems('mc',topic,5)) steps.push({k:'mc', pid:r.p.id, iid:r.it.id, why:'Real HSC multiple choice'});
+  const sa=shuffled(qIndex().filter(r=>r.type==='sa'&&r.topic===topic&&r.max>=2&&r.max<=4)).sort((a,b)=>{ const da=rec(a.p,a.it,a.part), db=rec(b.p,b.it,b.part); return (da&&typeof da.m==='number'?1:0)-(db&&typeof db.m==='number'?1:0); })[0];
+  if(sa) steps.push({k:'sa', pid:sa.p.id, iid:sa.it.id, part:sa.part.p, why:`Short answer · ${sa.max} marks`});
+  return steps;
+}
+function sessMins(steps){ let m=0; for(const s of steps){ if(s.k==='card') m+=0.6; else if(s.k==='mc') m+=1.5; else { const r=itemRow(s.pid,s.iid); const pt=r&&r.it.parts.find(x=>x.p===s.part); m+=(pt?pt.marks:3)*2.5; } } return Math.max(5,Math.round(m)); }
+function sessLine(){ const l=S.lastSession; if(l&&l.d===today()) return `Done today: ${l.right}/${l.n} right. Another round is fine.`; const t=weakestTopic(); return `Due cards, then ${TOPIC_NAME[t]} (your weakest topic) with real HSC questions`; }
+function tsStep(){ return TS.steps[TS.i]; }
+function tsNext(){ const st=tsStep(); if(st&&(st.k==='mc'||st.k==='sa')){ const r=itemRow(st.pid,st.iid); const part=st.k==='sa'?r.it.parts.find(x=>x.p===st.part):null; const rc=rec(r.p,r.it,part); const max=part?part.marks:1; TS.res[TS.i]={k:st.k, ok:!!rc&&typeof rc.m==='number'&&rc.m/max>=0.6, m:rc&&typeof rc.m==='number'?rc.m:null, max}; }
+  TS.i++; TS.shown=false; if(TS.i>=TS.steps.length) tsFinish(); render(); window.scrollTo({top:0}); }
+function tsShow(){ TS.shown=true; render(); }
+function tsCard(ok){ const c=BYID[tsStep().id]; recordReview(c, ok, 10); TS.res[TS.i]={k:'card', ok}; tsNext(); }
+function tsFinish(){ TS.done=true; TS.t1=Date.now(); const rs=TS.res.filter(Boolean); const n=rs.length, right=rs.filter(r=>r.ok).length; S.lastSession={d:today(), n, right, topic:TS.topic}; save(); if(n&&right/n>=0.7) confetti(); }
+function renderToday(){
+  const v=$('#view'); v.innerHTML='';
+  if(!TS||!TS.started){
+    const topic=(TS&&TS.topic)||weakestTopic(); const steps=buildSession(topic); TS={topic, steps, started:false};
+    const nCard=steps.filter(s=>s.k==='card').length, nDue=steps.filter(s=>s.why==='Due for review').length, nMc=steps.filter(s=>s.k==='mc').length, sa=steps.find(s=>s.k==='sa');
+    const parts=[]; if(nDue) parts.push(`${nDue} card${nDue===1?'':'s'} due for review`); if(nCard-nDue) parts.push(`${nCard-nDue} ${TOPIC_NAME[topic]} card${nCard-nDue===1?'':'s'} you have not got yet`); if(nMc) parts.push(`${nMc} real HSC multiple-choice question${nMc===1?'':'s'}`); if(sa) parts.push('1 short answer, marked against the official criteria');
+    const l=S.lastSession;
+    v.append(el('div',{class:'panel'}, el('h2',{},'Today’s session'),
+      el('p',{},`One guided run, start to finish. About ${sessMins(steps)} minutes.`),
+      el('ul',{class:'plainlist'}, ...parts.map(x=>el('li',{},x))),
+      el('div',{class:'row'}, el('span',{class:'small'},'Focus topic (weakest picked for you):'), seg(XTOPICS.slice(1), topic, val=>{ TS={topic:val, started:false}; render(); })),
+      l&&l.d===today()?el('p',{class:'small'},`You did a session today already: ${l.right} of ${l.n} right. Another one is fine.`):null,
+      el('button',{class:'primary',disabled:steps.length?null:'',onclick:()=>{ TS.started=true; TS.i=0; TS.res=[]; TS.t0=Date.now(); TS.fresh={}; render(); }}, steps.length?'Start':'Nothing to do in this topic')));
+    return;
+  }
+  if(TS.done) return renderTodayDone(v);
+  const st=tsStep();
+  v.append(el('div',{class:'row between'}, el('span',{class:'tally'}, `Step ${TS.i+1} of ${TS.steps.length} · ${st.why}`), el('button',{class:'ghost',onclick:()=>{ tsFinish(); render(); }},'Stop here')));
+  v.append(el('div',{class:'stepbar'}, el('span',{style:`width:${100*TS.i/TS.steps.length}%`})));
+  if(st.k==='card'){
+    const c=BYID[st.id]; if(!c){ tsNext(); return; }
+    v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Question'), el('span',{class:'deck'},c.t)), el('div',{class:'txt'},c.f)));
+    if(!TS.shown) v.append(el('div',{class:'nav'}, el('span',{class:'kbd'},'Space to show'), el('button',{class:'primary',onclick:tsShow},'Show answer')));
+    else { v.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Answer'), c.b)); v.append(el('div',{class:'judge'}, el('button',{class:'learn',onclick:()=>tsCard(false)},'✗ Missed it'), el('button',{class:'know',onclick:()=>tsCard(true)},'✓ Got it'))); }
+    return;
+  }
+  const r=itemRow(st.pid,st.iid); if(!r){ tsNext(); return; } const {p,s,it}=r;
+  const part=st.k==='sa'? it.parts.find(x=>x.p===st.part) : null;
+  if(!TS.fresh[TS.i]){ if(part){ delete S.papers[rkey(p,it,part)]; delete SELF[rkey(p,it,part)]; save(); } else clearItem(p,it); TS.fresh[TS.i]=true; }
+  const card=el('div',{class:'panel q'}, el('div',{class:'lab'}, `${p.title} · Question ${it.n}${part?'('+part.p+')':''} · ${part?part.marks+' marks':'1 mark'}`, el('span',{class:'deck'}, TOPIC_NAME[r.topic]||r.topic)));
+  if(part){ stimFor(card,it); card.append(typedUnit(p,it,part)); } else renderMC(card,p,it,[],0);
+  v.append(card);
+  const rc=rec(p,it,part); const done=!!rc&&typeof rc.m==='number';
+  v.append(el('div',{class:'nav'}, el('span',{class:'small'}, done?'':(part?'Write your answer, then mark it':'Choose an answer')), el('button',{class:done?'primary':'',onclick:tsNext}, done?(TS.i===TS.steps.length-1?'Finish':'Next ›'):'Skip ›')));
+}
+function renderTodayDone(v){
+  const rs=TS.res.map((r,i)=>r?Object.assign({i},r):null).filter(Boolean);
+  const cards=rs.filter(r=>r.k==='card'), mcs=rs.filter(r=>r.k==='mc'), sas=rs.filter(r=>r.k==='sa');
+  const mins=Math.max(1,Math.round(((TS.t1||Date.now())-TS.t0)/60000));
+  const box=el('div',{class:'panel'}, el('h2',{},'Session done'),
+    el('div',{class:'grid2'},
+      cards.length?el('div',{class:'stat'}, el('b',{},`${cards.filter(r=>r.ok).length} / ${cards.length}`), el('span',{},'flashcards')):null,
+      mcs.length?el('div',{class:'stat'}, el('b',{},`${mcs.filter(r=>r.ok).length} / ${mcs.length}`), el('span',{},'HSC multiple choice')):null,
+      sas.length?el('div',{class:'stat'}, el('b',{},sas[0].m==null?'not marked':`${sas[0].m} / ${sas[0].max}`), el('span',{},'short answer')):null,
+      el('div',{class:'stat'}, el('b',{},`${mins} min`), el('span',{},`🔥 ${S.streak} day streak`))));
+  const wrong=rs.filter(r=>!r.ok);
+  if(wrong.length){
+    const ul=el('ul',{class:'missed'});
+    for(const r of wrong){ const st=TS.steps[r.i]; if(st.k==='card'){ const c=BYID[st.id]; if(c) ul.append(el('li',{}, el('div',{class:'q'},c.f), el('div',{class:'a'},c.b))); } else { const ir=itemRow(st.pid,st.iid); if(!ir) continue; const it=ir.it; if(st.k==='mc'){ const keys=(String(it.key||'').match(/[A-D]/g)||[]); ul.append(el('li',{}, el('div',{class:'q'},it.stem), el('div',{class:'a'},'Answer: '+keys.map(k=>optLine(it,k)).join(' or ')))); } else { const pt=it.parts.find(x=>x.p===st.part); ul.append(el('li',{}, el('div',{class:'q'},pt?pt.text:''), el('div',{class:'a'}, pt&&pt.sample?'Sample answer: '+pt.sample:'See the criteria in the mistake notebook.'))); } } }
+    box.append(el('h3',{},'Fix these tomorrow'), el('p',{class:'small'},'They are in your mistake notebook, and the cards come back in your due reviews.'), ul);
+  } else box.append(el('p',{},'Nothing missed. Tomorrow’s session will move on to new cards.'));
+  box.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ TS=null; goMode('home'); }},'Back to Home'), wrong.length?el('button',{onclick:()=>goMode('mistakes')},'Mistake notebook'):null, el('button',{class:'ghost',onclick:()=>{ TS=null; render(); }},'Another session')));
+  v.append(box);
+}
 
 // ---------- match ----------
 let M=null;
@@ -4664,6 +4913,7 @@ function renderStats(){
       el('div',{class:'stat'}, el('b',{},String(S.streak)), el('span',{},`day streak · ${days} study day${days===1?'':'s'}`)),
       el('div',{class:'stat'}, el('b',{},`${known} / ${all}`), el('span',{},`cards marked got it · ${mastd} mastered`))),
     el('div',{class:'row'}, el('span',{class:'small'},'Daily goal:'), seg([[20,'20'],[30,'30'],[50,'50'],[80,'80']], S.goal, val=>{S.goal=val; save(); renderStrip(); renderStats();}))));
+  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
   const dueN=dueCards().length, week=CARDS.filter(c=>{ const r=rvOf(c); return !!r&&r.due>today()&&r.due<=dueDay(today(),7); }).length;
   v.append(el('div',{class:'panel'}, el('h2',{},'Spaced reviews'), el('div',{class:'grid2'}, el('div',{class:'stat'}, el('b',{},String(dueN)), el('span',{},'cards due today')), el('div',{class:'stat'}, el('b',{},String(week)), el('span',{},'due in the next 7 days'))), el('p',{class:'small'},'Each card you get right comes back later: after 1 day, then 3, then 7 and so on. A wrong answer brings it back today. Mastered means remembered on 3 separate days and not due again for at least a week.'), el('div',{class:'row'}, el('button',{class:'primary',disabled:dueN?null:'',onclick:()=>{ S.filter='due'; S.deck='all'; goMode('flash'); }}, dueN?`Review ${dueN} due now`:'Nothing due right now'))));
   const dk=el('div',{class:'panel'}, el('h2',{},'Progress by topic'));
@@ -4726,6 +4976,7 @@ function keySample(){
   return s;
 }
 async function getSample(){ if(apiKey()) return keySample(); if(SAMPLE!==undefined) return SAMPLE; try{ SAMPLE=(window.claude&&typeof window.claude.use==='function')? await window.claude.use('sample'):null; }catch(e){ SAMPLE=null; } return SAMPLE||null; }
+function prender(){ if(S.mode==='papers') renderPapers(); else render(); }
 function pItems(p){ return p.sections.flatMap(s=>s.items.map(it=>({s,it}))); }
 function rkey(p,it,part){ return p.id+'|'+it.id+(part?part.p:''); }
 function rec(p,it,part){ return S.papers[rkey(p,it,part)]; }
@@ -4743,11 +4994,11 @@ function wc(t){ return (String(t||'').trim().match(/\S+/g)||[]).length; }
 // ----- timer (whole-paper timed run; extra time + rest breaks follow the user's NESA provisions) -----
 let TIV=null;
 function timerState(){ const t=S.pp.timer; if(!t) return null; const now=Date.now(); const left=t.pausedAt? t.leftAtPause : Math.max(0,(t.endAt-now)/1000); const bLeft=t.pausedAt? Math.max(0,t.breakLeft-(now-t.pausedAt)/1000) : t.breakLeft; return {t,left,bLeft,paused:!!t.pausedAt}; }
-function startTimer(p){ const pr=provOf(p); const secs=(pr.base+(S.pp.prov?pr.extra:0))*60; S.pp.timer={paper:p.id,endAt:Date.now()+secs*1000,breakLeft:S.pp.prov?pr.breaks*60:0,pausedAt:null,leftAtPause:0,total:secs}; save(); tickTimer(); renderPapers(); toast('Timer started. '+fmtClock(secs)+' on the clock.'); }
-function pauseTimer(){ const st=timerState(); if(!st||st.paused) return; if(st.bLeft<=0){ toast('No rest-break time left.'); return; } st.t.pausedAt=Date.now(); st.t.leftAtPause=st.left; save(); renderPapers(); }
-function resumeTimer(){ const st=timerState(); if(!st||!st.paused) return; const used=(Date.now()-st.t.pausedAt)/1000; st.t.breakLeft=Math.max(0,st.t.breakLeft-used); st.t.endAt=Date.now()+st.t.leftAtPause*1000; st.t.pausedAt=null; save(); renderPapers(); }
-function stopTimer(){ S.pp.timer=null; save(); clearInterval(TIV); TIV=null; renderPapers(); }
-function tickTimer(){ clearInterval(TIV); TIV=setInterval(()=>{ const st=timerState(); if(!st){ clearInterval(TIV); TIV=null; return; } const d=$('#tclock'); if(d) d.textContent=fmtClock(st.left); const b=$('#tbreak'); if(b) b.textContent=fmtClock(st.bLeft); if(st.paused&&st.bLeft<=0){ resumeTimer(); toast('Rest break over. Back to it.'); } if(!st.paused&&st.left<=0){ clearInterval(TIV); TIV=null; toast('Time is up. Pens down.','gold'); S.pp.timer=null; save(); renderPapers(); } },1000); }
+function startTimer(p){ const pr=provOf(p); const secs=(pr.base+(S.pp.prov?pr.extra:0))*60; S.pp.timer={paper:p.id,endAt:Date.now()+secs*1000,breakLeft:S.pp.prov?pr.breaks*60:0,pausedAt:null,leftAtPause:0,total:secs}; save(); tickTimer(); prender(); toast('Timer started. '+fmtClock(secs)+' on the clock.'); }
+function pauseTimer(){ const st=timerState(); if(!st||st.paused) return; if(st.bLeft<=0){ toast('No rest-break time left.'); return; } st.t.pausedAt=Date.now(); st.t.leftAtPause=st.left; save(); prender(); }
+function resumeTimer(){ const st=timerState(); if(!st||!st.paused) return; const used=(Date.now()-st.t.pausedAt)/1000; st.t.breakLeft=Math.max(0,st.t.breakLeft-used); st.t.endAt=Date.now()+st.t.leftAtPause*1000; st.t.pausedAt=null; save(); prender(); }
+function stopTimer(){ S.pp.timer=null; save(); clearInterval(TIV); TIV=null; prender(); }
+function tickTimer(){ clearInterval(TIV); TIV=setInterval(()=>{ const st=timerState(); if(!st){ clearInterval(TIV); TIV=null; return; } const d=$('#tclock'); if(d) d.textContent=fmtClock(st.left); const b=$('#tbreak'); if(b) b.textContent=fmtClock(st.bLeft); if(st.paused&&st.bLeft<=0){ resumeTimer(); toast('Rest break over. Back to it.'); } if(!st.paused&&st.left<=0){ clearInterval(TIV); TIV=null; toast('Time is up. Pens down.','gold'); S.pp.timer=null; save(); prender(); } },1000); }
 function timerBar(p){ const st=timerState(); if(!st||st.t.paper!==p.id) return null; if(!TIV) tickTimer(); const pr=provOf(p);
   const bar=el('div',{class:'tbar'+(st.paused?' paused':'')}, el('span',{class:'timer',id:'tclock'}, fmtClock(st.left)), el('span',{class:'small'}, st.paused?'Rest break · ':'left · ', (S.pp.prov&&pr.breaks>0)?'rest break time: ':'no breaks', (S.pp.prov&&pr.breaks>0)?el('b',{id:'tbreak'},fmtClock(st.bLeft)):null));
   if(S.pp.prov&&pr.breaks>0) bar.append(el('button',{onclick:()=>st.paused?resumeTimer():pauseTimer()}, st.paused?'Back from break':'Take a rest break'));
@@ -4794,20 +5045,20 @@ async function markTyped(p,it,part,ta,btn){
   btn.disabled=true; btn.textContent='Marking…'; announce('Marking your answer');
   try{
     const res=await s.json(buildPrompt(p,it,part,text), {modelTier:'default', cache:false});
-    const r=normalise(res,max); setRec(p,it,part,{m:r.m, x:max, how:'ai', r:{band:r.band,verdict:r.verdict,strengths:r.strengths,improvements:r.improvements,model:r.model}}); awardXP(p,it,part,r.m,max,'ai'); renderPapers();
+    const r=normalise(res,max); setRec(p,it,part,{m:r.m, x:max, how:'ai', r:{band:r.band,verdict:r.verdict,strengths:r.strengths,improvements:r.improvements,model:r.model}}); awardXP(p,it,part,r.m,max,'ai'); prender();
     setTimeout(()=>{ const b=document.querySelector('.markbox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50);
   }catch(e){
     const code=e&&e.code;
     if(code==='not_granted'||code==='sampling_disabled'){ SAMPLE=null; toast('AI marking is off, so mark it yourself against the criteria.'); openSelfMark(p,it,part); }
     else if(code==='rate_limited'){ toast('AI marking is busy right now. Try again in a minute, or self-mark.'); openSelfMark(p,it,part); }
-    else if(code==='cancelled'){ renderPapers(); }
+    else if(code==='cancelled'){ prender(); }
     else if(code==='bad_key'){ toast('That API key was rejected. Check it in the AI marking box, then try again.'); openSelfMark(p,it,part); }
     else if(code==='network'){ toast('No connection to the marking service. Check your internet, or self-mark.'); openSelfMark(p,it,part); }
     else { toast('Marking did not come back cleanly. Mark it yourself against the criteria.'); openSelfMark(p,it,part); }
   }
 }
 const SELF={}; // key -> {m}
-function openSelfMark(p,it,part){ SELF[rkey(p,it,part)]={m:null}; renderPapers(); setTimeout(()=>{ const b=document.querySelector('.selfmark'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); }
+function openSelfMark(p,it,part){ SELF[rkey(p,it,part)]={m:null}; prender(); setTimeout(()=>{ const b=document.querySelector('.selfmark'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); }
 function selfMarkBox(p,it,part){
   const unit=part||it; const max=part?part.marks:it.marks; const key=rkey(p,it,part); const st=SELF[key]; const r=rec(p,it,part)||{};
   const box=el('div',{class:'panel selfmark'}, el('h2',{},'Mark it yourself'), el('p',{class:'small'},'Read the criteria and the sample answer, compare them with what you wrote, then choose the mark you honestly earned.'));
@@ -4818,14 +5069,14 @@ function selfMarkBox(p,it,part){
   if(r.a&&(unit.sample||unit.could)) box.append(compareBox((unit.sample||'')+' '+(unit.could||''), r.a));
   const row=el('div',{class:'row'}, el('span',{class:'small'},'Your mark:'));
   const vals=[]; if(max<=10){ for(let i=0;i<=max;i++) vals.push(i); } else { for(let i=0;i<=max;i+=2) vals.push(i); if(vals[vals.length-1]!==max) vals.push(max); }
-  const segm=seg(vals.map(v=>[v,String(v)]), st.m, v=>{ st.m=v; renderPapers(); }); row.append(segm); box.append(row);
-  box.append(el('div',{class:'row'}, el('button',{class:'primary',disabled:st.m==null?'':null,onclick:()=>{ setRec(p,it,part,{m:st.m,x:max,how:'self',r:null}); delete SELF[key]; awardXP(p,it,part,st.m,max,'self'); renderPapers(); }}, 'Save mark'+(st.m==null?'':' '+st.m+' / '+max)), el('button',{class:'ghost',onclick:()=>{ delete SELF[key]; renderPapers(); }},'Cancel')));
+  const segm=seg(vals.map(v=>[v,String(v)]), st.m, v=>{ st.m=v; prender(); }); row.append(segm); box.append(row);
+  box.append(el('div',{class:'row'}, el('button',{class:'primary',disabled:st.m==null?'':null,onclick:()=>{ setRec(p,it,part,{m:st.m,x:max,how:'self',r:null}); delete SELF[key]; awardXP(p,it,part,st.m,max,'self'); prender(); }}, 'Save mark'+(st.m==null?'':' '+st.m+' / '+max)), el('button',{class:'ghost',onclick:()=>{ delete SELF[key]; prender(); }},'Cancel')));
   return box;
 }
 function resultBox(p,it,part){
   const unit=part||it; const max=part?part.marks:it.marks; const r=rec(p,it,part); if(!r||typeof r.m!=='number') return null;
   const pct=r.m/max; const box=el('div',{class:'markbox'+(pct>=0.8?' top':pct>=0.5?' mid':' low')});
-  box.append(el('div',{class:'row between'}, el('span',{class:'mk'}, `${r.m} / ${max}`), el('span',{class:'small'}, r.how==='ai'?'AI estimate against the official criteria (not an official result)':r.how==='self'?'Self-marked':'Auto-marked'), el('button',{class:'ghost',onclick:()=>{ setRec(p,it,part,{m:undefined,how:undefined,r:null}); delete S.papers[rkey(p,it,part)].m; save(); renderPapers(); }},'Try again')));
+  box.append(el('div',{class:'row between'}, el('span',{class:'mk'}, `${r.m} / ${max}`), el('span',{class:'small'}, r.how==='ai'?'AI estimate against the official criteria (not an official result)':r.how==='self'?'Self-marked':'Auto-marked'), el('button',{class:'ghost',onclick:()=>{ setRec(p,it,part,{m:undefined,how:undefined,r:null}); delete S.papers[rkey(p,it,part)].m; save(); prender(); }},'Try again')));
   if(r.r){ if(r.r.band) box.append(el('div',{class:'small'},'Criteria row: ', el('b',{},r.r.band))); if(r.r.verdict) box.append(el('p',{class:'verdict'}, r.r.verdict));
     if(r.r.strengths&&r.r.strengths.length) box.append(el('div',{}, el('b',{},'What worked'), ...r.r.strengths.map(s=>el('p',{class:'bul good'},'✓ '+s))));
     if(r.r.improvements&&r.r.improvements.length) box.append(el('div',{}, el('b',{},'To get more marks'), ...r.r.improvements.map(s=>el('p',{class:'bul warn'},'→ '+s))));
@@ -4863,8 +5114,8 @@ function renderPapers(){
   const list=pItems(p); const idx=list.findIndex(x=>x.it.id===S.pp.item); if(idx<0){ S.pp.item=null; return renderPaper(v,p); }
   renderItem(v,p,list,idx);
 }
-function openPaper(id){ S.pp.paper=id; S.pp.item=null; save(); renderPapers(); window.scrollTo({top:0}); }
-function openItem(id){ S.pp.item=id; save(); renderPapers(); window.scrollTo({top:0}); }
+function openPaper(id){ S.pp.paper=id; S.pp.item=null; save(); prender(); window.scrollTo({top:0}); }
+function openItem(id){ S.pp.item=id; save(); prender(); window.scrollTo({top:0}); }
 const QVERB=/^(outline|explain|describe|discuss|analyse|evaluate|assess|identify|define|compare|distinguish|justify|recommend|propose|account for|examine|calculate|predict|interpret|summarise|clarify|classify|construct|contrast|demonstrate|extract|list|state|to what extent|how|why|what|which)\b/i;
 const TOPIC_WORDS={Operations:/operation|production|quality|supply chain|inventory|outsourc|performance objective|transformation|input|output|lean|technolog|global sourcing/g, Marketing:/marketing|brand|pric|promot|customer|segment|product life|distribution|place|advertis|sponsor|niche|mass market|e-marketing|global market/g, Finance:/financ|ratio|cash flow|profit|budget|debt|equity|liquidity|solvency|gearing|working capital|balance sheet|income statement|expense|revenue|capital|hedging|derivative|exchange rate/g, HR:/human resource|employ|staff|training|recruit|workplace|industrial|union|dispute|separation|remuneration|award|enterprise agreement|outsourcing of hr|work\/life|motivation|redundanc/g};
 function coarseTopic(raw,text){ const r=String(raw||'').toLowerCase(); if(/^operations/.test(r)) return 'Operations'; if(/^marketing/.test(r)) return 'Marketing'; if(/^finance/.test(r)) return 'Finance'; if(/^(human resources?|hr)/.test(r)) return 'HR'; const t=(r+' '+String(text||'')).toLowerCase(); let best='Other', bn=0; for(const [k,re] of Object.entries(TOPIC_WORDS)){ const n=(t.match(re)||[]).length; if(n>bn){ bn=n; best=k; } } return best; }
@@ -4876,7 +5127,7 @@ function searchPanel(){
   const all=qIndex(); const active=Object.entries(QF).some(([k,v])=>k==='q'?v.trim():v!=='all');
   const d=el('details',{class:'panel qsearch',open:active?'':null}, el('summary',{}, el('h2',{style:'display:inline'},'Find a question'), el('span',{class:'small'},` · ${all.length} questions and parts across ${PAPERS.length} papers`)));
   const years=[...new Set(all.map(r=>r.year))].sort((a,b)=>b-a); const verbs=[...new Set(all.map(r=>r.verb))].sort();
-  const re=()=>renderPapers();
+  const re=()=>prender();
   const qin=el('input',{type:'search',class:'qsel',placeholder:'Words in the question, e.g. cash flow',value:QF.q,'aria-label':'Search questions'}); qin.addEventListener('change',()=>{ QF.q=qin.value; re(); }); qin.addEventListener('keydown',e=>{ if(e.key==='Enter'){ QF.q=qin.value; re(); } });
   d.append(el('div',{class:'qfilters'}, qin,
     sel([['all','Any topic'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources'],['Other','Other']],QF.topic,v=>{QF.topic=v; re();}),
@@ -4889,7 +5140,7 @@ function searchPanel(){
   const hits=all.filter(qMatches); d.append(el('p',{class:'small'}, `${hits.length} match${hits.length===1?'':'es'}${hits.length>60?', showing the first 60':''}. Topics are from the NESA mapping grid where it exists, otherwise guessed from the wording.`));
   const list=el('div',{});
   for(const r of hits.slice(0,60)){ const rc=rec(r.p,r.it,r.part); const done=!!rc&&typeof rc.m==='number';
-    list.append(el('div',{class:'qrow'}, el('div',{class:'meta'}, `${r.p.title} · Q${r.it.n}${r.part?'('+r.part.p+')':''} · ${r.max} mark${r.max===1?'':'s'} · ${r.verb} · ${r.topic}${done?` · you got ${rc.m}/${r.max}`:''}`), el('div',{}, r.text), el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=r.p.id; S.pp.item=r.it.id; save(); renderPapers(); window.scrollTo({top:0}); }}, done?'Open again':'Open'), r.raw?el('span',{class:'small'}, r.raw):null))); }
+    list.append(el('div',{class:'qrow'}, el('div',{class:'meta'}, `${r.p.title} · Q${r.it.n}${r.part?'('+r.part.p+')':''} · ${r.max} mark${r.max===1?'':'s'} · ${r.verb} · ${r.topic}${done?` · you got ${rc.m}/${r.max}`:''}`), el('div',{}, r.text), el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=r.p.id; S.pp.item=r.it.id; save(); prender(); window.scrollTo({top:0}); }}, done?'Open again':'Open'), r.raw?el('span',{class:'small'}, r.raw):null))); }
   d.append(list); return d;
 }
 function renderPick(v){
@@ -4915,17 +5166,17 @@ function renderPick(v){
 }
 function renderPaper(v,p){
   const st=paperStatus(p); const pr=provOf(p);
-  const head=el('div',{class:'panel'}, el('div',{class:'row between'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=null; save(); renderPapers(); }},'← All papers'), el('span',{class:'small'}, st.done?`${st.done}/${st.n} answered · ${st.got}/${st.max} marks so far`:'Not started')));
+  const head=el('div',{class:'panel'}, el('div',{class:'row between'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=null; save(); prender(); }},'← All papers'), el('span',{class:'small'}, st.done?`${st.done}/${st.n} answered · ${st.got}/${st.max} marks so far`:'Not started')));
   head.append(el('h2',{},p.title), el('p',{class:'small'},p.subtitle));
   if(p.avg){ head.append(el('p',{class:'small'}, 'Class averages: '+Object.entries(p.avg).map(([k,v])=>k+' '+v).join(' · '))); }
   const dl=el('div',{class:'dl'}); for(const f of p.files||[]) dl.append(el('a',{href:f.href,target:'_blank',rel:'noopener',download:f.ext?null:''}, (f.ext?'↗ ':'⬇ ')+f.label)); if(p.src==='nesa') dl.append(el('a',{href:NESA_URL,target:'_blank',rel:'noopener'},'↗ Official NESA page for all Business Studies papers')); head.append(el('div',{}, el('b',{},'Downloads'), dl));
   const tb=timerBar(p);
   if(tb) head.append(tb); else {
-    const prov=hasProv()?el('label',{class:'row',style:'gap:.4rem'}, el('input',{type:'checkbox',checked:S.pp.prov?'':null,onchange:e=>{ S.pp.prov=e.target.checked; save(); renderPapers(); }}), `Use my provisions: ${pr.extra?'+'+pr.extra+' min extra time':''}${pr.extra&&pr.breaks?' and ':''}${pr.breaks?pr.breaks+' min of rest breaks':''}`):el('span',{class:'small'},'Standard time. Have exam provisions? Add them in Settings on Home.');
+    const prov=hasProv()?el('label',{class:'row',style:'gap:.4rem'}, el('input',{type:'checkbox',checked:S.pp.prov?'':null,onchange:e=>{ S.pp.prov=e.target.checked; save(); prender(); }}), `Use my provisions: ${pr.extra?'+'+pr.extra+' min extra time':''}${pr.extra&&pr.breaks?' and ':''}${pr.breaks?pr.breaks+' min of rest breaks':''}`):el('span',{class:'small'},'Standard time. Have exam provisions? Add them in Settings on Home.');
     head.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>startTimer(p)}, `Start timed run · ${fmtClock((pr.base+(S.pp.prov?pr.extra:0))*60)}`), prov));
   }
   if(p.general&&p.general.length){ const d=el('details',{}, el('summary',{},'What the markers said about this exam overall')); for(const g of p.general) d.append(el('p',{class:'bul'},'• '+g)); head.append(d); }
-  head.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ if(confirmReset.paper===p.id){ for(const k of Object.keys(S.papers)) if(k.startsWith(p.id+'|')) delete S.papers[k]; confirmReset.paper=null; save(); renderPapers(); } else { confirmReset.paper=p.id; renderPapers(); } }}, confirmReset.paper===p.id?'Tap again to clear this paper':'Clear my answers for this paper')));
+  head.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ if(confirmReset.paper===p.id){ for(const k of Object.keys(S.papers)) if(k.startsWith(p.id+'|')) delete S.papers[k]; confirmReset.paper=null; save(); prender(); } else { confirmReset.paper=p.id; prender(); } }}, confirmReset.paper===p.id?'Tap again to clear this paper':'Clear my answers for this paper')));
   v.append(head);
   for(const s of p.sections){
     const sec=el('div',{class:'panel'}, el('h2',{}, s.name), el('p',{class:'small'}, `${s.marks} marks`+(s.choose?' · answer one of the two':'')));
@@ -4937,7 +5188,7 @@ function renderPaper(v,p){
 }
 function renderItem(v,p,list,idx){
   const {s,it}=list[idx];
-  const nav=el('div',{class:'nav'}, el('button',{class:'ghost',onclick:()=>{ S.pp.item=null; save(); renderPapers(); window.scrollTo({top:0}); }},'← '+p.title), el('span',{class:'count'}, `Question ${it.n}`), el('div',{class:'row'}, el('button',{disabled:idx===0?'':null,onclick:()=>openItem(list[idx-1].it.id)},'‹ Prev'), el('button',{disabled:idx===list.length-1?'':null,onclick:()=>openItem(list[idx+1].it.id)},'Next ›')));
+  const nav=el('div',{class:'nav'}, el('button',{class:'ghost',onclick:()=>{ S.pp.item=null; save(); prender(); window.scrollTo({top:0}); }},'← '+p.title), el('span',{class:'count'}, `Question ${it.n}`), el('div',{class:'row'}, el('button',{disabled:idx===0?'':null,onclick:()=>openItem(list[idx-1].it.id)},'‹ Prev'), el('button',{disabled:idx===list.length-1?'':null,onclick:()=>openItem(list[idx+1].it.id)},'Next ›')));
   v.append(nav); const tb=timerBar(p); if(tb) v.append(tb);
   const card=el('div',{class:'panel q'});
   card.append(el('div',{class:'lab'}, `${s.name.replace(/ \(.*\)$/,'')} · Question ${it.n} · ${it.type==='mc'?'1 mark':it.marks+' marks'}`, it.topic?el('span',{class:'deck'},it.topic):null));
@@ -4956,10 +5207,10 @@ function renderMC(card,p,it,list,idx){
   const opts=el('div',{class:'opts'}); const answered=typeof r.m==='number';
   it.opts.forEach((o,i)=>{ const L='ABCD'[i]; const cls='opt'+(answered?(keys.includes(L)?' right':(r.c===L?' wrong':'')):''); opts.append(el('button',{class:cls,disabled:answered?'':null,onclick:()=>pickMC(p,it,L,keys)}, el('span',{class:'key'},L), o)); });
   card.append(opts);
-  if(answered){ const ok=keys.includes(r.c); card.append(el('div',{class:'feedback '+(ok?'good':'bad')}, ok?'Correct. '+pickRandom(PRAISE):`Not this time. The answer is ${keys.join(' or ')}.`+(keys.length>1?' NESA accepted either.':'')), it.topic?el('p',{class:'small'},'Syllabus area: '+it.topic):null, el('button',{class:'ghost',onclick:()=>{ delete S.papers[rkey(p,it,null)]; save(); renderPapers(); }},'Try again')); }
+  if(answered){ const ok=keys.includes(r.c); card.append(el('div',{class:'feedback '+(ok?'good':'bad')}, ok?'Correct. '+pickRandom(PRAISE):`Not this time. The answer is ${keys.join(' or ')}.`+(keys.length>1?' NESA accepted either.':'')), it.topic?el('p',{class:'small'},'Syllabus area: '+it.topic):null, el('button',{class:'ghost',onclick:()=>{ delete S.papers[rkey(p,it,null)]; save(); prender(); }},'Try again')); }
   else card.append(el('p',{class:'kbd'},'Press 1 to 4 to choose.'));
 }
-function pickMC(p,it,L,keys){ const ok=keys.includes(L); setRec(p,it,null,{c:L,m:ok?1:0,x:1,how:'mc'}); recordReview(null, ok, 5); announce(ok?'Correct':'Incorrect'); renderPapers(); }
+function pickMC(p,it,L,keys){ const ok=keys.includes(L); setRec(p,it,null,{c:L,m:ok?1:0,x:1,how:'mc'}); recordReview(null, ok, 5); announce(ok?'Correct':'Incorrect'); prender(); }
 
 
 // ---------- home ----------
@@ -5021,14 +5272,17 @@ function renderHome(){
   v.append(hero);
   const acts=el('div',{class:'actions'});
   const lastPaper=S.pp&&S.pp.paper&&PBY[S.pp.paper];
-  acts.append(action('Past papers', lastPaper?`Continue ${lastPaper.title}`:'Start with HSC 2025, marked against the real criteria', ()=>{ if(!lastPaper){ S.pp.paper='nesa2025'; S.pp.item=null; } goMode('papers'); }, 'primary'));
+  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }, 'primary'));
+  const mqN=mistakeQs().length, mcN=mistakeCards().length;
+  acts.append(action('Mistake notebook', mqN+mcN?`${mqN} exam question${mqN===1?'':'s'} and ${mcN} card${mcN===1?'':'s'} to fix`:'Empty so far. Anything you get wrong lands here.', ()=>goMode('mistakes')));
+  acts.append(action('Exam-style test', 'Real HSC questions by topic, marked like the exam', ()=>{ S.testKind='exam'; XT=null; goMode('test'); }));
+  acts.append(action('Past papers', lastPaper?`Continue ${lastPaper.title}`:'Start with HSC 2025, marked against the real criteria', ()=>{ if(!lastPaper){ S.pp.paper='nesa2025'; S.pp.item=null; } goMode('papers'); }));
   const dueN=dueCards().length;
   acts.append(action('Due for review', dueN?`${dueN} card${dueN===1?'':'s'} due today`:'Nothing due yet. Cards come back 1, 3 then 7 days after you get them right.', ()=>{ S.filter=dueN?'due':'all'; S.deck='all'; goMode('flash'); }));
   acts.append(action('Flashcards', learning.length?`${learning.length} cards still learning`:unseen.length?`${unseen.length} cards not seen yet`:`All ${CARDS.length} cards seen`, ()=>{ S.filter=learning.length?'l':'all'; S.deck='all'; goMode('flash'); }));
   const weak=topicRows().sort((a,b)=>a.pct-b.pct)[0];
   acts.append(action('Learn', `Weakest topic first: ${weak.d.name} (${weak.pct}% got it)`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
   acts.append(action('Ratio drill', 'All 7 ratios with exam-style figures and interpretation', ()=>goMode('ratio')));
-  acts.append(action('Test', '10 or 20 typed questions, keyword-checked', ()=>goMode('test')));
   acts.append(action('Match', '5 pairs against the clock', ()=>goMode('match')));
   acts.append(action('Exam guide', 'Exam structure, what each band looks like, the 35 NESA key words', ()=>goMode('guide')));
   v.append(el('div',{class:'panel'}, el('h2',{},'Jump in'), acts));
@@ -5116,7 +5370,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ renderDecks(); renderStrip(); renderProgress(); ({flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide})[S.mode](); }
+function render(){ renderDecks(); renderStrip(); renderProgress(); ({flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes})[S.mode](); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
@@ -5126,6 +5380,12 @@ document.addEventListener('keydown',e=>{
   } else if(S.mode==='learn'){
     if(S.learnType==='mc'){ if(/^[1-4]$/.test(e.key)){ e.preventDefault(); pick(Number(e.key)-1); } else if(e.key==='Enter'){ e.preventDefault(); nextLearn(); } }
     else if(L&&L.checked){ if(e.key==='ArrowLeft'||e.key==='1'){ e.preventDefault(); learnTypedResult(false);} else if(e.key==='ArrowRight'||e.key==='2'||e.key==='Enter'){ e.preventDefault(); learnTypedResult(true);} }
+  } else if(S.mode==='test'&&(S.testKind||'exam')!=='cards'){
+    if(/^[1-4]$/.test(e.key)){ const o=document.querySelectorAll('.opt:not(:disabled)')[Number(e.key)-1]; if(o){ e.preventDefault(); o.click(); } }
+  } else if(S.mode==='today'){
+    if(TS&&TS.started&&!TS.done){ const st=TS.steps[TS.i];
+      if(st&&st.k==='card'){ if(!TS.shown&&(e.key===' '||e.key==='Enter')){ e.preventDefault(); tsShow(); } else if(TS.shown&&(e.key==='ArrowLeft'||e.key==='1')){ e.preventDefault(); tsCard(false); } else if(TS.shown&&(e.key==='ArrowRight'||e.key==='2')){ e.preventDefault(); tsCard(true); } }
+      else if(st&&st.k==='mc'&&/^[1-4]$/.test(e.key)){ const o=document.querySelectorAll('.opt:not(:disabled)')[Number(e.key)-1]; if(o){ e.preventDefault(); o.click(); } } }
   } else if(S.mode==='test'){
     if(T&&T.revealed&&(e.key==='ArrowLeft'||e.key==='1')){ e.preventDefault(); markTest(false); }
     else if(T&&T.revealed&&(e.key==='ArrowRight'||e.key==='2')){ e.preventDefault(); markTest(true); }
@@ -5261,7 +5521,7 @@ function authForm(){
 }
 function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e){} } }
 
-if(location.hash==='#papers'){ S.mode='papers'; } else if(location.hash==='#ratio'){ S.mode='ratio'; } else if(location.hash==='#stats'){ S.mode='stats'; } else if(location.hash==='#guide'){ S.mode='guide'; }
+if(location.hash==='#papers'){ S.mode='papers'; } else if(location.hash==='#ratio'){ S.mode='ratio'; } else if(location.hash==='#stats'){ S.mode='stats'; } else if(location.hash==='#guide'){ S.mode='guide'; } else if(location.hash==='#today'){ S.mode='today'; } else if(location.hash==='#mistakes'){ S.mode='mistakes'; } else if(location.hash==='#test'){ S.mode='test'; S.testKind='exam'; }
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
 </script>
