@@ -1,0 +1,11 @@
+# Band Six on Cloudflare: the site is served as Workers static assets.
+# The 611 resource PDFs live in the R2 bucket "bandsix-files", served at files.bandsfordays.com.
+name = "bandsix"
+compatibility_date = "2026-10-01"
+routes = [
+  { pattern = "bandsfordays.com", custom_domain = true },
+  { pattern = "www.bandsfordays.com", custom_domain = true }
+]
+
+[assets]
+directory = "./"

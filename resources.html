@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en-AU" data-files="res/">
+<html lang="en-AU" data-files="https://files.bandsfordays.com/">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -149,6 +149,6 @@ $('#q').addEventListener('input',e=>{ q=e.target.value.trim(); render(); });
 $('#picks').innerHTML=PICKS.map(p=>ITEMS.find(i=>i.u===p+'.pdf')).filter(Boolean).map(i=>`<a href="${BASE+i.u}" target="_blank" rel="noopener"><b>${esc(i.t)}</b><span>${CATNAME[i.c]}${i.p?` · ${i.p} pp`:''}</span></a>`).join('');
 const h=location.hash.slice(1); if(h&&CATNAME[h]){ cat=h; [...$('#cats').children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.v===cat)); }
 render();
-fetch(BASE+PICKS[0]+'.pdf',{method:'HEAD'}).then(r=>{ if(!r.ok) $('#moving').hidden=false; }).catch(()=>{ $('#moving').hidden=false; });
+if(!/^https?:/.test(BASE)) fetch(BASE+PICKS[0]+'.pdf',{method:'HEAD'}).then(r=>{ if(!r.ok) $('#moving').hidden=false; }).catch(()=>{ $('#moving').hidden=false; });
 </script>
 </body></html>
