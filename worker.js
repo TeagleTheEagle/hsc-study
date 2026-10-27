@@ -61,7 +61,7 @@ function normalise(res, max) {
   return { mark: m, band: String(res.band || ''), verdict: String(res.verdict || ''), strengths: arr(res.strengths), improvements: arr(res.improvements), model: String(res.model || '') };
 }
 
-async function askClaude(env, prompt) {
+async function askClaude(env, content) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) });
   const model = env.MODEL || 'claude-opus-5-5';
   const textOf = r => r.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
@@ -71,7 +71,7 @@ async function askClaude(env, prompt) {
       model, max_tokens: 16000,
       betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
       output_config: { effort: 'medium', format: { type: 'json_schema', schema: RESULT_SCHEMA } },
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content }],
     });
   } catch (error) {
     // A request-shape problem (an option this model or account doesn't take): retry once with the plain request.
@@ -79,13 +79,32 @@ async function askClaude(env, prompt) {
     response = await client.messages.create({
       model, max_tokens: 16000,
       output_config: { effort: 'medium' },
-      messages: [{ role: 'user', content: prompt }],
+      messages: [{ role: 'user', content }],
     });
   }
   if (response.stop_reason === 'refusal') throw { code: 'refusal' };
   const parsed = parseResult(textOf(response));
   if (!parsed) throw { code: 'invalid_json' };
   return parsed;
+}
+
+// Maths entries list the question and marking-guideline pictures (served from the site) to send with the prompt.
+function b64(buf) {
+  const a = new Uint8Array(buf); let s = '';
+  for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000));
+  return btoa(s);
+}
+async function imageBlock(env, url, path) {
+  const res = await env.ASSETS.fetch(new URL('/' + path, url));
+  if (!res.ok) return null;
+  return { type: 'image', source: { type: 'base64', media_type: 'image/png', data: b64(await res.arrayBuffer()) } };
+}
+// A photo of handwritten working: a JPEG/PNG/WebP data URL under about 2 MB. null = none, false = not acceptable.
+function photoBlock(photo) {
+  if (!photo) return null;
+  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(photo));
+  if (!m || m[2].length > 2800000) return false;
+  return { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } };
 }
 
 async function mark(request, env) {
@@ -97,13 +116,15 @@ async function mark(request, env) {
   try { body = await request.json(); } catch (e) { return json(400, { code: 'bad_request' }); }
   const answer = String((body && body.answer) || '').trim();
   const key = String((body && body.key) || '');
-  if (answer.split(/\s+/).length < 8) return json(400, { code: 'too_short' });
-
-  const user = await userFromToken(env, token);
-  if (!user) return json(401, { code: 'sign_in' });
+  const photo = photoBlock(body && body.photo);
+  if (photo === false) return json(400, { code: 'bad_photo' });
 
   const entry = (await bank(env, request.url, key))[key];
   if (!entry) return json(404, { code: 'unknown_question' });
+  if (!photo && answer.split(/\s+/).filter(Boolean).length < (entry.min || 8)) return json(400, { code: 'too_short' });
+
+  const user = await userFromToken(env, token);
+  if (!user) return json(401, { code: 'sign_in' });
 
   const day = sydneyDay();
   const limit = Number(env.DAILY_LIMIT || 5), cap = Number(env.GLOBAL_DAILY_CAP || 300);
@@ -114,7 +135,10 @@ async function mark(request, env) {
 
   let result;
   try {
-    result = normalise(await askClaude(env, entry.pre + answer.slice(0, 12000) + entry.post), entry.max);
+    const text = entry.pre + answer.slice(0, 12000) + entry.post;
+    const imgs = (await Promise.all((entry.imgs || []).map(p => imageBlock(env, request.url, p)))).filter(Boolean);
+    if (photo) imgs.push(photo);
+    result = normalise(await askClaude(env, imgs.length ? [...imgs, { type: 'text', text }] : text), entry.max);
   } catch (error) {
     if (error instanceof Anthropic.RateLimitError) return json(503, { code: 'rate_limited' });
     if (error instanceof Anthropic.APIError) return json(502, { code: 'upstream', status: error.status });

@@ -290,6 +290,16 @@ footer{color:var(--muted);font-size:.9rem}
 .qb small{font-weight:400;font-size:.75rem;color:var(--muted)}
 .qb.done{background:var(--good-soft);border-color:var(--good)} .qb.part{background:var(--mid-soft);border-color:var(--mid)}
 .stimimg{max-width:100%;height:auto;border:1px solid var(--border);border-radius:8px;background:#fff;display:block}
+.stimimg+.stimimg{margin-top:.5rem}.mgimg{margin:.4rem 0}
+.photorow{align-items:center;gap:.6rem;flex-wrap:wrap;margin:.5rem 0}.photothumb{max-width:min(100%,360px);max-height:320px;border:1px solid var(--border);border-radius:8px;display:block;margin-top:.5rem}
+.btnlike{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem .9rem;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-weight:700}
+.btnlike:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.visually-hidden{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+img.stimimg,img.photothumb{cursor:zoom-in}
+.imgzoom{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.88);overflow:auto;padding:3.6rem 0 1rem}
+.imgzoom img{display:block;width:max(100%,820px);max-width:none;height:auto;background:#fff;margin:0 auto}
+.zclose{position:fixed;top:.6rem;right:.6rem;z-index:1001}
+.opts.optrow{grid-template-columns:repeat(4,1fr)}.optrow .opt{justify-content:center}
 .stim{background:var(--surface-2);border-radius:12px;padding:.8rem 1rem;display:grid;gap:.3rem}
 .stim.big{font-size:1.1rem;gap:.5rem}
 .ptext{display:grid;gap:.3rem} .ptext p.bul{padding-left:1.2rem;text-indent:-1.2rem}
@@ -4316,7 +4326,7 @@ for(const [id,n] of Object.entries(S.m||{})){ if(n>=3&&!S.rv[id]&&S.p[id]==='k')
 // persist the migrated shape straight away so the id mapping is never applied twice
 try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
 // ---------- subjects ----------
-const SUBJECTS=[{"id": "business", "name": "Business Studies", "short": "Business", "icon": "💼", "n": 644}, {"id": "english", "name": "English Standard and Advanced", "short": "English", "icon": "📖", "file": "subjects/english.json", "n": 147, "v": "074cb78e", "papers": "subjects/english-papers.json", "pv": "06f3fcf0", "np": 28}, {"id": "maths-std2", "name": "Mathematics Standard 2", "short": "Maths Std 2", "icon": "📐", "file": "subjects/maths-std2.json", "n": 207, "v": "37d26273"}, {"id": "maths-adv", "name": "Mathematics Advanced", "short": "Maths Adv", "icon": "📈", "soon": true}, {"id": "biology", "name": "Biology", "short": "Biology", "icon": "🧬", "file": "subjects/biology.json", "n": 603, "v": "4ebf3283"}, {"id": "chemistry", "name": "Chemistry", "short": "Chemistry", "icon": "⚗️", "file": "subjects/chemistry.json", "n": 141, "v": "451c0254"}, {"id": "physics", "name": "Physics", "short": "Physics", "icon": "🔭", "soon": true}, {"id": "modern-history", "name": "Modern History", "short": "Modern", "icon": "🏛️", "soon": true}, {"id": "ancient-history", "name": "Ancient History", "short": "Ancient", "icon": "🏺", "soon": true}, {"id": "legal", "name": "Legal Studies", "short": "Legal", "icon": "⚖️", "soon": true}];
+const SUBJECTS=[{"id": "business", "name": "Business Studies", "short": "Business", "icon": "💼", "n": 644}, {"id": "english", "name": "English Standard and Advanced", "short": "English", "icon": "📖", "file": "subjects/english.json", "n": 147, "v": "074cb78e", "papers": "subjects/english-papers.json", "pv": "06f3fcf0", "np": 28}, {"id": "maths-std2", "name": "Mathematics Standard 2", "short": "Maths Std 2", "icon": "📐", "file": "subjects/maths-std2.json", "n": 207, "v": "37d26273"}, {"id": "maths-adv", "name": "Mathematics Advanced", "short": "Maths Adv", "icon": "📈", "file": "subjects/maths-adv.json", "n": 131, "v": "6460c75f", "papers": "subjects/maths-adv-papers.json", "pv": "5491c76e", "np": 6}, {"id": "biology", "name": "Biology", "short": "Biology", "icon": "🧬", "file": "subjects/biology.json", "n": 603, "v": "4ebf3283"}, {"id": "chemistry", "name": "Chemistry", "short": "Chemistry", "icon": "⚗️", "file": "subjects/chemistry.json", "n": 141, "v": "451c0254"}, {"id": "physics", "name": "Physics", "short": "Physics", "icon": "🔭", "soon": true}, {"id": "modern-history", "name": "Modern History", "short": "Modern", "icon": "🏛️", "soon": true}, {"id": "ancient-history", "name": "Ancient History", "short": "Ancient", "icon": "🏺", "soon": true}, {"id": "legal", "name": "Legal Studies", "short": "Legal", "icon": "⚖️", "soon": true}];
 const SUBJ_BY=Object.fromEntries(SUBJECTS.map(s=>[s.id,s]));
 const SUBJ_DATA={};
 let SUBJ=SUBJ_BY.business;
@@ -4643,7 +4653,7 @@ function clearItem(p,it){ for(const u of itemUnits(it)){ delete S.papers[rkey(p,
 function provFactor(){ const c=S.cfg||{}; const base=Number(c.examMins)||180; return (base+base/30*(Number(c.extraPer30)||0))/base; }
 function paceMins(rows){ let m=0; for(const r of rows){ m+= r.type==='mc'? 1.5 : r.max*1.8; } return Math.max(1,Math.round(m*provFactor())); }
 function optLine(it,L){ const i='ABCD'.indexOf(L); return i>=0&&it.opts&&it.opts[i]? `${L}: ${it.opts[i]}` : (L||'none'); }
-function stimFor(card,it){ if(it.type==='mc'){ return; } if(it.stim) card.append(el('div',{class:'stim'}, paras(it.stim))); const im=pimgEl(it.img); if(im) card.append(im); }
+function stimFor(card,it){ if(it.type==='mc'){ return; } if(it.stim) card.append(el('div',{class:'stim'}, paras(it.stim))); for(const x of (it.imgs||[it.img])){ const im=pimgEl(x); if(im) card.append(im); } }
 
 // ---------- Test: real HSC questions (default) or flashcard questions ----------
 let XT=null, XTIV=null;
@@ -5189,9 +5199,9 @@ const SITE=true; const CLAUDE_LINK='https://claude.ai/artifact/CyYxdyDmgDoC2xPoJ
 function apiKey(){ try{ return localStorage.getItem('bss_apikey')||''; }catch(e){ return ''; } }
 function keySample(){
   const key=apiKey(); if(!key) return null;
-  const call=async(input)=>{
+  const call=async(input,imgs)=>{
     let res;
-    try{ res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2026-10-21','anthropic-beta':'server-side-fallback-2026-07-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5-5',max_tokens:3000,fallbacks:'default',output_config:{effort:'medium'},messages:[{role:'user',content:String(input)}]})}); }
+    try{ res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'content-type':'application/json','x-api-key':key,'anthropic-version':'2026-10-21','anthropic-beta':'server-side-fallback-2026-07-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model:'claude-opus-5-5',max_tokens:3000,fallbacks:'default',output_config:{effort:'medium'},messages:[{role:'user',content:imgs&&imgs.length?[...imgs.map(d=>({type:'image',source:{type:'base64',media_type:d.slice(5,d.indexOf(';')),data:d.slice(d.indexOf(',')+1)}})),{type:'text',text:String(input)}]:String(input)}]})}); }
     catch(e){ throw {code:'network',message:'Could not reach the marking service.'}; }
     if(res.status===401||res.status===403) throw {code:'bad_key',message:'API key rejected'};
     if(res.status===429) throw {code:'rate_limited',message:'Rate limited'};
@@ -5202,7 +5212,7 @@ function keySample(){
     return {text, truncated:data.stop_reason==='max_tokens'};
   };
   const s=async(input,opts)=>call(input);
-  s.json=async(input,opts)=>{ const {text}=await call(input); const a=text.indexOf('{'), b=text.lastIndexOf('}'); try{ return JSON.parse(text.slice(a,b+1)); }catch(e){ throw {code:'invalid_json',message:'Not valid JSON',text}; } };
+  s.json=async(input,opts)=>{ const {text}=await call(input,opts&&opts.images); const a=text.indexOf('{'), b=text.lastIndexOf('}'); try{ return JSON.parse(text.slice(a,b+1)); }catch(e){ throw {code:'invalid_json',message:'Not valid JSON',text}; } };
   return s;
 }
 async function getSample(){ if(apiKey()) return keySample(); if(SAMPLE!==undefined) return SAMPLE; try{ SAMPLE=(window.claude&&typeof window.claude.use==='function')? await window.claude.use('sample'):null; }catch(e){ SAMPLE=null; } return SAMPLE||null; }
@@ -5239,7 +5249,7 @@ function timerBar(p){ const st=timerState(); if(!st||st.t.paper!==p.id) return n
 function critList(crit){ const box=el('div',{class:'crit'}); for(const c of crit||[]){ box.append(el('div',{class:'cr'}, el('b',{}, c.m+(/\d/.test(c.m)&&!/–|-/.test(c.m)&&Number(c.m)===1?' mark':' marks')), el('div',{}, ...c.b.map(b=>el('p',{}, '• '+b))))); } return box; }
 function buildPrompt(p,it,part,text){
   const max=part?part.marks:it.marks; const unit=part||it;
-  const q=part? `Question ${it.n}${part.p?'('+part.p+')':''} [${part.marks} marks]: ${part.text}` : `Question ${it.n} [${it.marks} marks]: ${it.text}`;
+  const mth=/^maths/.test(p.subj||''); const q=part? `Question ${it.n}${part.p?'('+part.p+')':''} [${part.marks} marks]: ${part.text||'(the question is in the attached image)'}` : `Question ${it.n} [${it.marks} marks]: ${it.text}`;
   const stim=[it.stimFull||it.stim, part&&(part.pstimFull||part.pstim), part&&part.textFull].filter(Boolean).join('\n');
   const crit=(unit.crit||[]).map(c=>`${c.m} marks: ${c.b.join(' | ')}`).join('\n');
   const fb=it.fb||{}; const fbt=[...(fb.better||[]).map(x=>'Better responses: '+x), ...(fb.improve||[]).map(x=>'To improve: '+x), ...(fb.note||[]).map(x=>x)].join('\n');
@@ -5247,13 +5257,13 @@ function buildPrompt(p,it,part,text){
   const subj=p.subjName||'Business Studies'; const eng=p.subj==='english'; const craft=it.kind==='craft';
   const paperName=p.subj?`the ${p.year} NSW HSC ${subj} exam${p.paper?', Paper '+p.paper:''}`:p.src==='nesa'?`the ${p.year} NSW HSC Business Studies exam`:`${p.title} (a Riverview Year 12 Business Studies assessment, Operations topic)`;
   const role=eng?'NSW HSC English':'NSW HSC '+subj;
-  return `You are an experienced ${role} marker. Mark the student's response to a question from ${paperName} strictly against the official marking criteria, exactly as an HSC marker would: award marks only for what is actually written, do not be generous, and quote the criteria row the response fits. Write feedback in short plain sentences${eng?'. Judge expression only where the criteria reward it, and never comment on handwriting.':' and never comment on spelling or handwriting.'}${eng&&long?' The student wrote this essay on their own prescribed text, which you may know: judge their textual references for accuracy and relevance.':''}
+  return `You are an experienced ${role} marker. Mark the student's response to a question from ${paperName} strictly against the official marking criteria, exactly as an HSC marker would: award marks only for what is actually written, do not be generous, and quote the criteria row the response fits. Write feedback in short plain sentences${eng?'. Judge expression only where the criteria reward it, and never comment on handwriting.':' and never comment on spelling or handwriting.'}${mth?' The images attached before this text show, in order: the question as printed in the exam, then the official marking guideline with its criteria table and sample answer. Award marks for correct working exactly as the criteria rows allow, even if the final answer is wrong; accept any valid method, equivalent forms and typed notation such as x^2, sqrt(x), e^(2x) and ln(x). A response with only a final answer earns only what the criteria give for it.':''}${eng&&long?' The student wrote this essay on their own prescribed text, which you may know: judge their textual references for accuracy and relevance.':''}
 
 ${q}
 ${stim?(p.subj?'STIMULUS / TEXTS PROVIDED:\n':'STIMULUS / CASE INFORMATION:\n')+stim+'\n':''}
 MARKING CRITERIA (out of ${max}):
 ${crit||'(use standard HSC criteria for this directive verb and mark value)'}
-${unit.sample?'\nSAMPLE ANSWER (official):\n'+unit.sample:''}
+${unit.sample&&!mth?'\nSAMPLE ANSWER (official):\n'+unit.sample:''}
 ${unit.could?'\nANSWERS COULD INCLUDE (the student does not need every point):\n'+unit.could:''}
 ${unit.comments?'\nTEACHER MARKER COMMENTS:\n'+unit.comments:''}
 ${fbt?'\nWHAT THE REAL MARKERS SAID ABOUT THIS QUESTION:\n'+fbt:''}
@@ -5264,15 +5274,32 @@ ${text.slice(0,12000)}
 """
 
 Return JSON only, no prose, in this exact shape:
-{"mark": <integer 0-${max}>, "band": "<the criteria row it fits, e.g. '${(unit.crit&&unit.crit[0]&&unit.crit[0].m)||max}'>", "verdict": "<one sentence saying why it got that mark>", "strengths": ["<up to 3 short points>"], "improvements": ["<up to 3 concrete things to add or change to reach the next row, each under 25 words>"], "model": "<${long?'a 6 to 8 line plan of what a full-mark response would cover, one line per paragraph, not a full essay':craft?'a 4 to 6 line plan of what a full-mark response would do':eng?'a full-mark answer of about '+(max*45)+' words a student could realistically write in the exam':'a full-mark answer in 2 to 5 plain sentences a student could realistically write in the exam'}>"}`;
+{"mark": <integer 0-${max}>, "band": "<the criteria row it fits, e.g. '${(unit.crit&&unit.crit[0]&&unit.crit[0].m)||max}'>", "verdict": "<one sentence saying why it got that mark>", "strengths": ["<up to 3 short points>"], "improvements": ["<up to 3 concrete things to add or change to reach the next row, each under 25 words>"], "model": "<${long?'a 6 to 8 line plan of what a full-mark response would cover, one line per paragraph, not a full essay':craft?'a 4 to 6 line plan of what a full-mark response would do':mth?'a full worked solution, one step per line, written the way a student would set it out in the exam':eng?'a full-mark answer of about '+(max*45)+' words a student could realistically write in the exam':'a full-mark answer in 2 to 5 plain sentences a student could realistically write in the exam'}>"}`;
 }
 function normalise(res,max){ let m=Number(res&&res.mark); if(!isFinite(m)) m=0; m=Math.max(0,Math.min(max,Math.round(m))); const arr=x=>Array.isArray(x)?x.map(String).slice(0,4):(x?[String(x)]:[]); return {m, band:String(res.band||''), verdict:String(res.verdict||''), strengths:arr(res.strengths), improvements:arr(res.improvements), model:String(res.model||'')}; }
 function awardXP(p,it,part,m,max,how){ const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
+document.addEventListener('click',e=>{ const im=e.target&&e.target.closest&&e.target.closest('img.stimimg,img.photothumb'); if(!im||im.closest('.imgzoom')) return; const prev=document.activeElement; const close=()=>{ ov.remove(); if(prev&&prev.focus) prev.focus(); }; const ov=el('div',{class:'imgzoom',role:'dialog','aria-modal':'true','aria-label':'Picture, zoomed in',tabindex:'-1',onkeydown:ev=>{ if(ev.key==='Escape') close(); },onclick:ev=>{ if(ev.target===ov) close(); }}, el('button',{class:'primary zclose',onclick:close},'Close ✕'), el('img',{src:im.src,alt:im.alt||''})); document.body.append(ov); ov.querySelector('.zclose').focus(); });
+function isMathsP(p){ return /^maths/.test((p&&p.subj)||''); }
+function hasMG(u){ return !!(u&&u.mgimg&&u.mgimg.length); }
+function mgImgs(u){ const alt='Official marking guideline and sample answer. '+(u.crit||[]).map(c=>c.m+' marks: '+c.b.join('; ')).join('. '); return u.mgimg.map(s=>el('img',{src:s,class:'stimimg mgimg',alt,loading:'lazy'})); }
+const PHOTO={}; // answer key -> JPEG data URL of handwritten working, for this visit only
+function shrinkPhoto(file){ return new Promise((ok,no)=>{ const img=new Image(); const url=URL.createObjectURL(file); img.onload=()=>{ const k=Math.min(1,1600/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*k); c.height=Math.round(img.height*k); const g=c.getContext('2d'); g.fillStyle='#fff'; g.fillRect(0,0,c.width,c.height); g.drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url); ok(c.toDataURL('image/jpeg',0.8)); }; img.onerror=()=>{ URL.revokeObjectURL(url); no(); }; img.src=url; }); }
+function photoRow(p,it,part){
+  const key=rkey(p,it,part); const id='ph_'+key.replace(/\W/g,'_'); const row=el('div',{class:'row photorow'});
+  const inp=el('input',{type:'file',accept:'image/*',class:'visually-hidden',id,onchange:async e=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const ta=row.parentNode&&row.parentNode.querySelector('textarea'); if(ta){ S.papers[key]=Object.assign(S.papers[key]||{},{a:ta.value.slice(0,12000),t:Date.now()}); save(); } try{ PHOTO[key]=await shrinkPhoto(f); prender(); }catch(err){ toast('Could not read that photo. Try a JPG or PNG.'); } }});
+  if(PHOTO[key]) row.append(el('img',{src:PHOTO[key],class:'photothumb',alt:'Photo of your working'}), el('button',{class:'ghost',onclick:()=>{ delete PHOTO[key]; prender(); }},'Remove photo'));
+  else row.append(el('label',{class:'btnlike ghost',for:id,tabindex:'0',role:'button',onkeydown:e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); inp.click(); } }},'📷 Add a photo of your working'), el('span',{class:'small'}, isMathsP(p)?'Did it on paper? Snap it and the AI marks your handwriting too.':'Wrote it by hand? Add a photo and the AI reads it.'));
+  row.append(inp); return row;
+}
+function unitImgs(p,it,part){ if(!isMathsP(p)) return []; return [...(it.imgs||[]), ...((part&&part.pimg)||[]), ...((part&&part.mgimg)||[])].filter(x=>/\//.test(x)); }
+function toDataURL(blob){ return new Promise(ok=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=()=>ok(null); fr.readAsDataURL(blob); }); }
+async function markImages(p,it,part){ const out=[]; for(const s of unitImgs(p,it,part)){ try{ const r=await fetch(s); if(r.ok){ const d=await toDataURL(await r.blob()); if(d) out.push(d); } }catch(e){} } const ph=PHOTO[rkey(p,it,part)]; if(ph) out.push(ph); return out; }
 function withPartA(p,it,part,text){ if(it.kind!=='craft'||!part||part.p!=='b') return text; const a=(rec(p,it,it.parts.find(x=>x.p==='a'))||{}).a||''; return a?'[Part (a) piece, for reference]\n'+a.slice(0,6000)+'\n\n[Part (b) reflection, to be marked]\n'+text:text; }
 async function markTyped(p,it,part,ta,btn){
-  const text=ta.value.trim(); const max=part?part.marks:it.marks;
-  if(wc(text)<8){ toast('Write your answer first (at least a sentence).'); ta.focus(); return; }
+  const ph=PHOTO[rkey(p,it,part)]; const mth=isMathsP(p); let text=ta.value.trim(); const max=part?part.marks:it.marks;
+  if(!ph&&wc(text)<(mth?1:8)){ toast(mth?'Write your working first, or add a photo of it.':'Write your answer first (at least a sentence).'); ta.focus(); return; }
   setRec(p,it,part,{a:text.slice(0,12000)});
+  if(ph) text=(text||'(No typed working: see the photo.)')+'\n\n[The student attached a photo of their handwritten working. It is the LAST image. Mark the typed text and the photo together.]';
   if(!apiKey()){
     if(UID&&SB) return markOnServer(p,it,part,text,max,btn);
     toast('Sign in (it is free) to get '+MARKQ.limit+' AI-marked answers a day. For now, mark this one yourself.'); openSelfMark(p,it,part); return;
@@ -5281,7 +5308,7 @@ async function markTyped(p,it,part,ta,btn){
   if(!s){ openSelfMark(p,it,part); return; }
   btn.disabled=true; btn.textContent='Marking…'; announce('Marking your answer');
   try{
-    const res=await s.json(buildPrompt(p,it,part,withPartA(p,it,part,text)), {modelTier:'default', cache:false});
+    const res=await s.json(buildPrompt(p,it,part,withPartA(p,it,part,text)), {modelTier:'default', cache:false, images:apiKey()?await markImages(p,it,part):undefined});
     const r=normalise(res,max); setRec(p,it,part,{m:r.m, x:max, how:'ai', r:{band:r.band,verdict:r.verdict,strengths:r.strengths,improvements:r.improvements,model:r.model}}); awardXP(p,it,part,r.m,max,'ai'); prender();
     setTimeout(()=>{ const b=document.querySelector('.markbox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50);
   }catch(e){
@@ -5300,7 +5327,7 @@ async function markOnServer(p,it,part,text,max,btn){
   let r=null, data={};
   try{
     const {data:sd}=await SB.auth.getSession(); const tok=sd&&sd.session&&sd.session.access_token;
-    if(tok){ r=await fetch('/api/mark',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tok},body:JSON.stringify({key:rkey(p,it,part),answer:withPartA(p,it,part,text)})}); try{ data=await r.json(); }catch(e){} }
+    if(tok){ r=await fetch('/api/mark',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tok},body:JSON.stringify({key:rkey(p,it,part),answer:withPartA(p,it,part,text),photo:PHOTO[rkey(p,it,part)]||undefined})}); try{ data=await r.json(); }catch(e){} }
   }catch(e){ toast('No connection to the marking service. Check your internet, or self-mark.'); openSelfMark(p,it,part); return; }
   if(data.limit) MARKQ.limit=data.limit;
   if(r&&r.ok&&data.result){
@@ -5323,8 +5350,8 @@ function openSelfMark(p,it,part){ SELF[rkey(p,it,part)]={m:null}; prender(); set
 function selfMarkBox(p,it,part){
   const unit=part||it; const max=part?part.marks:it.marks; const key=rkey(p,it,part); const st=SELF[key]; const r=rec(p,it,part)||{};
   const box=el('div',{class:'panel selfmark'}, el('h2',{},'Mark it yourself'), el('p',{class:'small'},'Read the criteria and the sample answer, compare them with what you wrote, then choose the mark you honestly earned.'));
-  box.append(el('h3',{},'Marking criteria'), critList(unit.crit));
-  if(unit.sample){ box.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Sample answer'), paras(unit.sample))); }
+  box.append(el('h3',{},'Marking criteria'), hasMG(unit)?el('div',{},...mgImgs(unit)):critList(unit.crit));
+  if(unit.sample&&!hasMG(unit)){ box.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Sample answer'), paras(unit.sample))); }
   if(unit.could){ box.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Answers could include'), paras(unit.could))); }
   if(unit.comments){ box.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Marker comments'), paras(unit.comments))); }
   if(r.a&&(unit.sample||unit.could)) box.append(compareBox((unit.sample||'')+' '+(unit.could||''), r.a));
@@ -5344,8 +5371,8 @@ function resultBox(p,it,part){
     if(r.r.improvements&&r.r.improvements.length) box.append(el('div',{}, el('b',{},'To get more marks'), ...r.r.improvements.map(s=>el('p',{class:'bul warn'},'→ '+s))));
     if(r.r.model) box.append(el('div',{class:'answer'}, el('div',{class:'lab'}, it.type==='long'?'Full-mark plan':'What a full-mark answer looks like'), paras(r.r.model))); }
   const d=el('details',{}, el('summary',{},'Official marking criteria, sample answer and marker comments'));
-  d.append(critList(unit.crit));
-  if(unit.sample) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Sample answer'), paras(unit.sample)));
+  d.append(hasMG(unit)?el('div',{},...mgImgs(unit)):critList(unit.crit));
+  if(unit.sample&&!hasMG(unit)) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Sample answer'), paras(unit.sample)));
   if(unit.could) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Answers could include'), paras(unit.could)));
   if(unit.comments) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Marker comments'), paras(unit.comments)));
   const fb=it.fb||{}; if((fb.better&&fb.better.length)||(fb.improve&&fb.improve.length)||(fb.note&&fb.note.length)){ d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'What the real markers said'), ...(fb.better||[]).map(x=>el('p',{class:'bul'},'✓ Better responses: '+x)), ...(fb.improve||[]).map(x=>el('p',{class:'bul'},'→ To improve: '+x)), ...(fb.note||[]).map(x=>el('p',{class:'bul'},x)))); }
@@ -5354,16 +5381,17 @@ function resultBox(p,it,part){
 function peekBox(unit,it){ const d=el('details',{class:'peek'}, el('summary',{},'Peek at the marking criteria (no sample answer)')); d.append(critList(unit.crit)); const fb=it.fb||{}; if(fb.improve&&fb.improve.length) d.append(el('div',{class:'small'}, el('b',{},'Real markers said to improve: '), fb.improve.join(' · '))); return d; }
 function typedUnit(p,it,part){
   const key=rkey(p,it,part); const r=rec(p,it,part)||{}; const max=part?part.marks:it.marks; const box=el('div',{class:'unit'});
-  if(part){ box.append(el('div',{class:'lab'}, `${part.p?'('+part.p+')  ':''}${part.marks} mark${part.marks===1?'':'s'}`, part.topic?el('span',{class:'deck'},part.topic):null)); if(part.pstim) box.append(paras(part.pstim,'stimtxt')); for(const im of part.pimg||[]){ const e=pimgEl(im); if(e) box.append(e); } box.append(el('div',{class:'qtext'}, part.text)); }
+  if(part){ box.append(el('div',{class:'lab'}, `${part.p?'('+part.p+')  ':''}${part.marks} mark${part.marks===1?'':'s'}`, part.topic?el('span',{class:'deck'},part.topic):null)); if(part.pstim) box.append(paras(part.pstim,'stimtxt')); for(const im of part.pimg||[]){ const e=pimgEl(im); if(e) box.append(e); } if(part.text) box.append(el('div',{class:'qtext'}, part.text)); }
   const marked=typeof r.m==='number';
-  if(SELF[key]){ box.append(el('div',{class:'yourtext'}, el('div',{class:'lab'},'Your answer'), paras(r.a||''))); box.append(selfMarkBox(p,it,part)); return box; }
-  if(marked){ box.append(el('div',{class:'yourtext'}, el('div',{class:'lab'},'Your answer'), paras(r.a||''))); box.append(resultBox(p,it,part)); return box; }
+  if(SELF[key]){ box.append(el('div',{class:'yourtext'}, el('div',{class:'lab'},'Your answer'), paras(r.a||''), PHOTO[key]?el('img',{src:PHOTO[key],class:'photothumb',alt:'Photo of your working'}):null)); box.append(selfMarkBox(p,it,part)); return box; }
+  if(marked){ box.append(el('div',{class:'yourtext'}, el('div',{class:'lab'},'Your answer'), paras(r.a||''), PHOTO[key]?el('img',{src:PHOTO[key],class:'photothumb',alt:'Photo of your working'}):null)); box.append(resultBox(p,it,part)); return box; }
   const long=it.type==='long';
   if(r.prev&&r.prev.length){ const last=r.prev[r.prev.length-1]; box.append(el('div',{class:'rewritebox'}, el('b',{},`Rewrite · last time ${typeof last.m==='number'?last.m:'?'} / ${max}`), last.imp&&last.imp.length? el('div',{}, el('p',{class:'small'},'Fix these, then mark it again:'), ...last.imp.map(s=>el('p',{class:'bul warn'},'→ '+s))) : el('p',{class:'small'},'Check the criteria and the sample answer, improve your answer below, then mark it again.'))); }
   const craft=it.kind==='craft', big=long||craft&&part&&part.marks>=8;
-  const ta=el('textarea',{class:big?'long':'', placeholder: !isBiz()?(craft?(part&&part.p==='a'?'Write your piece here. Make the stimulus central, focus on one moment or idea, and craft every sentence.':'Explain the choices you made in part (a): name each technique, quote your own writing and say how it shapes meaning.'):long?'Write your essay here: a thesis that answers the question, body paragraphs with close references to the text, and a conclusion. Aim for 800 to 1,000 words.':'Type your answer here. Answer the question in your first sentence, then give technique, quote and effect.'):long?(it.kind==='report'?'Write your business report here: executive summary, headings for each dot point, recommendation. Aim for 600 to 800 words.':'Write your essay here: introduction with a judgement, PEEL paragraphs with case study evidence, conclusion. Aim for 600 to 800 words.'):'Type your answer here. Use the directive verb, the business in the stimulus and the key terms.', 'aria-label':'Your answer', oninput:e=>{ clearTimeout(ta._t); ta._t=setTimeout(()=>{ S.papers[key]=Object.assign(S.papers[key]||{},{a:e.target.value.slice(0,12000),t:Date.now()}); save(); },700); const w=box.querySelector('.wc'); if(w) w.textContent=wc(e.target.value)+' words'; }, onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); box.querySelector('.markbtn').click(); } }});
+  const ta=el('textarea',{class:big?'long':'', placeholder: isMathsP(p)?'Type your working, one step per line. Use ^ for powers (x^2), sqrt( ) for roots and / for fractions. Or do it on paper and add a photo below.':!isBiz()?(craft?(part&&part.p==='a'?'Write your piece here. Make the stimulus central, focus on one moment or idea, and craft every sentence.':'Explain the choices you made in part (a): name each technique, quote your own writing and say how it shapes meaning.'):long?'Write your essay here: a thesis that answers the question, body paragraphs with close references to the text, and a conclusion. Aim for 800 to 1,000 words.':'Type your answer here. Answer the question in your first sentence, then give technique, quote and effect.'):long?(it.kind==='report'?'Write your business report here: executive summary, headings for each dot point, recommendation. Aim for 600 to 800 words.':'Write your essay here: introduction with a judgement, PEEL paragraphs with case study evidence, conclusion. Aim for 600 to 800 words.'):'Type your answer here. Use the directive verb, the business in the stimulus and the key terms.', 'aria-label':'Your answer', oninput:e=>{ clearTimeout(ta._t); ta._t=setTimeout(()=>{ S.papers[key]=Object.assign(S.papers[key]||{},{a:e.target.value.slice(0,12000),t:Date.now()}); save(); },700); const w=box.querySelector('.wc'); if(w&&!isMathsP(p)) w.textContent=wc(e.target.value)+' words'; }, onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); box.querySelector('.markbtn').click(); } }});
   ta.value=r.a||'';
-  box.append(ta, el('div',{class:'wc'}, wc(ta.value)+' words'+(craft&&part&&part.p==='a'?' · aim for 600 to 800':craft?' · about 300 to 400':long&&!isBiz()?' · aim for 800 to 1,000':!isBiz()?' · about '+(max*45)+' words':long?' · aim for 600 to 800':max>=5?' · a solid paragraph':max>=3?' · 3 to 5 sentences':' · 1 to 2 sentences')));
+  box.append(ta, el('div',{class:'wc'}, isMathsP(p)?'Show every step, the way the sample answers do.':wc(ta.value)+' words'+(craft&&part&&part.p==='a'?' · aim for 600 to 800':craft?' · about 300 to 400':long&&!isBiz()?' · aim for 800 to 1,000':!isBiz()?' · about '+(max*45)+' words':long?' · aim for 600 to 800':max>=5?' · a solid paragraph':max>=3?' · 3 to 5 sentences':' · 1 to 2 sentences')));
+  if(!isBiz()) box.append(photoRow(p,it,part));
   const btn=el('button',{class:'primary markbtn',onclick:()=>markTyped(p,it,part,ta,btn)}, (r.prev&&r.prev.length)?'Mark my rewrite':part&&part.p?`Mark part (${part.p})`:'Mark my response');
   box.append(el('div',{class:'row'}, btn, el('button',{class:'ghost',onclick:()=>{ setRec(p,it,part,{a:ta.value.slice(0,12000)}); openSelfMark(p,it,part); }},'Self-mark instead')));
   box.append(peekBox(part||it,it));
@@ -5501,7 +5529,7 @@ function renderItem(v,p,list,idx){
   const card=el('div',{class:'panel q'});
   card.append(el('div',{class:'lab'}, `${s.name.replace(/ \(.*\)$/,'')} · Question ${it.n} · ${it.type==='mc'?'1 mark':it.marks+' marks'}`, it.topic?el('span',{class:'deck'},it.topic):null));
   if(it.type==='mc') renderMC(card,p,it,list,idx);
-  else if(it.type==='sa'){ if(it.stim) card.append(el('div',{class:'stim'}, paras(it.stim))); const im=pimgEl(it.img); if(im) card.append(im); for(const pt of it.parts) card.append(typedUnit(p,it,pt)); }
+  else if(it.type==='sa'){ if(it.stim) card.append(el('div',{class:'stim'}, paras(it.stim))); for(const x of (it.imgs||[it.img])){ const im=pimgEl(x); if(im) card.append(im); } if(isMathsP(p)) card.append(el('p',{class:'small'},'Tap a picture to zoom in.')); for(const pt of it.parts) card.append(typedUnit(p,it,pt)); }
   else { if(s.choose) card.append(el('p',{class:'small'}, isBiz()?'Section IV: you only answer ONE of the two questions in the exam. Pick the one you would choose, or do both for practice.':'In the exam you answer only ONE question from this section: the one on your text. Do others for practice if you like.')); if(it.text.includes('\n')) card.append(el('div',{class:'stim big'}, paras(it.text))); else card.append(el('div',{class:'qtext'}, it.text)); const im=pimgEl(it.img); if(im) card.append(im); card.append(typedUnit(p,it,null)); }
   v.append(card);
   v.append(el('div',{class:'nav'}, el('span',{class:'small'}, `${idx+1} of ${list.length}`), el('button',{class:'primary',disabled:idx===list.length-1?'':null,onclick:()=>openItem(list[idx+1].it.id)}, 'Next question ›')));
@@ -5512,7 +5540,7 @@ function renderMC(card,p,it,list,idx){
   const sh=pimgEl(it.shared); if(sh) card.append(sh);
   const im=pimgEl(it.img); if(im) card.append(im);
   card.append(el('div',{class:'qtext'}, it.stem));
-  const opts=el('div',{class:'opts'}); const answered=typeof r.m==='number';
+  const opts=el('div',{class:'opts'+(it.opts.every(o=>!o)?' optrow':'')}); const answered=typeof r.m==='number';
   it.opts.forEach((o,i)=>{ const L='ABCD'[i]; const cls='opt'+(answered?(keys.includes(L)?' right':(r.c===L?' wrong':'')):''); opts.append(el('button',{class:cls,disabled:answered?'':null,onclick:()=>pickMC(p,it,L,keys)}, el('span',{class:'key'},L), o)); });
   card.append(opts);
   if(answered){ const ok=keys.includes(r.c); card.append(el('div',{class:'feedback '+(ok?'good':'bad')}, ok?'Correct. '+pickRandom(PRAISE):`Not this time. The answer is ${keys.join(' or ')}.`+(keys.length>1?' NESA accepted either.':'')), it.topic?el('p',{class:'small'},'Syllabus area: '+it.topic):null, el('button',{class:'ghost',onclick:()=>{ delete S.papers[rkey(p,it,null)]; save(); prender(); }},'Try again')); }
