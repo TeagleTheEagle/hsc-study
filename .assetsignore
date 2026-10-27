@@ -6,3 +6,7 @@ README.md
 node_modules
 .wrangler
 res
+worker.js
+package.json
+package-lock.json
+.dev.vars

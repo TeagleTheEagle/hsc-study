@@ -1,6 +1,8 @@
 # Band Six on Cloudflare: the site is served as Workers static assets.
 # The 611 resource PDFs live in the R2 bucket "bandsix-files", served at files.bandsfordays.com.
+# worker.js answers /api/* (free AI marking); everything else is a static file.
 name = "bandsix"
+main = "worker.js"
 compatibility_date = "2026-10-01"
 routes = [
   { pattern = "bandsfordays.com", custom_domain = true },
@@ -9,6 +11,22 @@ routes = [
 
 [assets]
 directory = "./"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+
+# Daily marking counts per student and site-wide (keys expire after 2 days).
+[[kv_namespaces]]
+binding = "MARKS"
+id = "c669400708c643d0b421cb6ec5ffb401"
+
+# Public settings. The Supabase key here is the publishable one (same as in app.html).
+# The Anthropic key is a secret: wrangler secret put ANTHROPIC_API_KEY
+[vars]
+SUPA_URL = "https://vfrrzrkiamsnyesqevwl.supabase.co"
+SUPA_KEY = "sb_publishable_NbyHQeXmH1ovRyHYOmFMXA_OEub4F2z"
+DAILY_LIMIT = "5"
+GLOBAL_DAILY_CAP = "300"
+MODEL = "claude-opus-5-5"
 
 # PR branches deploy with `wrangler preview`, which requires this block (it can stay empty).
 [previews]

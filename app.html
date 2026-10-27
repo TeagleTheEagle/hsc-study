@@ -5168,6 +5168,10 @@ async function markTyped(p,it,part,ta,btn){
   const text=ta.value.trim(); const max=part?part.marks:it.marks;
   if(wc(text)<8){ toast('Write your answer first (at least a sentence).'); ta.focus(); return; }
   setRec(p,it,part,{a:text.slice(0,12000)});
+  if(!apiKey()){
+    if(UID&&SB) return markOnServer(p,it,part,text,max,btn);
+    toast('Sign in (it is free) to get '+MARKQ.limit+' AI-marked answers a day. For now, mark this one yourself.'); openSelfMark(p,it,part); return;
+  }
   const s=await getSample();
   if(!s){ openSelfMark(p,it,part); return; }
   btn.disabled=true; btn.textContent='Marking…'; announce('Marking your answer');
@@ -5185,6 +5189,30 @@ async function markTyped(p,it,part,ta,btn){
     else { toast('Marking did not come back cleanly. Mark it yourself against the criteria.'); openSelfMark(p,it,part); }
   }
 }
+const MARKQ={limit:5, left:null};
+async function markOnServer(p,it,part,text,max,btn){
+  btn.disabled=true; btn.textContent='Marking…'; announce('Marking your answer');
+  let r=null, data={};
+  try{
+    const {data:sd}=await SB.auth.getSession(); const tok=sd&&sd.session&&sd.session.access_token;
+    if(tok){ r=await fetch('/api/mark',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tok},body:JSON.stringify({key:rkey(p,it,part),answer:text})}); try{ data=await r.json(); }catch(e){} }
+  }catch(e){ toast('No connection to the marking service. Check your internet, or self-mark.'); openSelfMark(p,it,part); return; }
+  if(data.limit) MARKQ.limit=data.limit;
+  if(r&&r.ok&&data.result){
+    const x=normalise(data.result,max); setRec(p,it,part,{m:x.m, x:max, how:'ai', r:{band:x.band,verdict:x.verdict,strengths:x.strengths,improvements:x.improvements,model:x.model}}); awardXP(p,it,part,x.m,max,'ai');
+    MARKQ.left=data.left; toast(data.left===0?'That was your last free AI mark for today. They reset tomorrow.':data.left+' free AI mark'+(data.left===1?'':'s')+' left today.');
+    prender(); setTimeout(()=>{ const b=document.querySelector('.markbox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); return;
+  }
+  const c=data.code||(r?'':'sign_in');
+  if(c==='daily_limit'){ MARKQ.left=0; toast('You have used today\'s '+MARKQ.limit+' free AI marks. Mark this one yourself; they reset tomorrow.'); }
+  else if(c==='sign_in') toast('Sign in again to use free AI marking. For now, mark this one yourself.');
+  else if(c==='busy_today'||c==='rate_limited') toast('AI marking is busy right now. Mark this one yourself, or try again later.');
+  else if(c==='not_configured') toast('Free AI marking is not switched on yet. Mark this one yourself against the criteria.');
+  else toast('Marking did not come back cleanly. Mark it yourself against the criteria.');
+  openSelfMark(p,it,part);
+}
+async function loadQuota(){ try{ if(!SB||!UID) return; const {data:sd}=await SB.auth.getSession(); const tok=sd&&sd.session&&sd.session.access_token; if(!tok) return; const r=await fetch('/api/quota',{headers:{authorization:'Bearer '+tok}}); const q=await r.json(); if(q.limit) MARKQ.limit=q.limit; MARKQ.on=q.on; if(typeof q.left==='number'){ MARKQ.left=q.left; const n=$('#aiNote'); if(n&&!apiKey()) n.textContent=aiNoteText(); } }catch(e){} }
+function aiNoteText(){ if(UID){ if(MARKQ.on===false) return 'Free AI marking is not switched on yet, so written answers use self-marking with the criteria and sample answers shown.'; return 'Free AI marking is on while you are signed in: '+(MARKQ.left==null?MARKQ.limit+' marked answers a day.':MARKQ.left+' of '+MARKQ.limit+' left today.')+' For more, add your own API key below.'; } return 'Sign in (it is free) to get '+MARKQ.limit+' AI-marked answers a day. Until then, written answers use self-marking with the criteria and sample answers shown.'; }
 const SELF={}; // key -> {m}
 function openSelfMark(p,it,part){ SELF[rkey(p,it,part)]={m:null}; prender(); setTimeout(()=>{ const b=document.querySelector('.selfmark'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); }
 function selfMarkBox(p,it,part){
@@ -5273,9 +5301,9 @@ function searchPanel(){
 }
 function renderPick(v){
   const intro=el('div',{class:'panel'}, el('h2',{},'Past papers'), el('p',{},'Pick a paper, answer the real questions, and get marked against the official marking criteria. Multiple choice marks itself. Written answers are marked by AI against the criteria, sample answer and marker comments (or you can self-mark). You can also download every paper and marking guide.'));
-  const sm=getSample(); intro.append(el('p',{class:'small',id:'aiNote'},'Checking whether AI marking is available…')); sm.then(s=>{ const n=$('#aiNote'); if(n) n.textContent=apiKey()?'AI marking is on, using your API key (kept only in this browser).':s?'AI marking is on. The first time you press Mark you will be asked to allow it.':'AI marking is off on this site, so written answers use self-marking with the criteria and sample answers shown. Turn it on below, or open the Claude version for built-in marking.'; });
-  const kp=el('details',{class:'keypanel'}, el('summary',{}, apiKey()?'AI marking: on (your API key)':'Turn on AI marking'));
-  kp.append(el('p',{class:'small'},'Two ways to get your written answers marked by AI on this site:'));
+  loadQuota(); const sm=getSample(); intro.append(el('p',{class:'small',id:'aiNote'},'Checking whether AI marking is available…')); sm.then(s=>{ const n=$('#aiNote'); if(n) n.textContent=apiKey()?'AI marking is on, using your API key (kept only in this browser).':s?'AI marking is on. The first time you press Mark you will be asked to allow it.':aiNoteText(); });
+  const kp=el('details',{class:'keypanel'}, el('summary',{}, apiKey()?'AI marking: on (your API key)':'More AI marking'));
+  kp.append(el('p',{class:'small'},'Signed-in students get '+MARKQ.limit+' free AI marks a day. Two ways to get more:'));
   kp.append(el('p',{class:'small'}, el('b',{},'1. '), 'Open the ', el('a',{href:CLAUDE_LINK,target:'_blank',rel:'noopener'},'Claude version of this study set'), ', which has AI marking and account sync built in.'));
   kp.append(el('p',{class:'small'}, el('b',{},'2. '), 'Paste an Anthropic API key from console.anthropic.com. It stays in this browser only (never sent anywhere except api.anthropic.com) and each marked answer costs a cent or two.'));
   const ki=el('input',{type:'password',id:'apiKeyInput',placeholder:'sk-ant-…','aria-label':'Anthropic API key',autocomplete:'off'}); ki.value=apiKey();
