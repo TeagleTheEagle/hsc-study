@@ -17,14 +17,18 @@ const RESULT_SCHEMA = {
   additionalProperties: false,
 };
 
-let BANK = null;
-async function bank(env, url) {
-  if (!BANK) {
-    const res = await env.ASSETS.fetch(new URL('/data/mark-bank.json', url));
-    if (!res.ok) throw new Error('mark bank missing');
-    BANK = await res.json();
+// Business prompts are in data/mark-bank.json; other subjects in data/mark-bank-<prefix>.json,
+// where the prefix starts the paper id (en-adv-2025-p1|3 -> en).
+const BANKS = {};
+async function bank(env, url, key) {
+  const m = /^([a-z]{2,4})-/.exec(key || '');
+  const file = m ? `/data/mark-bank-${m[1]}.json` : '/data/mark-bank.json';
+  if (!BANKS[file]) {
+    const res = await env.ASSETS.fetch(new URL(file, url));
+    if (!res.ok) return {};
+    BANKS[file] = await res.json();
   }
-  return BANK;
+  return BANKS[file];
 }
 
 const json = (status, body) => new Response(JSON.stringify(body), {
@@ -98,7 +102,7 @@ async function mark(request, env) {
   const user = await userFromToken(env, token);
   if (!user) return json(401, { code: 'sign_in' });
 
-  const entry = (await bank(env, request.url))[key];
+  const entry = (await bank(env, request.url, key))[key];
   if (!entry) return json(404, { code: 'unknown_question' });
 
   const day = sydneyDay();
