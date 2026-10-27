@@ -157,6 +157,19 @@ kbd{font-family:inherit;border:1px solid var(--border);border-bottom-width:2px;b
 .opt{text-align:left;min-height:56px;padding:.7rem 1rem;font-size:1.1rem;line-height:1.45;display:flex;gap:.8rem;align-items:flex-start;overflow-wrap:anywhere}
 .opt .key{flex:0 0 auto;width:1.7em;height:1.7em;border-radius:50%;background:var(--surface-2);display:inline-grid;place-items:center;font-weight:700;font-size:.95rem;margin-top:.1em}
 .opt.right{background:var(--good-soft);border-color:var(--good)}
+table.mastery{width:100%;border-collapse:separate;border-spacing:3px;font-size:.92rem;table-layout:fixed}
+table.mastery th{font-size:.78rem;font-weight:700;color:var(--muted);text-align:center;padding:.2rem;line-height:1.2}
+table.mastery th.tp{text-align:left;width:34%}
+table.mastery td{text-align:center;border-radius:8px;padding:.45rem .2rem;font-weight:700;background:var(--surface-2)}
+table.mastery td.tp{text-align:left;background:none;padding:0}
+table.mastery td.tp button{all:unset;cursor:pointer;font-weight:600;overflow-wrap:anywhere;display:block;padding:.3rem .2rem}
+table.mastery td.tp button:hover{text-decoration:underline}
+table.mastery td.lo{background:var(--warn-soft)} table.mastery td.mid{background:var(--surface-2)} table.mastery td.hi{background:var(--good-soft)}
+table.mastery td.none{color:var(--muted);font-weight:400}
+.mlegend{font-size:.85rem;color:var(--muted);margin:.5rem 0 .2rem}
+.rewritebox{border:2px dashed var(--border);border-radius:12px;padding:.7rem 1rem;margin:.6rem 0}
+.attempts{font-weight:700;margin:.2rem 0 .4rem}
+.diagtopics .deckrow .bar span.k{background:var(--good)}
 .opt.wrong{background:var(--warn-soft);border-color:var(--warn)}
 .opt:disabled{opacity:1}
 .opt:disabled:not(.right):not(.wrong){opacity:.55}
@@ -4399,7 +4412,7 @@ function confetti(){
 }
 
 // ---------- header ----------
-const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress',today:'home',mistakes:'progress',library:'library',editset:'library'};
+const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress',today:'home',diag:'home',mistakes:'progress',library:'library',editset:'library'};
 const SECTION_DEFAULT={home:'home',study:'flash',practice:'ratio',papers:'papers',guide:'guide',progress:'stats',library:'library'};
 function goMode(m){ S.mode=m; if(SECTION_OF[m]==='study') S.lastStudy=m; save(); render(); window.scrollTo({top:0}); }
 function renderDecks(){
@@ -4431,7 +4444,7 @@ function renderStrip(){
 const confirmReset={pending:false};
 function renderProgress(){
   const cards=deckCards(); const p=$('#progress'); p.innerHTML='';
-  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='mistakes'||S.mode==='library'||S.mode==='editset'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
+  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='diag'||S.mode==='mistakes'||S.mode==='library'||S.mode==='editset'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
   const m=cards.filter(mastered).length, k=cards.filter(c=>status(c)==='k').length-m, l=cards.filter(c=>status(c)==='l').length, u=cards.length-k-l-m;
   const bar=el('div',{class:'bar',role:'img','aria-label':`${m} mastered, ${k} got it, ${l} still learning, ${u} not seen`});
   bar.append(el('span',{class:'m',style:`width:${100*m/cards.length}%`}), el('span',{class:'k',style:`width:${100*k/cards.length}%`}), el('span',{class:'l',style:`width:${100*l/cards.length}%`}));
@@ -4798,6 +4811,7 @@ function topicStrength(t){
   for(const c of cs){ const r=rvOf(c); for(const h of ((r&&r.h)||[]).slice(-3)){ seen++; ok+=h[1]?1:0; } }
   for(const r of qIndex()){ if(r.topic!==t) continue; const x=rec(r.p,r.it,r.part); if(x&&typeof x.m==='number'){ seen+=r.max; ok+=x.m; } }
   const known=cs.length? cs.filter(c=>status(c)==='k').length/cs.length : 0;
+  if(seen<5){ const dg=diagFor(t); if(dg&&dg.n) return (dg.ok/dg.n)*0.6+known*0.4; }
   return seen>=5? (ok/seen)*0.6+known*0.4 : known*0.5;
 }
 function weakestTopic(){ return TOPIC_ORDER.map(t=>[t,topicStrength(t)]).sort((a,b)=>a[1]-b[1])[0][0]; }
@@ -4809,6 +4823,75 @@ function buildSession(topic){
   const sa=shuffled(qIndex().filter(r=>r.type==='sa'&&r.topic===topic&&r.max>=2&&r.max<=4)).sort((a,b)=>{ const da=rec(a.p,a.it,a.part), db=rec(b.p,b.it,b.part); return (da&&typeof da.m==='number'?1:0)-(db&&typeof db.m==='number'?1:0); })[0];
   if(sa) steps.push({k:'sa', pid:sa.p.id, iid:sa.it.id, part:sa.part.p, why:`Short answer · ${sa.max} marks`});
   return steps;
+}
+if(!S.diag||typeof S.diag!=='object'||Array.isArray(S.diag)) S.diag={};
+let DG=null;
+function diagDone(){ return !!S.diag[SUBJ.id]; }
+function diagFor(t){ const d=S.diag[SUBJ.id]; return d&&d.r&&d.r[t]?{ok:d.r[t][0],n:d.r[t][1]}:null; }
+function diagTopics(){ return TOPIC_ORDER.filter(t=>CARDS.filter(c=>c.t===t).length>=4); }
+function diagCount(){ const ts=diagTopics(); return Math.min(15, ts.length*(ts.length>5?2:3)); }
+function diagLine(){ return `${diagCount()} questions across every topic, about 3 minutes. It finds your weakest topic so each session starts in the right place.`; }
+function diagBuild(){
+  const ts=diagTopics(); const per=ts.length>5?2:3; const qs=[];
+  for(const t of ts){ const cs=CARDS.filter(c=>c.t===t); const pool=shuffled(cs.filter(c=>status(c)==='u')).concat(shuffled(cs.filter(c=>status(c)!=='u')));
+    for(const c of pool.slice(0,per)) qs.push({id:c.id, t, opts:makeOptions(c).map(o=>o.id)}); }
+  return {qs:shuffled(qs).slice(0,15), i:0, pick:null, res:[], done:false};
+}
+function diagPick(k){ if(!DG||DG.pick!=null) return; const q=DG.qs[DG.i]; const c=cardById(q.id); DG.pick=k; const ok=k>=0&&q.opts[k]===q.id; DG.res[DG.i]=ok; recordReview(c, ok, 5); announce(ok?'Correct':'Not quite. The answer is shown in green.'); render(); }
+function diagNext(){ if(!DG||DG.pick==null) return; DG.i++; DG.pick=null;
+  if(DG.i>=DG.qs.length){ DG.done=true; const r={}; DG.qs.forEach((q,i)=>{ r[q.t]=r[q.t]||[0,0]; r[q.t][1]++; if(DG.res[i]) r[q.t][0]++; }); S.diag[SUBJ.id]={d:today(), r}; save(); }
+  render(); window.scrollTo({top:0}); }
+function renderDiag(){
+  const v=$('#view'); v.innerHTML='';
+  if(!DG){
+    v.append(el('div',{class:'panel'}, el('h2',{},'Quick check'), el('p',{},diagLine()),
+      el('p',{class:'small'},'Pick the answer that fits each question. If you have no idea, press “I don’t know”: an honest miss helps more than a lucky guess.'),
+      diagDone()?el('p',{class:'small'},`You last did a quick check on ${S.diag[SUBJ.id].d}. Doing it again updates your weakest topic.`):null,
+      el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ DG=diagBuild(); render(); }},'Start the quick check'), el('button',{class:'ghost',onclick:()=>goMode('home')},'Not now'))));
+    return;
+  }
+  if(DG.done) return renderDiagDone(v);
+  const q=DG.qs[DG.i]; const c=cardById(q.id); if(!c){ DG.pick=-1; diagNext(); return; }
+  v.append(el('div',{class:'row between'}, el('span',{class:'tally'}, `Question ${DG.i+1} of ${DG.qs.length} · ${TOPIC_NAME[q.t]||q.t}`), el('button',{class:'ghost',onclick:()=>{ DG=null; goMode('home'); }},'Stop')));
+  v.append(el('div',{class:'stepbar'}, el('span',{style:`width:${100*DG.i/DG.qs.length}%`})));
+  v.append(el('div',{class:'card static'}, el('div',{class:'lab'}, el('span',{},'Which is the answer?')), el('div',{class:'txt'}, c.f)));
+  const opts=el('div',{class:'opts'});
+  q.opts.forEach((id,k)=>{ const o=cardById(id); if(!o) return; const cls='opt'+(DG.pick!=null?(id===q.id?' right':(DG.pick===k?' wrong':'')):'');
+    opts.append(el('button',{class:cls,disabled:DG.pick!=null?'':null,onclick:()=>diagPick(k)}, el('span',{class:'key'},String(k+1)), o.b)); });
+  v.append(opts);
+  if(DG.pick==null) v.append(el('div',{class:'nav'}, el('span',{class:'kbd'},'Press 1 to 4 to answer'), el('button',{class:'ghost',onclick:()=>diagPick(-1)},'I don’t know')));
+  else v.append(el('div',{class:'nav'}, el('span',{class:'small'}, DG.res[DG.i]?'Right.':'This card is now in your mistake notebook.'), el('button',{class:'primary',onclick:diagNext}, DG.i===DG.qs.length-1?'See my results':'Next →')));
+}
+function renderDiagDone(v){
+  const d=S.diag[SUBJ.id]; const rows=Object.entries(d.r).map(([t,x])=>({t, ok:x[0], n:x[1], pct:Math.round(100*x[0]/Math.max(1,x[1]))})).sort((a,b)=>a.pct-b.pct);
+  const right=rows.reduce((s,r)=>s+r.ok,0), n=rows.reduce((s,r)=>s+r.n,0);
+  const box=el('div',{class:'panel diagtopics'}, el('h2',{},`Quick check: ${right} of ${n}`), el('p',{class:'small'},'Lowest first. Your sessions start with the weakest topic and move on as it improves.'));
+  for(const r of rows) box.append(el('div',{class:'deckrow'}, el('span',{},TOPIC_NAME[r.t]||r.t), el('div',{class:'bar'}, el('span',{class:'k',style:`width:${r.pct}%`})), el('span',{class:'pct'},`${r.ok}/${r.n}`)));
+  const weak=weakestTopic();
+  box.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ DG=null; TS={topic:weak, started:false}; goMode('today'); }}, `Start today’s session: ${TOPIC_NAME[weak]||weak}`), el('button',{class:'ghost',onclick:()=>{ DG=null; goMode('home'); }},'Back to Home')));
+  v.append(box);
+}
+function mCell(v, tip){ return el('td',{class:v==null?'none':v<50?'lo':v<80?'mid':'hi', title:tip}, v==null?'–':v+'%'); }
+function masteryMap(){
+  const biz=isBiz(); const t=el('table',{class:'mastery'});
+  t.append(el('tr',{}, el('th',{class:'tp'},'Topic'), el('th',{},'Recall'), el('th',{},'Long-term'), el('th',{},'Applying'), el('th',{},'Exam writing')));
+  for(const d of DECKS.filter(d=>d.topic)){
+    const cs=CARDS.filter(d.test); if(!cs.length) continue; const tk=cs[0].t;
+    const recall=Math.round(100*cs.filter(c=>status(c)==='k').length/cs.length), lt=Math.round(100*cs.filter(mastered).length/cs.length);
+    let mo=0,mn=0,wo=0,wn=0;
+    if(biz) for(const r of qIndex()){ if(r.topic!==tk) continue; const x=rec(r.p,r.it,r.part); if(!x||typeof x.m!=='number') continue; if(r.type==='mc'){ mn++; mo+=x.m>0?1:0; } else { wn+=r.max; wo+=x.m; } }
+    t.append(el('tr',{}, el('td',{class:'tp'}, el('button',{onclick:()=>{ S.deck=d.id; goMode('learn'); },title:'Learn this topic'}, d.name)),
+      mCell(recall,'Cards you got right last time'), mCell(lt,'Cards right on 3 or more separate days'),
+      mCell(mn?Math.round(100*mo/mn):null, biz?(mn?`${mo} of ${mn} real HSC multiple-choice questions right`:'No HSC multiple choice answered yet'):'Past papers for this subject are coming'),
+      mCell(wn?Math.round(100*wo/wn):null, biz?(wn?`${wo} of ${wn} marks on written answers`:'No written answers marked yet'):'Past papers for this subject are coming')));
+  }
+  return el('div',{}, t, el('p',{class:'mlegend'}, 'Recall: cards you got right last time. Long-term: right on 3 or more separate days. ', biz?'Applying: real HSC multiple choice. Exam writing: your marked written answers, as a share of the marks. Tap a topic to learn it.':'Applying and Exam writing fill in once this subject has its past papers. Tap a topic to learn it.'));
+}
+function startRewrite(p,it,part){
+  const k=rkey(p,it,part), r=S.papers[k]; if(!r) return;
+  const prev=(r.prev||[]).concat([{m:r.m, how:r.how, a:String(r.a||'').slice(0,4000), imp:(r.r&&r.r.improvements)||[]}]).slice(-3);
+  setRec(p,it,part,{prev, how:undefined, r:null}); delete S.papers[k].m; save(); prender();
+  setTimeout(()=>{ const b=document.querySelector('.rewritebox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50);
 }
 function sessMins(steps){ let m=0; for(const s of steps){ if(s.k==='card') m+=0.6; else if(s.k==='mc') m+=1.5; else { const r=itemRow(s.pid,s.iid); const pt=r&&r.it.parts.find(x=>x.p===s.part); m+=(pt?pt.marks:3)*2.5; } } return Math.max(5,Math.round(m)); }
 function sessLine(){ const l=S.lastSession; if(l&&l.d===today()) return `Done today: ${l.right}/${l.n} right. Another round is fine.`; const t=weakestTopic(); return `Due cards, then ${TOPIC_NAME[t]} (your weakest topic)`+(isBiz()?' with real HSC questions':''); }
@@ -4830,6 +4913,7 @@ function renderToday(){
       el('ul',{class:'plainlist'}, ...parts.map(x=>el('li',{},x))),
       el('div',{class:'row'}, el('span',{class:'small'},'Focus topic (weakest picked for you):'), seg(XTOPICS.slice(1), topic, val=>{ TS={topic:val, started:false}; render(); })),
       l&&l.d===today()?el('p',{class:'small'},`You did a session today already: ${l.right} of ${l.n} right. Another one is fine.`):null,
+      !diagDone()?el('p',{class:'small'}, 'New here? ', el('a',{href:'#',onclick:e=>{ e.preventDefault(); DG=null; goMode('diag'); }},'Take the 3-minute quick check'), ' first so the session targets your weakest topic.'):null,
       el('button',{class:'primary',disabled:steps.length?null:'',onclick:()=>{ TS.started=true; TS.i=0; TS.res=[]; TS.t0=Date.now(); TS.fresh={}; render(); }}, steps.length?'Start':'Nothing to do in this topic')));
     return;
   }
@@ -5232,7 +5316,8 @@ function selfMarkBox(p,it,part){
 function resultBox(p,it,part){
   const unit=part||it; const max=part?part.marks:it.marks; const r=rec(p,it,part); if(!r||typeof r.m!=='number') return null;
   const pct=r.m/max; const box=el('div',{class:'markbox'+(pct>=0.8?' top':pct>=0.5?' mid':' low')});
-  box.append(el('div',{class:'row between'}, el('span',{class:'mk'}, `${r.m} / ${max}`), el('span',{class:'small'}, r.how==='ai'?'AI estimate against the official criteria (not an official result)':r.how==='self'?'Self-marked':'Auto-marked'), el('button',{class:'ghost',onclick:()=>{ setRec(p,it,part,{m:undefined,how:undefined,r:null}); delete S.papers[rkey(p,it,part)].m; save(); prender(); }},'Try again')));
+  box.append(el('div',{class:'row between'}, el('span',{class:'mk'}, `${r.m} / ${max}`), el('span',{class:'small'}, r.how==='ai'?'AI estimate against the official criteria (not an official result)':r.how==='self'?'Self-marked':'Auto-marked'), el('button',{class:r.m<max?'primary':'ghost',onclick:()=>startRewrite(p,it,part)}, r.m<max?'Rewrite it for more marks':'Try again')));
+  if(r.prev&&r.prev.length){ const first=r.prev[0].m, gain=r.m-(typeof first==='number'?first:r.m); box.append(el('div',{class:'attempts'}, 'Your attempts: '+r.prev.map(x=>typeof x.m==='number'?x.m:'?').concat([r.m]).join(' → ')+' out of '+max+(gain>0?`  (+${gain} from rewriting)`:''))); }
   if(r.r){ if(r.r.band) box.append(el('div',{class:'small'},'Criteria row: ', el('b',{},r.r.band))); if(r.r.verdict) box.append(el('p',{class:'verdict'}, r.r.verdict));
     if(r.r.strengths&&r.r.strengths.length) box.append(el('div',{}, el('b',{},'What worked'), ...r.r.strengths.map(s=>el('p',{class:'bul good'},'✓ '+s))));
     if(r.r.improvements&&r.r.improvements.length) box.append(el('div',{}, el('b',{},'To get more marks'), ...r.r.improvements.map(s=>el('p',{class:'bul warn'},'→ '+s))));
@@ -5253,10 +5338,11 @@ function typedUnit(p,it,part){
   if(SELF[key]){ box.append(el('div',{class:'yourtext'}, el('div',{class:'lab'},'Your answer'), paras(r.a||''))); box.append(selfMarkBox(p,it,part)); return box; }
   if(marked){ box.append(el('div',{class:'yourtext'}, el('div',{class:'lab'},'Your answer'), paras(r.a||''))); box.append(resultBox(p,it,part)); return box; }
   const long=it.type==='long';
+  if(r.prev&&r.prev.length){ const last=r.prev[r.prev.length-1]; box.append(el('div',{class:'rewritebox'}, el('b',{},`Rewrite · last time ${typeof last.m==='number'?last.m:'?'} / ${max}`), last.imp&&last.imp.length? el('div',{}, el('p',{class:'small'},'Fix these, then mark it again:'), ...last.imp.map(s=>el('p',{class:'bul warn'},'→ '+s))) : el('p',{class:'small'},'Check the criteria and the sample answer, improve your answer below, then mark it again.'))); }
   const ta=el('textarea',{class:long?'long':'', placeholder: long?(it.kind==='report'?'Write your business report here: executive summary, headings for each dot point, recommendation. Aim for 600 to 800 words.':'Write your essay here: introduction with a judgement, PEEL paragraphs with case study evidence, conclusion. Aim for 600 to 800 words.'):'Type your answer here. Use the directive verb, the business in the stimulus and the key terms.', 'aria-label':'Your answer', oninput:e=>{ clearTimeout(ta._t); ta._t=setTimeout(()=>{ S.papers[key]=Object.assign(S.papers[key]||{},{a:e.target.value.slice(0,12000),t:Date.now()}); save(); },700); const w=box.querySelector('.wc'); if(w) w.textContent=wc(e.target.value)+' words'; }, onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); box.querySelector('.markbtn').click(); } }});
   ta.value=r.a||'';
   box.append(ta, el('div',{class:'wc'}, wc(ta.value)+' words'+(long?' · aim for 600 to 800':max>=5?' · a solid paragraph':max>=3?' · 3 to 5 sentences':' · 1 to 2 sentences')));
-  const btn=el('button',{class:'primary markbtn',onclick:()=>markTyped(p,it,part,ta,btn)}, part?`Mark part (${part.p})`:'Mark my response');
+  const btn=el('button',{class:'primary markbtn',onclick:()=>markTyped(p,it,part,ta,btn)}, (r.prev&&r.prev.length)?'Mark my rewrite':part?`Mark part (${part.p})`:'Mark my response');
   box.append(el('div',{class:'row'}, btn, el('button',{class:'ghost',onclick:()=>{ setRec(p,it,part,{a:ta.value.slice(0,12000)}); openSelfMark(p,it,part); }},'Self-mark instead')));
   box.append(peekBox(part||it,it));
   return box;
@@ -5428,7 +5514,8 @@ function renderHomeSubject(){
   const sd=SUBJ_DATA[SUBJ.id]; if(sd&&sd.note) hero.append(el('p',{class:'subjnote'}, sd.note));
   hero.append(settingsBox()); v.append(hero);
   const acts=el('div',{class:'actions'});
-  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }, 'primary'));
+  if(!diagDone()) acts.append(action('Start with a quick check', diagLine(), ()=>{ DG=null; goMode('diag'); }, 'primary'));
+  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }, diagDone()?'primary':''));
   const dueN=dueCards().length;
   acts.append(action('Due for review', dueN?`${dueN} card${dueN===1?'':'s'} due today`:'Nothing due yet. Cards come back 1, 3 then 7 days after you get them right.', ()=>{ S.filter=dueN?'due':'all'; S.deck='all'; goMode('flash'); }));
   acts.append(action('Flashcards', learning.length?`${learning.length} cards still learning`:unseen.length?`${unseen.length} cards not seen yet`:`All ${CARDS.length} cards seen`, ()=>{ S.filter=learning.length?'l':'all'; S.deck='all'; goMode('flash'); }));
@@ -5442,7 +5529,7 @@ function renderHomeSubject(){
   acts.append(action('Key words', 'The 35 NESA directive verbs every exam question uses', ()=>{ S.deck='keywords'; goMode('flash'); }));
   v.append(el('div',{class:'panel'}, el('h2',{},'Jump in'), acts));
   const prog=el('div',{class:'panel'}, el('h2',{},'Where you stand'));
-  for(const r of rows) prog.append(deckBar(r));
+  prog.append(masteryMap());
   prog.append(retentionRow());
   prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
   v.append(prog);
@@ -5456,14 +5543,15 @@ function renderHome(){
   const v=$('#view'); v.innerHTML='';
   const EXAM_AT=examAt(); const now=new Date(); const days=calDays(EXAM_AT);
   const learning=CARDS.filter(c=>status(c)==='l'), unseen=CARDS.filter(c=>status(c)==='u');
-  const hero=el('div',{class:'panel hero'}, el('div',{class:'lab'}, `${S.cfg.exam} · ${fmtDay(EXAM_AT)}`),
-    el('h2',{}, days>1?`${days} days to go`:days===1?'Exam is tomorrow':days===0?'Exam day. You have got this.':'Exam done. Well played.'),
-    el('p',{class:'small'}, days>=0?examLine():'Keep the set for revision whenever you like, and set your next exam date in Settings.'));
+  const hero=el('div',{class:'panel hero'}, el('div',{class:'lab'}, days>=0?`${S.cfg.exam} · ${fmtDay(EXAM_AT)}`:SUBJ.name),
+    el('h2',{}, days>1?`${days} days to go`:days===1?'Exam is tomorrow':days===0?'Exam day. You have got this.':`${CARDS.length} cards to master`),
+    el('p',{class:'small'}, days>=0?examLine():'Add your exam date in Settings below to get a countdown and a daily plan.'));
   hero.append(settingsBox());
   v.append(hero);
   const acts=el('div',{class:'actions'});
   const lastPaper=S.pp&&S.pp.paper&&PBY[S.pp.paper];
-  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }, 'primary'));
+  if(!diagDone()) acts.append(action('Start with a quick check', diagLine(), ()=>{ DG=null; goMode('diag'); }, 'primary'));
+  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }, diagDone()?'primary':''));
   const mqN=mistakeQs().length, mcN=mistakeCards().length;
   acts.append(action('Mistake notebook', mqN+mcN?`${mqN} exam question${mqN===1?'':'s'} and ${mcN} card${mcN===1?'':'s'} to fix`:'Empty so far. Anything you get wrong lands here.', ()=>goMode('mistakes')));
   acts.append(action('Exam-style test', 'Real HSC questions by topic, marked like the exam', ()=>{ S.testKind='exam'; XT=null; goMode('test'); }));
@@ -5479,7 +5567,7 @@ function renderHome(){
   acts.append(action('Exam guide', 'Exam structure, what each band looks like, the 35 NESA key words', ()=>goMode('guide')));
   v.append(el('div',{class:'panel'}, el('h2',{},'Jump in'), acts));
   const prog=el('div',{class:'panel'}, el('h2',{},'Where you stand'));
-  for(const r of topicRows()) prog.append(deckBar(r));
+  prog.append(masteryMap());
   let pq=0,pg=0,pm=0; for(const p of PAPERS){ const st=paperStatus(p); pq+=pItems(p).filter(x=>itemStatus(p,x.it).done).length; pg+=st.got; pm+=st.max; }
   prog.append(el('div',{class:'deckrow'}, el('span',{},'Past papers'), el('span',{class:'small'}, pq?`${pq} questions marked · ${pg}/${pm} marks (${Math.round(100*pg/Math.max(1,pm))}%)`:'No questions marked yet'), el('span',{})));
   prog.append(retentionRow());
@@ -5563,7 +5651,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ if(!isBiz()&&['ratio','papers','guide'].includes(S.mode)) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes})[S.mode](); }
+function render(){ if(!isBiz()&&['ratio','papers','guide'].includes(S.mode)) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
@@ -5576,6 +5664,8 @@ document.addEventListener('keydown',e=>{
     else if(L&&L.checked){ if(e.key==='ArrowLeft'||e.key==='1'){ e.preventDefault(); learnTypedResult(false);} else if(e.key==='ArrowRight'||e.key==='2'||e.key==='Enter'){ e.preventDefault(); learnTypedResult(true);} }
   } else if(S.mode==='test'&&(S.testKind||'exam')!=='cards'){
     if(/^[1-4]$/.test(e.key)){ const o=document.querySelectorAll('.opt:not(:disabled)')[Number(e.key)-1]; if(o){ e.preventDefault(); o.click(); } }
+  } else if(S.mode==='diag'){
+    if(DG&&!DG.done){ if(DG.pick==null&&/^[1-4]$/.test(e.key)){ e.preventDefault(); diagPick(Number(e.key)-1); } else if(DG.pick!=null&&e.key==='Enter'){ e.preventDefault(); diagNext(); } }
   } else if(S.mode==='today'){
     if(TS&&TS.started&&!TS.done){ const st=TS.steps[TS.i];
       if(st&&st.k==='card'){ if(!TS.shown&&(e.key===' '||e.key==='Enter')){ e.preventDefault(); tsShow(); } else if(TS.shown&&(e.key==='ArrowLeft'||e.key==='1')){ e.preventDefault(); tsCard(false); } else if(TS.shown&&(e.key==='ArrowRight'||e.key==='2')){ e.preventDefault(); tsCard(true); } }
@@ -5935,10 +6025,11 @@ function renderEditSet(){
 // ---------- account sync (claude.ai sign-in via the db + user capabilities) ----------
 let DBH=null, UID=null, USERH=null, ME=null;
 const sync={state:'local', timer:null, chain:Promise.resolve(), lastHash:'', lastScore:''};
-function progressDoc(){ if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg; return {v:5, idv:2, subj:S.subj||'business', cfgBy:S.cfgBy||{}, rv:S.rv||{}, cfg:(S.cfgBy&&S.cfgBy.business)||S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
+function progressDoc(){ if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg; return {v:5, idv:2, subj:S.subj||'business', cfgBy:S.cfgBy||{}, diag:S.diag||{}, rv:S.rv||{}, cfg:(S.cfgBy&&S.cfgBy.business)||S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
 function mergeRemote(r){
   if(!r||typeof r!=='object') return;
   migrateIds(r);
+  if(r.diag&&typeof r.diag==='object'){ if(!S.diag||typeof S.diag!=='object') S.diag={}; for(const [k,x] of Object.entries(r.diag)){ if(x&&x.r&&(!S.diag[k]||String(x.d)>String(S.diag[k].d))) S.diag[k]=x; } }
   const remoteNewer=(r.total||0)>(S.total||0);
   const base=remoteNewer?r:S, other=remoteNewer?S:r;
   const p=Object.assign({}, other.p||{}, base.p||{});
@@ -5967,7 +6058,7 @@ function mergeRemote(r){
 function schedulePush(){ if(!DBH||!UID||sync.state!=='synced') return; clearTimeout(sync.timer); sync.timer=setTimeout(pushProgress, 1500); }
 function pushProgress(){
   if(!DBH||!UID||sync.state!=='synced') return;
-  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.cfgBy,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent]);
+  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.cfgBy,doc.diag,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent]);
   if(h===sync.lastHash) return; sync.lastHash=h;
   sync.chain=sync.chain.then(()=>DBH.doc('data/users/'+UID+'/progress').set(doc)).then(()=>{ pushScore(false); }).catch(e=>{ if(e&&e.code==='invalid_argument'){ sync.state='readonly'; renderAccount(); } });
 }
