@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="HSC Business Studies study set: 644 flashcards, learn and test modes, an exam guide, ratio drill, and every HSC past paper 2015 to 2025 marked against the official criteria.">
+<meta name="description" content="Band Six: free HSC study sets with flashcards, learn, test and match modes and spaced reviews, for Business Studies, Biology, Maths and more. Business Studies also has every HSC paper 2015 to 2025 marked against the official criteria.">
 <meta name="theme-color" content="#1F6F8B">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <script id="supabasejs" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" crossorigin="anonymous" defer></script>
@@ -338,13 +338,24 @@ button.danger{border-color:var(--warn);color:var(--warn)}
 .sesslist{display:grid;gap:.3rem} .sesslist .rowx{display:grid;grid-template-columns:1fr auto auto auto auto;gap:.6rem;align-items:center;padding:.4rem .6rem;border-radius:10px;background:var(--surface-2);font-size:.92rem} .sesslist .sub{color:var(--muted)}
 @media (max-width:640px){.sesslist .rowx{grid-template-columns:1fr auto auto} .sesslist .sub{display:none} .readytable .deckrow{grid-template-columns:1fr auto} .readytable .deckrow .small{grid-column:1/-1}}
 .small.err{color:#B42318}
+.subjbtn{min-height:40px;padding:.3rem .8rem;border-radius:999px;font-weight:700;background:var(--accent-soft);border:2px solid var(--accent);color:var(--ink);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+dialog#subjdlg{border:2px solid var(--border);border-radius:18px;background:var(--surface);color:var(--ink);padding:1.1rem 1.2rem;width:min(40rem,calc(100vw - 2rem));max-height:calc(100dvh - 2rem)}
+dialog#subjdlg::backdrop{background:rgba(0,0,0,.45)}
+.dlghead{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.subjgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));gap:.55rem;margin-top:.6rem}
+.subjgrid button{display:grid;gap:.15rem;text-align:left;min-height:64px;padding:.6rem .8rem;border-radius:14px;background:var(--surface-2);border:2px solid transparent}
+.subjgrid button[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.subjgrid button b{font-size:1rem} .subjgrid button span{font-size:.85rem;color:var(--muted)}
+.subjgrid button:disabled{opacity:.55;cursor:default}
+body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{visibility:hidden}
+.subjnote{font-size:.9rem;color:var(--muted)}
 </style>
 
 <header class="top">
   <div class="wrap">
     <div class="titlebar">
       <h1><a href="index.html" class="homelink">Band Six</a> <span class="sub">Study set</span></h1>
-      <span class="exam" id="examline">Exam Mon 26 Oct</span>
+      <button class="subjbtn" id="subjbtn" aria-haspopup="dialog" aria-label="Change subject"><span id="subjname">Business Studies</span> <span aria-hidden="true">▾</span></button>
     </div>
     <nav class="mainnav" id="mainnav" aria-label="Sections">
       <button data-section="home">Home</button>
@@ -354,7 +365,7 @@ button.danger{border-color:var(--warn);color:var(--warn)}
       <button data-section="guide">Exam guide</button>
       <button data-section="progress">Progress</button>
       <button data-section="library">Library</button>
-      <a class="navlink" href="resources.html">Resources</a>
+      <a class="navlink" id="reslink" href="resources.html">Resources</a>
     </nav>
     <div class="subbar" id="subbar">
       <div class="tabs" role="tablist" aria-label="Study mode">
@@ -377,6 +388,7 @@ button.danger{border-color:var(--warn);color:var(--warn)}
   <footer id="foot">Keyboard: <kbd>Space</kbd> flip · <kbd>←</kbd> still learning · <kbd>→</kbd> got it · <kbd>1</kbd>–<kbd>4</kbd> pick an answer · <kbd>Enter</kbd> next · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> check or mark a typed answer · <kbd>S</kbd> star a card.</footer>
 </div></main>
 <canvas id="confetti" hidden></canvas>
+<dialog id="subjdlg" aria-labelledby="subjdlgh"><div class="dlghead"><h2 id="subjdlgh">Choose a subject</h2><button class="ghost" id="subjclose" aria-label="Close">✕</button></div><p class="small">Your progress, streak and XP are kept for every subject. Switch whenever you like.</p><div class="subjgrid" id="subjgrid"></div></dialog>
 
 <script>
 const CARDS = [
@@ -4278,8 +4290,19 @@ for(const [k,v] of Object.entries({exam:'HSC Business Studies', examAt:'2026-10-
 for(const [id,n] of Object.entries(S.m||{})){ if(n>=3&&!S.rv[id]&&S.p[id]==='k'){ const d=S.lastDay||today(); S.rv[id]={n:Math.min(n,3), iv:3, due:dueDay(d,3), days:[d], last:d, h:[]}; } }
 // persist the migrated shape straight away so the id mapping is never applied twice
 try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
+// ---------- subjects ----------
+const SUBJECTS=[{"id": "business", "name": "Business Studies", "short": "Business", "icon": "💼", "n": 644}, {"id": "english", "name": "English Standard and Advanced", "short": "English", "icon": "📖", "soon": true}, {"id": "maths-std2", "name": "Mathematics Standard 2", "short": "Maths Std 2", "icon": "📐", "file": "subjects/maths-std2.json", "n": 207, "v": "37d26273"}, {"id": "maths-adv", "name": "Mathematics Advanced", "short": "Maths Adv", "icon": "📈", "soon": true}, {"id": "biology", "name": "Biology", "short": "Biology", "icon": "🧬", "file": "subjects/biology.json", "n": 603, "v": "4ebf3283"}, {"id": "chemistry", "name": "Chemistry", "short": "Chemistry", "icon": "⚗️", "soon": true}, {"id": "physics", "name": "Physics", "short": "Physics", "icon": "🔭", "soon": true}, {"id": "modern-history", "name": "Modern History", "short": "Modern", "icon": "🏛️", "soon": true}, {"id": "ancient-history", "name": "Ancient History", "short": "Ancient", "icon": "🏺", "soon": true}, {"id": "legal", "name": "Legal Studies", "short": "Legal", "icon": "⚖️", "soon": true}];
+const SUBJ_BY=Object.fromEntries(SUBJECTS.map(s=>[s.id,s]));
+const SUBJ_DATA={};
+let SUBJ=SUBJ_BY.business;
+function isBiz(){ return SUBJ.id==='business'; }
+// settings (exam date, length, provisions) are kept per subject; S.cfg is the active subject's
+if(!S.cfgBy||typeof S.cfgBy!=='object'||Array.isArray(S.cfgBy)) S.cfgBy={business:S.cfg};
+if(!S.cfgBy.business) S.cfgBy.business=S.cfg;
+if(!S.subj||!SUBJ_BY[S.subj]||SUBJ_BY[S.subj].soon) S.subj='business';
+function defaultCfg(s){ const b=S.cfgBy.business||{}; return {exam:'HSC '+s.name, examAt:'', examMins:180, readMins:5, extraPer30:b.extraPer30||0, breakPer30:b.breakPer30||0, minsPerDay:b.minsPerDay||45}; }
 let SAVE_ERR=false;
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); if(SAVE_ERR){ SAVE_ERR=false; try{ renderAccount(); }catch(_){ } } }catch(e){ if(!SAVE_ERR){ SAVE_ERR=true; toast('Could not save in this browser (private window or storage full). Progress will be lost when you close the tab.'); try{ renderAccount(); }catch(_){ } } } schedulePush(); }
+function save(){ if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg; try{ localStorage.setItem(KEY, JSON.stringify(S)); if(SAVE_ERR){ SAVE_ERR=false; try{ renderAccount(); }catch(_){ } } }catch(e){ if(!SAVE_ERR){ SAVE_ERR=true; toast('Could not save in this browser (private window or storage full). Progress will be lost when you close the tab.'); try{ renderAccount(); }catch(_){ } } } schedulePush(); }
 function status(c){ return S.p[c.id]||'u'; }
 function rvOf(c){ return S.rv&&S.rv[c.id]; }
 function mastered(c){ const r=rvOf(c); return status(c)==='k' && !!r && (r.days||[]).length>=3 && (r.iv||0)>=7; }
@@ -4382,6 +4405,9 @@ function goMode(m){ S.mode=m; if(SECTION_OF[m]==='study') S.lastStudy=m; save();
 function renderDecks(){
   const sec=SECTION_OF[S.mode]||'home';
   document.querySelectorAll('#mainnav button').forEach(b=>{ b.setAttribute('aria-current', b.dataset.section===sec?'page':'false'); b.onclick=()=>goMode(b.dataset.section==='study'?(S.lastStudy||'flash'):SECTION_DEFAULT[b.dataset.section]); });
+  for(const b of document.querySelectorAll('#mainnav button')){ if(['practice','papers','guide'].includes(b.dataset.section)) b.hidden=!isBiz(); }
+  { const rl=$('#reslink'); if(rl) rl.style.display=isBiz()?'':'none'; }
+  $('#subjbtn').onclick=openSubjects;
   $('#subbar').hidden=(sec!=='study');
   const box=$('#decks'); box.innerHTML='';
   for(const d of decks()){
@@ -4441,7 +4467,7 @@ function renderFlash(){
   if(!F.list.length){ v.append(el('div',{class:'empty'}, S.filter==='l'?'Nothing marked “still learning” in this deck. Nice.':S.filter==='due'?'Nothing due for review in this deck right now. Cards come back 1, 3 then 7 days after you get them right.':S.filter==='star'?'No starred cards here yet. Press ☆ on a card (or S) to star it.':S.filter==='fade'?'Nothing fading: every card you have seen here is still strong.':S.filter==='k'?'Nothing marked “got it” in this deck yet.':'Every card in this deck has been seen. Switch Study to All to go round again.')); return; }
   const c=F.list[F.i]; const st=status(c); const ms=mastered(c);
   const card=el('div',{class:'card'+(F.flipped?' flipped':'')+(ms?' mastered':st==='k'?' known':st==='l'?' learning':''),tabindex:'0',role:'button','aria-label':'Flip card',onclick:flip,onkeydown:e=>{ if(e.key==='Enter'){e.preventDefault();flip();} }},
-    el('div',{class:'lab'}, el('span',{}, F.flipped?'Answer':'Question'), el('span',{class:'deck'}, ms?el('span',{class:'badge'},'Mastered'):c.t, ' ', starBtn(c))),
+    el('div',{class:'lab'}, el('span',{}, F.flipped?'Answer':'Question'), el('span',{class:'deck'}, ms?el('span',{class:'badge'},'Mastered'):topicLabel(c), ' ', starBtn(c))),
     el('div',{class:'txt'+(F.flipped?' ans':'')}, F.flipped?c.b:c.f),
     el('div',{class:'hint'}, F.flipped?'Tap to see the question again':'Tap or press Space to show the answer'));
   v.append(card);
@@ -4561,8 +4587,9 @@ function markTest(ok){ const c=T.q[T.i]; if(ok)T.right++; else T.missed.push(c);
 // ---------- shared: real exam questions by topic ----------
 const TOPIC_NAME={Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'Human resources',Other:'General',all:'All topics'};
 const XTOPICS=[['all','All topics'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources']];
-function deckTopic(){ return ({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR',ratios:'Finance'})[S.deck]||'all'; }
+function deckTopic(){ if(!isBiz()) return TOPIC_ORDER.includes(S.deck)?S.deck:'all'; return ({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR',ratios:'Finance'})[S.deck]||'all'; }
 function itemIndex(){
+  if(!isBiz()) return [];
   if(itemIndex.cache) return itemIndex.cache; const rows=[];
   for(const p of PAPERS){ for(const {s,it} of pItems(p)){
     if(it.type!=='mc'&&it.type!=='sa') continue; let topic;
@@ -4593,8 +4620,8 @@ function stimFor(card,it){ if(it.type==='mc'){ return; } if(it.stim) card.append
 
 // ---------- Test: real HSC questions (default) or flashcard questions ----------
 let XT=null, XTIV=null;
-function testKindSeg(){ return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
-function renderTest(){ if((S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
+function testKindSeg(){ if(!isBiz()) return null; return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
+function renderTest(){ if(!isBiz()||(S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
 function xtRows(){ return XT.list.map(x=>itemRow(x.pid,x.iid)).filter(Boolean); }
 function xtNew(rows){ XT={list:rows.map(r=>({pid:r.p.id,iid:r.it.id})), i:0, started:true, done:false, t0:Date.now(), t1:null, fresh:{}}; }
 function xtStart(){
@@ -4696,18 +4723,19 @@ function missRow(r, part, rc){
 let MF={topic:'all', kind:'all'};
 function mistakeQs(){ const out=[]; for(const r of qIndex()){ const rc=rec(r.p,r.it,r.part); if(!rc||typeof rc.m!=='number'||rc.m/r.max>=0.6) continue; const ir=itemRow(r.p.id,r.it.id); out.push({r:Object.assign({}, r, {topic: r.topic==='Other'&&ir?ir.topic:r.topic}), part:r.part, rc}); } return out.sort((a,b)=>(b.rc.t||0)-(a.rc.t||0)); }
 function mistakeCards(){ return allCards().filter(c=>status(c)==='l'); }
+function topicLabel(c){ return isBiz()||c.sid?c.t:(TOPIC_NAME[c.t]||c.t); }
 function cardTopic(c){ return c.t==='Key words'?'Other':c.t; }
 function renderMistakes(){
   const v=$('#view'); v.innerHTML='';
   const qs=mistakeQs().filter(m=>MF.topic==='all'||m.r.topic===MF.topic), cs=mistakeCards().filter(c=>MF.topic==='all'||cardTopic(c)===MF.topic);
   const head=el('div',{class:'panel'}, el('h2',{},'Mistake notebook'),
-    el('p',{},'Everything you have got wrong, in one place: exam questions where you lost more than 40% of the marks, and flashcards you marked as missed. Get one right again and it drops out of the notebook.'),
+    el('p',{}, isBiz()?'Everything you have got wrong, in one place: exam questions where you lost more than 40% of the marks, and flashcards you marked as missed. Get one right again and it drops out of the notebook.':'Every flashcard you marked as missed, in one place. Get one right again and it drops out of the notebook.'),
     el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(XTOPICS, MF.topic, val=>{ MF.topic=val; renderMistakes(); })),
     el('div',{class:'row'}, el('span',{class:'small'},'Show:'), seg([['all','Everything'],['exam',`Exam questions (${qs.length})`],['cards',`Flashcards (${cs.length})`]], MF.kind, val=>{ MF.kind=val; renderMistakes(); })));
   const redo=[...new Map(qs.filter(m=>m.r.type!=='long').map(m=>[m.r.p.id+'|'+m.r.it.id, itemRow(m.r.p.id,m.r.it.id)])).values()].filter(Boolean);
   head.append(el('div',{class:'row'},
     redo.length?el('button',{class:'primary',onclick:()=>{ S.testKind='exam'; xtNew(redo); goMode('test'); }}, `Redo ${redo.length} exam question${redo.length===1?'':'s'}`):null,
-    cs.length?el('button',{class:redo.length?'':'primary',onclick:()=>{ S.deck=({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR'})[MF.topic]||'all'; S.filter='l'; goMode('flash'); }}, `Study ${cs.length} flashcard${cs.length===1?'':'s'}`):null));
+    cs.length?el('button',{class:redo.length?'':'primary',onclick:()=>{ S.deck=isBiz()?(({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR'})[MF.topic]||'all'):(TOPIC_ORDER.includes(MF.topic)?MF.topic:'all'); S.filter='l'; goMode('flash'); }}, `Study ${cs.length} flashcard${cs.length===1?'':'s'}`):null));
   v.append(head);
   if(!qs.length&&!cs.length){ v.append(el('div',{class:'panel'}, el('p',{}, MF.topic==='all'?'Nothing here yet. Wrong answers from tests, past papers, today’s session and flashcards land here automatically.':'Nothing to fix in this topic right now.'))); return; }
   if(MF.kind!=='cards'&&qs.length){ const shown=qs.slice(0,40); v.append(el('div',{class:'panel'}, el('h2',{},'Exam questions'), el('div',{class:'mlist'}, ...shown.map(m=>{ const row=missRow(m.r,m.part,m.rc); row.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=m.r.p.id; S.pp.item=m.r.it.id; goMode('papers'); }},'Open in the paper ›'))); return row; })), qs.length>40?el('p',{class:'small'},`Showing the latest 40 of ${qs.length}.`):null)); }
@@ -4717,6 +4745,54 @@ function renderMistakes(){
 // ---------- today's session ----------
 let TS=null;
 const TOPIC_ORDER=['Finance','Operations','Marketing','HR'];
+let BIZ_SAVED=null;
+function bizSnapshot(){ if(BIZ_SAVED) return; DECKS.forEach((d,i)=>{ if(i>=1&&i<=4) d.topic=true; }); BIZ_SAVED={cards:CARDS.slice(), decks:DECKS.slice(), order:TOPIC_ORDER.slice(), names:Object.assign({},TOPIC_NAME), xt:XTOPICS.map(x=>x.slice())}; }
+function subjectDecks(data){ const out=[{id:'all', name:'All', test:c=>true}]; for(const [id,name] of data.topics) out.push({id, name:name.replace(/^Module (\d+): /,'M$1 · '), full:name, topic:true, test:c=>c.t===id}); out.push({id:'keywords', name:'★ Key words', focus:true, test:c=>c.t==='Key words'}); return out; }
+function applySubject(id){
+  bizSnapshot();
+  const s=SUBJ_BY[id]||SUBJ_BY.business; const data=SUBJ_DATA[s.id];
+  if(s.id!=='business'&&!data) return false;
+  if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg;
+  SUBJ=s; S.subj=s.id;
+  let cards, dks, topics;
+  if(s.id==='business'){ cards=BIZ_SAVED.cards; dks=BIZ_SAVED.decks; topics=null; }
+  else {
+    const kw=BIZ_SAVED.cards.filter(c=>c.t==='Key words');
+    cards=data.cards.map(c=>{ if(!c.oid) c.oid=c.id; return c; }).concat(kw); dks=subjectDecks(data); topics=data.topics;
+  }
+  CARDS.splice(0,CARDS.length,...cards); DECKS.splice(0,DECKS.length,...dks);
+  for(const k of Object.keys(BYID)) delete BYID[k]; for(const c of CARDS) BYID[c.id]=c;
+  for(const k of Object.keys(TOPIC_NAME)) delete TOPIC_NAME[k];
+  if(topics){ TOPIC_ORDER.splice(0,TOPIC_ORDER.length,...topics.map(t=>t[0])); Object.assign(TOPIC_NAME, Object.fromEntries(topics), {Other:'General','Key words':'Key words',all:'All topics'}); XTOPICS.splice(0,XTOPICS.length,['all','All topics'],...topics.map(t=>[t[0],t[1].replace(/^Module (\d+): /,'M$1 · ')])); }
+  else { TOPIC_ORDER.splice(0,TOPIC_ORDER.length,...BIZ_SAVED.order); Object.assign(TOPIC_NAME, BIZ_SAVED.names); XTOPICS.splice(0,XTOPICS.length,...BIZ_SAVED.xt.map(x=>x.slice())); }
+  S.cfg=S.cfgBy[s.id]||(S.cfgBy[s.id]=defaultCfg(s));
+  if(!decks().some(d=>d.id===S.deck)) S.deck='all';
+  if(!isBiz()&&['ratio','papers','guide'].includes(S.mode)) S.mode='home';
+  if(MF) MF.topic='all';
+  F={list:[], i:0, flipped:false, key:'', typed:''}; L=null; T=null; M=null; TS=null; XT=null;
+  invalidateCards();
+  const n=$('#subjname'); if(n) n.textContent=s.name;
+  document.title=(isBiz()?'Business Studies':s.name)+' · Band Six';
+  return true;
+}
+async function loadSubject(id){
+  const s=SUBJ_BY[id]; if(!s||s.soon) return false; if(s.id==='business'||SUBJ_DATA[s.id]) return true;
+  const r=await fetch(s.file+'?v='+(s.v||'1')); if(!r.ok) throw new Error('HTTP '+r.status);
+  const d=await r.json(); SUBJ_DATA[s.id]=d; return true;
+}
+async function switchSubject(id){
+  if(id===SUBJ.id){ closeSubjects(); return; }
+  document.body.classList.add('subj-loading');
+  try{ await loadSubject(id); applySubject(id); save(); closeSubjects(); render(); window.scrollTo({top:0}); announce(SUBJ.name+' loaded'); }
+  catch(e){ toast('Could not load '+(SUBJ_BY[id]?SUBJ_BY[id].name:'that subject')+'. Check your connection and try again.'); }
+  finally{ document.body.classList.remove('subj-loading'); }
+}
+function openSubjects(){
+  const g=$('#subjgrid'); g.innerHTML='';
+  for(const s of SUBJECTS){ g.append(el('button',{'aria-current':String(s.id===SUBJ.id),disabled:s.soon?'':null,onclick:()=>switchSubject(s.id)}, el('b',{},s.icon+' '+s.name), el('span',{}, s.soon?'Coming soon':`${s.n} cards`+(s.id==='business'?' · past papers · ratios':'')))); }
+  const d=$('#subjdlg'); if(d.showModal) d.showModal(); else d.setAttribute('open','');
+}
+function closeSubjects(){ const d=$('#subjdlg'); if(d&&d.open){ if(d.close) d.close(); else d.removeAttribute('open'); } }
 function topicStrength(t){
   const cs=CARDS.filter(c=>c.t===t); let seen=0, ok=0;
   for(const c of cs){ const r=rvOf(c); for(const h of ((r&&r.h)||[]).slice(-3)){ seen++; ok+=h[1]?1:0; } }
@@ -4735,7 +4811,7 @@ function buildSession(topic){
   return steps;
 }
 function sessMins(steps){ let m=0; for(const s of steps){ if(s.k==='card') m+=0.6; else if(s.k==='mc') m+=1.5; else { const r=itemRow(s.pid,s.iid); const pt=r&&r.it.parts.find(x=>x.p===s.part); m+=(pt?pt.marks:3)*2.5; } } return Math.max(5,Math.round(m)); }
-function sessLine(){ const l=S.lastSession; if(l&&l.d===today()) return `Done today: ${l.right}/${l.n} right. Another round is fine.`; const t=weakestTopic(); return `Due cards, then ${TOPIC_NAME[t]} (your weakest topic) with real HSC questions`; }
+function sessLine(){ const l=S.lastSession; if(l&&l.d===today()) return `Done today: ${l.right}/${l.n} right. Another round is fine.`; const t=weakestTopic(); return `Due cards, then ${TOPIC_NAME[t]} (your weakest topic)`+(isBiz()?' with real HSC questions':''); }
 function tsStep(){ return TS.steps[TS.i]; }
 function tsNext(){ const st=tsStep(); if(st&&(st.k==='mc'||st.k==='sa')){ const r=itemRow(st.pid,st.iid); const part=st.k==='sa'?r.it.parts.find(x=>x.p===st.part):null; const rc=rec(r.p,r.it,part); const max=part?part.marks:1; TS.res[TS.i]={k:st.k, ok:!!rc&&typeof rc.m==='number'&&rc.m/max>=0.6, m:rc&&typeof rc.m==='number'?rc.m:null, max}; }
   TS.i++; TS.shown=false; if(TS.i>=TS.steps.length) tsFinish(); render(); window.scrollTo({top:0}); }
@@ -5067,7 +5143,7 @@ function buildPrompt(p,it,part,text){
   const fb=it.fb||{}; const fbt=[...(fb.better||[]).map(x=>'Better responses: '+x), ...(fb.improve||[]).map(x=>'To improve: '+x), ...(fb.note||[]).map(x=>x)].join('\n');
   const long=it.type==='long';
   const paperName=p.src==='nesa'?`the ${p.year} NSW HSC Business Studies exam`:`${p.title} (a Riverview Year 12 Business Studies assessment, Operations topic)`;
-  return `You are an experienced NSW HSC Business Studies marker. Mark the student's response to a question from ${paperName} strictly against the official marking criteria, exactly as an HSC marker would: award marks only for what is actually written, do not be generous, and quote the criteria row the response fits. The student has dyslexia and ADHD, so write feedback in short plain sentences and never comment on spelling or handwriting.
+  return `You are an experienced NSW HSC Business Studies marker. Mark the student's response to a question from ${paperName} strictly against the official marking criteria, exactly as an HSC marker would: award marks only for what is actually written, do not be generous, and quote the criteria row the response fits. Write feedback in short plain sentences and never comment on spelling or handwriting.
 
 ${q}
 ${stim?'STIMULUS / CASE INFORMATION:\n'+stim+'\n':''}
@@ -5171,7 +5247,7 @@ function openItem(id){ S.pp.item=id; save(); prender(); window.scrollTo({top:0})
 const QVERB=/^(outline|explain|describe|discuss|analyse|evaluate|assess|identify|define|compare|distinguish|justify|recommend|propose|account for|examine|calculate|predict|interpret|summarise|clarify|classify|construct|contrast|demonstrate|extract|list|state|to what extent|how|why|what|which)\b/i;
 const TOPIC_WORDS={Operations:/operation|production|quality|supply chain|inventory|outsourc|performance objective|transformation|input|output|lean|technolog|global sourcing/g, Marketing:/marketing|brand|pric|promot|customer|segment|product life|distribution|place|advertis|sponsor|niche|mass market|e-marketing|global market/g, Finance:/financ|ratio|cash flow|profit|budget|debt|equity|liquidity|solvency|gearing|working capital|balance sheet|income statement|expense|revenue|capital|hedging|derivative|exchange rate/g, HR:/human resource|employ|staff|training|recruit|workplace|industrial|union|dispute|separation|remuneration|award|enterprise agreement|outsourcing of hr|work\/life|motivation|redundanc/g};
 function coarseTopic(raw,text){ const r=String(raw||'').toLowerCase(); if(/^operations/.test(r)) return 'Operations'; if(/^marketing/.test(r)) return 'Marketing'; if(/^finance/.test(r)) return 'Finance'; if(/^(human resources?|hr)/.test(r)) return 'HR'; const t=(r+' '+String(text||'')).toLowerCase(); let best='Other', bn=0; for(const [k,re] of Object.entries(TOPIC_WORDS)){ const n=(t.match(re)||[]).length; if(n>bn){ bn=n; best=k; } } return best; }
-function qIndex(){ if(qIndex.cache) return qIndex.cache; const rows=[]; for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const text=it.type==='mc'?it.stem:(u.part?u.part.text:it.text); const first=String(text||'').replace(/^[^A-Za-z]+/,''); const vm=first.match(QVERB); const verb=it.type==='mc'?'Multiple choice':(vm?vm[0].toLowerCase().replace(/^\w/,ch=>ch.toUpperCase()):'Other'); const raw=(u.part&&u.part.topic)||it.topic||''; rows.push({p,s,it,part:u.part,max:u.max,text:String(text||'').replace(/\s+/g,' ').slice(0,170),verb,topic:coarseTopic(raw,text),raw,type:it.type,year:p.year,src:p.src}); } } } return qIndex.cache=rows; }
+function qIndex(){ if(!isBiz()) return []; if(qIndex.cache) return qIndex.cache; const rows=[]; for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const text=it.type==='mc'?it.stem:(u.part?u.part.text:it.text); const first=String(text||'').replace(/^[^A-Za-z]+/,''); const vm=first.match(QVERB); const verb=it.type==='mc'?'Multiple choice':(vm?vm[0].toLowerCase().replace(/^\w/,ch=>ch.toUpperCase()):'Other'); const raw=(u.part&&u.part.topic)||it.topic||''; rows.push({p,s,it,part:u.part,max:u.max,text:String(text||'').replace(/\s+/g,' ').slice(0,170),verb,topic:coarseTopic(raw,text),raw,type:it.type,year:p.year,src:p.src}); } } } return qIndex.cache=rows; }
 let QF={q:'',topic:'all',year:'all',type:'all',verb:'all',status:'all',marks:'all'};
 function sel(opts,val,on){ const s=el('select',{class:'qsel',onchange:e=>on(e.target.value)}); for(const [v,l] of opts){ const o=el('option',{value:String(v)},l); if(String(v)===String(val)) o.selected=true; s.append(o); } return s; }
 function qMatches(r){ const q=QF.q.trim().toLowerCase(); if(q&&!(r.text+' '+r.raw+' '+r.p.title).toLowerCase().includes(q)) return false; if(QF.topic!=='all'&&r.topic!==QF.topic) return false; if(QF.year!=='all'&&String(r.year)!==QF.year) return false; if(QF.type!=='all'&&r.type!==QF.type) return false; if(QF.verb!=='all'&&r.verb!==QF.verb) return false; if(QF.marks!=='all'){ const m=r.max; if(QF.marks==='1'&&m!==1) return false; if(QF.marks==='2-3'&&(m<2||m>3)) return false; if(QF.marks==='4-6'&&(m<4||m>6)) return false; if(QF.marks==='7+'&&m<7) return false; } if(QF.status!=='all'){ const rc=rec(r.p,r.it,r.part); const done=!!rc&&typeof rc.m==='number'; if(QF.status==='new'&&done) return false; if(QF.status==='done'&&!done) return false; if(QF.status==='weak'&&!(done&&rc.m/r.max<0.6)) return false; } return true; }
@@ -5275,7 +5351,7 @@ function examLine(){ const t=examTiming(); let s=`Official: starts ${fmtTime(t.s
 function provLine(){ const t=examTiming(); if(!t.extra&&!t.breaks) return 'If you have NESA exam provisions (extra time or rest breaks), enter them in Settings on the Home page: the timings here and the timed runs under Past papers will then use them. Use the 5 minutes of reading time to read the Section III case and choose your Section IV question.'; return `Your settings (Home, then Settings): ${t.extra?t.extra+' minutes extra writing time ('+S.cfg.extraPer30+' per half hour)':''}${t.extra&&t.breaks?' and ':''}${t.breaks?'up to '+t.breaks+' minutes of rest breaks (the clock stops; each break at least 5 minutes)':''}. Start ${fmtTime(t.start)}, finish by ${t.extra?t.finExtra:t.finStd}${t.breaks?', or '+t.finAll+' if you take every break':''}. Use the 5 minutes of reading time to read the Section III case and choose your Section IV question.`; }
 function settingsBox(){
   const c=S.cfg; const d=el('details',{class:'cfgbox',id:'cfgbox'}, el('summary',{},'Settings: exam date, extra time, rest breaks, study time'));
-  d.append(el('p',{class:'small'},'These are your own settings and save with your progress. Official exam facts (length, sections, marks) are from NESA and live in the Exam guide.'));
+  d.append(el('p',{class:'small'}, isBiz()?'These are your own settings and save with your progress. Official exam facts (length, sections, marks) are from NESA and live in the Exam guide.':'These are your own settings for '+SUBJ.name+' and save with your progress. Each subject keeps its own exam date.'));
   const f=(label,input)=>el('label',{}, label, input);
   const iExam=el('input',{type:'text',value:c.exam,maxlength:'60'});
   const dt=String(c.examAt||'').split('T'); const iDate=el('input',{type:'date',value:dt[0]||''}); const iTime=el('input',{type:'time',value:dt[1]||'09:25'});
@@ -5283,7 +5359,7 @@ function settingsBox(){
   const iExtra=el('input',{type:'number',min:'0',max:'30',step:'1',value:String(c.extraPer30)}); const iBreak=el('input',{type:'number',min:'0',max:'30',step:'1',value:String(c.breakPer30)});
   const iMins=el('input',{type:'number',min:'10',max:'480',step:'5',value:String(c.minsPerDay)});
   d.append(el('div',{class:'cfgrid'}, f('Exam or assessment',iExam), f('Date',iDate), f('Start time',iTime), f('Length (minutes)',iLen), f('Reading time (minutes)',iRead), f('Extra time per half hour (NESA provision, 0 if none)',iExtra), f('Rest breaks per half hour (0 if none)',iBreak), f('Study minutes per day',iMins)));
-  d.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ const n=(x,lo,hi,def)=>{ const v=Number(x.value); return isFinite(v)&&x.value!==''?Math.max(lo,Math.min(hi,v)):def; }; S.cfg={exam:iExam.value.trim()||'My exam', examAt:(iDate.value||dt[0]||'2026-10-26')+'T'+(iTime.value||'09:25'), examMins:n(iLen,10,300,180), readMins:n(iRead,0,30,5), extraPer30:n(iExtra,0,30,0), breakPer30:n(iBreak,0,30,0), minsPerDay:n(iMins,10,480,45)}; if(!S.cfg.extraPer30&&!S.cfg.breakPer30) S.pp.prov=false; else if(S.pp.prov===false) S.pp.prov=true; save(); toast('Settings saved.'); render(); }},'Save settings')));
+  d.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ const n=(x,lo,hi,def)=>{ const v=Number(x.value); return isFinite(v)&&x.value!==''?Math.max(lo,Math.min(hi,v)):def; }; S.cfg={exam:iExam.value.trim()||'My exam', examAt:(iDate.value||dt[0])?(iDate.value||dt[0])+'T'+(iTime.value||'09:25'):(isBiz()?'2026-10-26T09:25':''), examMins:n(iLen,10,300,180), readMins:n(iRead,0,30,5), extraPer30:n(iExtra,0,30,0), breakPer30:n(iBreak,0,30,0), minsPerDay:n(iMins,10,480,45)}; if(!S.cfg.extraPer30&&!S.cfg.breakPer30) S.pp.prov=false; else if(S.pp.prov===false) S.pp.prov=true; save(); toast('Settings saved.'); render(); }},'Save settings')));
   return d;
 }
 function planPanel(days){
@@ -5310,12 +5386,47 @@ function planPanel(days){
   }
   return panel;
 }
-function topicRows(){ const rows=[]; for(const d of DECKS.slice(1,5)){ const cs=CARDS.filter(d.test); const k=cs.filter(c=>status(c)==='k').length, m=cs.filter(mastered).length, l=cs.filter(c=>status(c)==='l').length; rows.push({d,cs,k,m,l,pct:Math.round(100*k/cs.length)}); } return rows; }
+function topicRows(){ const rows=[]; for(const d of DECKS.filter(d=>d.topic)){ const cs=CARDS.filter(d.test); const k=cs.filter(c=>status(c)==='k').length, m=cs.filter(mastered).length, l=cs.filter(c=>status(c)==='l').length; rows.push({d,cs,k,m,l,pct:Math.round(100*k/cs.length)}); } return rows; }
 function deckBar(r){ return el('div',{class:'deckrow'}, el('span',{},r.d.name), el('div',{class:'bar'}, el('span',{class:'m',style:`width:${100*r.m/r.cs.length}%`}), el('span',{class:'k',style:`width:${100*(r.k-r.m)/r.cs.length}%`}), el('span',{class:'l',style:`width:${100*r.l/r.cs.length}%`})), el('span',{class:'pct'},r.pct+'%')); }
 function action(title, sub, on, cls){ return el('button',{class:'act'+(cls?' '+cls:''),onclick:on}, el('b',{},title), el('span',{},sub)); }
-function renderHome(){
+function calDays(d){ const a=new Date(d.getFullYear(),d.getMonth(),d.getDate()), n=new Date(), b=new Date(n.getFullYear(),n.getMonth(),n.getDate()); return Math.round((a-b)/86400000); }
+function renderHomeSubject(){
   const v=$('#view'); v.innerHTML='';
-  const EXAM_AT=examAt(); const now=new Date(); const days=Math.ceil((EXAM_AT-now)/86400000);
+  const has=!!S.cfg.examAt&&!isNaN(new Date(S.cfg.examAt)); const EXAM_AT=has?new Date(S.cfg.examAt):null; const days=has?calDays(EXAM_AT):null;
+  const learning=CARDS.filter(c=>status(c)==='l'), unseen=CARDS.filter(c=>status(c)==='u');
+  const hero=el('div',{class:'panel hero'}, el('div',{class:'lab'}, has?`${S.cfg.exam} · ${fmtDay(EXAM_AT)}`:SUBJ.name),
+    el('h2',{}, !has?`${CARDS.length} cards to master`:days>1?`${days} days to go`:days===1?'Exam is tomorrow':days===0?'Exam day. You have got this.':'Exam done. Well played.'),
+    el('p',{class:'small'}, has&&days>=0?examLine().replace(/ Use reading time to choose your Section IV question\./,''):'Add your exam date in Settings below to get a countdown and a daily plan.'));
+  const sd=SUBJ_DATA[SUBJ.id]; if(sd&&sd.note) hero.append(el('p',{class:'subjnote'}, sd.note));
+  hero.append(settingsBox()); v.append(hero);
+  const acts=el('div',{class:'actions'});
+  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }, 'primary'));
+  const dueN=dueCards().length;
+  acts.append(action('Due for review', dueN?`${dueN} card${dueN===1?'':'s'} due today`:'Nothing due yet. Cards come back 1, 3 then 7 days after you get them right.', ()=>{ S.filter=dueN?'due':'all'; S.deck='all'; goMode('flash'); }));
+  acts.append(action('Flashcards', learning.length?`${learning.length} cards still learning`:unseen.length?`${unseen.length} cards not seen yet`:`All ${CARDS.length} cards seen`, ()=>{ S.filter=learning.length?'l':'all'; S.deck='all'; goMode('flash'); }));
+  const rows=topicRows(); const weak=rows.slice().sort((a,b)=>a.pct-b.pct)[0];
+  if(weak) acts.append(action('Learn', `Weakest topic first: ${weak.d.full||weak.d.name} (${weak.pct}% got it)`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
+  acts.append(action('Test', 'Questions one at a time, typed or on paper, then mark yourself', ()=>{ goMode('test'); }));
+  acts.append(action('Match', '5 pairs against the clock', ()=>goMode('match')));
+  const mcN=mistakeCards().length;
+  acts.append(action('Mistake notebook', mcN?`${mcN} card${mcN===1?'':'s'} to fix`:'Empty so far. Anything you miss lands here.', ()=>goMode('mistakes')));
+  { const ns=Object.keys(S.sets).length; acts.append(action('Library', ns?`${ns} set${ns===1?'':'s'} of your own`:'Make your own sets, import from Quizlet, star hard cards', ()=>goMode('library'))); }
+  acts.append(action('Key words', 'The 35 NESA directive verbs every exam question uses', ()=>{ S.deck='keywords'; goMode('flash'); }));
+  v.append(el('div',{class:'panel'}, el('h2',{},'Jump in'), acts));
+  const prog=el('div',{class:'panel'}, el('h2',{},'Where you stand'));
+  for(const r of rows) prog.append(deckBar(r));
+  prog.append(retentionRow());
+  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
+  v.append(prog);
+  if(has&&days>=0&&rows.length){ const mins=Number(S.cfg.minsPerDay)||45; const sorted=rows.slice().sort((a,b)=>a.pct-b.pct); const panel=el('div',{class:'panel'}, el('h2',{},'Your plan'), el('p',{class:'small'},`${mins} minutes a day (change it in Settings), weakest topic first.`)); const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    for(let i=0;i<Math.min(4,days+1);i++){ const d=new Date(); d.setDate(d.getDate()+i); const label=i===0?'Today':i===1?'Tomorrow':names[d.getDay()]; const wk=sorted[i%Math.min(2,sorted.length)]; const a=Math.max(10,Math.round(mins*0.5)), b=mins-a;
+      panel.append(el('div',{class:'planrow'}, el('b',{},label), el('span',{}, days-i===0?'Exam day. A light flick through your starred cards and ★ Key words, then stop.':`${a} min · Learn ${wk.d.full||wk.d.name} (${wk.pct}% got it). ${b} min · Test mode on everything due, typed answers.`))); }
+    v.append(panel); }
+}
+function renderHome(){
+  if(!isBiz()) return renderHomeSubject();
+  const v=$('#view'); v.innerHTML='';
+  const EXAM_AT=examAt(); const now=new Date(); const days=calDays(EXAM_AT);
   const learning=CARDS.filter(c=>status(c)==='l'), unseen=CARDS.filter(c=>status(c)==='u');
   const hero=el('div',{class:'panel hero'}, el('div',{class:'lab'}, `${S.cfg.exam} · ${fmtDay(EXAM_AT)}`),
     el('h2',{}, days>1?`${days} days to go`:days===1?'Exam is tomorrow':days===0?'Exam day. You have got this.':'Exam done. Well played.'),
@@ -5424,7 +5535,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes})[S.mode](); }
+function render(){ if(!isBiz()&&['ratio','papers','guide'].includes(S.mode)) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes})[S.mode](); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
@@ -5467,7 +5578,7 @@ function isStarred(c){ const id=typeof c==='string'?c:c.id; return (S.star[id]||
 function toggleStar(c){ if(!c) return; if(isStarred(c)){ S.unstar[c.id]=Date.now(); } else { S.star[c.id]=Date.now(); } save(); announce(isStarred(c)?'Starred':'Star removed'); }
 function starredCards(){ return allCards().filter(isStarred); }
 function starBtn(c){ const on=isStarred(c); return el('button',{class:'starb'+(on?' on':''),'aria-pressed':String(on),'aria-label':on?'Remove star':'Star this card',title:on?'Starred (press S)':'Star this card (press S)',onclick:e=>{ e.stopPropagation(); e.preventDefault(); toggleStar(c); render(); }}, on?'★':'☆'); }
-function deckLab(c){ return el('span',{class:'deck'}, c.t, ' ', starBtn(c)); }
+function deckLab(c){ return el('span',{class:'deck'}, topicLabel(c), ' ', starBtn(c)); }
 function setsSorted(){ return Object.values(S.sets).filter(s=>s&&s.id).sort((a,b)=>(b.updated||0)-(a.updated||0)); }
 function setCards(s){ userCards(); return (s.cards||[]).filter(c=>c&&c.id); }
 function itemCards(id){ if(String(id).startsWith('set:')){ const s=S.sets[id.slice(4)]; return s?setCards(s):[]; } if(id==='starred') return starredCards(); const d=DECKS.find(d=>d.id===id); return d?CARDS.filter(d.test):[]; }
@@ -5625,9 +5736,9 @@ function importPanel(onAdd){
 const AI={text:'', n:15, busy:false, err:'', out:null, picked:null};
 function aiPrompt(text, n, existing){
   const topicMode=text.trim().length<160&&!/\n/.test(text.trim());
-  const subj=/business/i.test(text)||!/biolog|math|physic|chem|english|history|geograph|legal|econom|pdhpe|french|japanese/i.test(text)?'NSW HSC Business Studies':'the NSW HSC course the topic names';
+  const subj=!isBiz()?'NSW HSC '+SUBJ.name:(/business/i.test(text)||!/biolog|math|physic|chem|english|history|geograph|legal|econom|pdhpe|french|japanese/i.test(text)?'NSW HSC Business Studies':'the NSW HSC course the topic names');
   return `You write study flashcards for a Year 12 student sitting ${subj}.
-${topicMode?`TOPIC: ${text.trim()}\nWrite ${n} flashcards that cover this topic the way the syllabus and HSC exam treat it: definitions, the key points under each dot point, advantages and disadvantages, and how it links to business outcomes.`:`NOTES:\n"""\n${text.trim().slice(0,12000)}\n"""\nTurn these notes into ${n} flashcards. Cover the whole of the notes evenly and keep the student's own terms and examples.`}
+${topicMode?`TOPIC: ${text.trim()}\nWrite ${n} flashcards that cover this topic the way the syllabus and HSC exam treat it: definitions, the key points under each dot point, advantages and disadvantages${isBiz()?', and how it links to business outcomes':', and the examples and evidence markers expect'}.`:`NOTES:\n"""\n${text.trim().slice(0,12000)}\n"""\nTurn these notes into ${n} flashcards. Cover the whole of the notes evenly and keep the student's own terms and examples.`}
 Rules: the front is one specific question using an HSC directive verb (define, outline, describe, explain, distinguish, compare) or a key term; the back is the answer a marker would want, 1 to 2 sentences, at most 40 words, no filler. No numbering, no duplicates${existing&&existing.length?', and nothing already covered by these existing cards: '+existing.slice(0,60).map(c=>c.f).join(' | '):''}.
 Return only JSON: {"cards":[{"f":"front","b":"back"}]}`;
 }
@@ -5741,13 +5852,13 @@ function renderLibrary(){
   if(tags.length){ const tr=el('div',{class:'row tagrow'}, el('span',{class:'small'},'Tags:'), el('button',{class:'tagchip','aria-pressed':String(!LIB.tag),onclick:()=>{ LIB.tag=''; render(); }},'All')); for(const g of tags) tr.append(el('button',{class:'tagchip','aria-pressed':String(LIB.tag===g),onclick:()=>{ LIB.tag=LIB.tag===g?'':g; render(); }},'#'+g)); sp.append(tr); }
   const grid=el('div',{class:'setgrid',id:'setgrid'}); sp.append(grid);
   function renderSetGrid(){ grid.innerHTML=''; const q=LIB.q.trim().toLowerCase(); const list=sets.filter(s=>(!LIB.tag||(s.tags||[]).includes(LIB.tag))&&(!q||(s.name||'').toLowerCase().includes(q)||(s.desc||'').toLowerCase().includes(q)||(s.tags||[]).some(t=>t.toLowerCase().includes(q))||setCards(s).some(c=>c.f.toLowerCase().includes(q))));
-    if(!sets.length){ grid.append(el('div',{class:'empty'}, el('p',{},'No sets of your own yet. The 644 Business cards are always here; your own sets sit beside them.'), el('p',{class:'small'},'Make one from scratch, paste a list from Quizlet or a spreadsheet, or let the AI draft cards from your notes.'))); return; }
+    if(!sets.length){ grid.append(el('div',{class:'empty'}, el('p',{},`No sets of your own yet. The ${CARDS.length} ${isBiz()?'Business':SUBJ.short} cards are always here; your own sets sit beside them.`), el('p',{class:'small'},'Make one from scratch, paste a list from Quizlet or a spreadsheet, or let the AI draft cards from your notes.'))); return; }
     if(!list.length){ grid.append(el('div',{class:'empty'},'No sets match.')); return; }
     for(const s of list) grid.append(setCard(s)); }
   renderSetGrid(); v.append(sp);
   const folders=Object.values(S.folders).filter(f=>f&&f.id).sort((a,b)=>(b.updated||0)-(a.updated||0));
   if(folders.length){ const fp=el('div',{class:'panel'}, el('h2',{},'Folders'), el('p',{class:'small'},'A folder groups sets and topics so you can study them as one combined deck.')); const fg=el('div',{class:'setgrid'}); for(const f of folders) fg.append(folderCard(f)); fp.append(fg); v.append(fp); }
-  const bp=el('div',{class:'panel'}, el('h2',{},'Business Studies decks'), el('p',{class:'small'},'The built-in cards, by topic. Star any card to collect it in ★ Starred.'));
+  const bp=el('div',{class:'panel'}, el('h2',{},SUBJ.name+' decks'), el('p',{class:'small'},'The built-in cards, by topic. Star any card to collect it in ★ Starred.'));
   const bg=el('div',{class:'setgrid'});
   for(const d of DECKS.slice(1)){ const cards=CARDS.filter(d.test); const r=readiness(cards); bg.append(el('div',{class:'setcard builtin'}, el('div',{class:'row between'}, el('span',{class:'title'},d.name), el('span',{class:'small'},`${cards.length} cards`)), miniBar(cards), el('div',{class:'small'}, r.seen?`${Math.round(r.ret*100)}% retention · ${r.label}`:'Not studied yet'), studyBtns(d.id,true))); }
   const st=starredCards(); bg.append(el('div',{class:'setcard builtin'}, el('div',{class:'row between'}, el('span',{class:'title'},'★ Starred'), el('span',{class:'small'},`${st.length} cards`)), st.length?miniBar(st):el('p',{class:'small'},'Press ☆ on any card (or S on the keyboard) to star it. Starred cards from every set study together here.'), st.length?studyBtns('starred',true):null));
@@ -5796,7 +5907,7 @@ function renderEditSet(){
 // ---------- account sync (claude.ai sign-in via the db + user capabilities) ----------
 let DBH=null, UID=null, USERH=null, ME=null;
 const sync={state:'local', timer:null, chain:Promise.resolve(), lastHash:'', lastScore:''};
-function progressDoc(){ return {v:4, idv:2, rv:S.rv||{}, cfg:S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
+function progressDoc(){ if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg; return {v:5, idv:2, subj:S.subj||'business', cfgBy:S.cfgBy||{}, rv:S.rv||{}, cfg:(S.cfgBy&&S.cfgBy.business)||S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
 function mergeRemote(r){
   if(!r||typeof r!=='object') return;
   migrateIds(r);
@@ -5821,12 +5932,14 @@ function mergeRemote(r){
   const rseen=new Set(); const recent=(S.recent||[]).concat(r.recent||[]).filter(x=>x&&x.d).sort((a,b)=>(b.t||0)-(a.t||0)).filter(x=>!rseen.has(x.d)&&rseen.add(x.d)).slice(0,10);
   Object.assign(S, {sets, setsDel, folders, foldersDel, star, unstar, hist, sess, recent}); invalidateCards();
   const later=((r.lastDay||'')>(S.lastDay||''))?r:S;
-  Object.assign(S, {p, m, days, best, badges, xp:Math.max(S.xp||0, r.xp||0), total:Math.max(S.total||0, r.total||0), ratioRight:Math.max(S.ratioRight||0, r.ratioRight||0), streak:later.streak||0, lastDay:later.lastDay||'', goal:base.goal||S.goal, perfectTest:!!(S.perfectTest||r.perfectTest), nick:S.nick||r.nick||'', papers, rv, cfg:(remoteNewer&&r.cfg)?r.cfg:(S.cfg||r.cfg||null)});
+  Object.assign(S, {p, m, days, best, badges, xp:Math.max(S.xp||0, r.xp||0), total:Math.max(S.total||0, r.total||0), ratioRight:Math.max(S.ratioRight||0, r.ratioRight||0), streak:later.streak||0, lastDay:later.lastDay||'', goal:base.goal||S.goal, perfectTest:!!(S.perfectTest||r.perfectTest), nick:S.nick||r.nick||'', papers, rv});
+  { const mine=Object.assign({}, S.cfgBy||{}); if(S.subj) mine[S.subj]=S.cfg; const theirs=Object.assign({}, r.cfgBy||{}); if(r.cfg&&!theirs.business) theirs.business=r.cfg;
+    const cb=remoteNewer?Object.assign(mine, theirs):Object.assign(theirs, mine); if(!cb.business) cb.business=S.cfg; S.cfgBy=cb; S.cfg=cb[S.subj]||(cb[S.subj]=defaultCfg(SUBJ)); }
 }
 function schedulePush(){ if(!DBH||!UID||sync.state!=='synced') return; clearTimeout(sync.timer); sync.timer=setTimeout(pushProgress, 1500); }
 function pushProgress(){
   if(!DBH||!UID||sync.state!=='synced') return;
-  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent]);
+  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.cfgBy,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent]);
   if(h===sync.lastHash) return; sync.lastHash=h;
   sync.chain=sync.chain.then(()=>DBH.doc('data/users/'+UID+'/progress').set(doc)).then(()=>{ pushScore(false); }).catch(e=>{ if(e&&e.code==='invalid_argument'){ sync.state='readonly'; renderAccount(); } });
 }
@@ -5929,6 +6042,12 @@ function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e)
 
 if(location.hash==='#library'){ S.mode='library'; }
 if(location.hash==='#papers'){ S.mode='papers'; } else if(location.hash==='#ratio'){ S.mode='ratio'; } else if(location.hash==='#stats'){ S.mode='stats'; } else if(location.hash==='#guide'){ S.mode='guide'; } else if(location.hash==='#today'){ S.mode='today'; } else if(location.hash==='#mistakes'){ S.mode='mistakes'; } else if(location.hash==='#test'){ S.mode='test'; S.testKind='exam'; }
+bizSnapshot();
+$('#subjclose').onclick=closeSubjects;
+$('#subjdlg').addEventListener('click',e=>{ if(e.target.id==='subjdlg') closeSubjects(); });
+{ if(S.subj) S.cfgBy[S.subj]=S.cfg; let want=S.subj; const qs=new URLSearchParams(location.search).get('s'); if(qs&&SUBJ_BY[qs]&&!SUBJ_BY[qs].soon) want=qs;
+  S.subj='business'; S.cfg=S.cfgBy.business; applySubject('business');
+  if(want&&want!=='business'){ document.body.classList.add('subj-loading'); loadSubject(want).then(()=>{ applySubject(want); save(); render(); }).catch(()=>{ toast('Could not load '+SUBJ_BY[want].name+', so Business Studies is open. Try again from the subject button.'); }).finally(()=>document.body.classList.remove('subj-loading')); } }
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
 </script>

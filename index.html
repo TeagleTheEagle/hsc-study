@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Band Six · HSC Business Studies</title>
-<meta name="description" content="A free study site for HSC Business Studies: 644 flashcards, learn and test modes, a ratio drill, and every HSC past paper from 2015 to 2025 with marking against the official criteria.">
+<title>Band Six · Free HSC study sets</title>
+<meta name="description" content="Free HSC study sets for Business Studies, Biology, Maths and more: flashcards, learn, test and match modes, spaced reviews, and for Business Studies every HSC paper from 2015 to 2025 marked against the official criteria.">
 <meta name="theme-color" content="#1F6F8B">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
@@ -59,6 +59,13 @@ a.card:hover{border-color:var(--accent)}
 .step b{display:block}
 .step span{color:var(--muted);font-size:1rem}
 .note{background:var(--surface-2);border-radius:12px;padding:.9rem 1.1rem;font-size:1rem;color:var(--muted)}
+.subjects{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.7rem}
+.subj{background:var(--surface);border:2px solid var(--border);border-radius:16px;padding:1rem 1.1rem;display:grid;gap:.25rem;color:inherit;text-decoration:none;align-content:start}
+a.subj:hover{border-color:var(--accent)}
+.subj b{font-size:1.1rem}
+.subj span{color:var(--muted);font-size:.95rem}
+.subj.soon{opacity:.6;border-style:dashed}
+.subj .ic{font-size:1.5rem;line-height:1}
 footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--muted);font-size:.95rem;display:grid;gap:.4rem}
 </style>
 </head>
@@ -66,9 +73,9 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
 <header><div class="wrap">
   <a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6F8B"/><path d="M9 21l5-6 4 4 5-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Band Six</a>
   <nav aria-label="Site">
-    <a href="app.html">Study cards</a>
-    <a href="app.html#ratio">Ratio drill</a>
-    <a href="app.html#papers">Past papers</a>
+    <a href="app.html">Study</a>
+    <a href="#subjects">Subjects</a>
+    <a href="app.html?s=business#papers">Past papers</a>
     <a href="resources.html">Resources</a>
     <a href="app.html#stats">Progress</a>
   </nav>
@@ -77,14 +84,23 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
 <main>
 <div class="wrap">
   <div class="hero">
-    <span class="exam">Business Studies HSC · Monday 26 October</span>
-    <h1>Everything you need for Business Studies, in one place.</h1>
-    <p class="lead">Flashcards for every syllabus dot point, a ratio drill that works like the exam, and every HSC paper since 2015 with marking against the official criteria.</p>
+    <span class="exam">Free HSC study sets</span>
+    <h1>Know what to study. Learn how to earn the next mark.</h1>
+    <p class="lead">Pick your subject and Band Six gives you a short session each day: the cards you are about to forget, your weakest topic next, and exam questions where we have them.</p>
     <div class="cta">
       <a class="btn primary" href="app.html">Start studying</a>
-      <a class="btn" href="app.html#papers">Do a past paper</a>
+      <a class="btn" href="#subjects">Choose a subject</a>
     </div>
   </div>
+
+  <section id="subjects">
+    <h2>Subjects</h2>
+    <!--SUBJECTS--><div class="subjects"><a class="subj" href="app.html?s=business"><span class="ic" aria-hidden="true">💼</span><b>Business Studies</b><span>644 cards · past papers, ratio drill, resources</span></a><div class="subj soon"><span class="ic" aria-hidden="true">📖</span><b>English Standard and Advanced</b><span>Coming soon</span></div><a class="subj" href="app.html?s=maths-std2"><span class="ic" aria-hidden="true">📐</span><b>Mathematics Standard 2</b><span>207 cards</span></a><div class="subj soon"><span class="ic" aria-hidden="true">📈</span><b>Mathematics Advanced</b><span>Coming soon</span></div><a class="subj" href="app.html?s=biology"><span class="ic" aria-hidden="true">🧬</span><b>Biology</b><span>603 cards</span></a><div class="subj soon"><span class="ic" aria-hidden="true">⚗️</span><b>Chemistry</b><span>Coming soon</span></div><div class="subj soon"><span class="ic" aria-hidden="true">🔭</span><b>Physics</b><span>Coming soon</span></div><div class="subj soon"><span class="ic" aria-hidden="true">🏛️</span><b>Modern History</b><span>Coming soon</span></div><div class="subj soon"><span class="ic" aria-hidden="true">🏺</span><b>Ancient History</b><span>Coming soon</span></div><div class="subj soon"><span class="ic" aria-hidden="true">⚖️</span><b>Legal Studies</b><span>Coming soon</span></div></div><!--/SUBJECTS-->
+    <p class="note" style="margin-top:1rem">Your progress, streak and XP carry across every subject. Switch subjects any time with the button at the top of the study app. More subjects are on the way.</p>
+  </section>
+
+  <section id="business">
+  <h2>Business Studies: the full toolkit</h2>
   <div class="facts">
     <div class="fact"><b>644</b><span>flashcards across Operations, Marketing, Finance, HR and the NESA key words</span></div>
     <div class="fact"><b>11</b><span>HSC exams 2015 to 2025 with marking guidelines</span></div>
@@ -93,15 +109,14 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
   </div>
 
   <section id="modes">
-    <h2>Pick how you want to study</h2>
     <div class="grid">
-      <a class="card" href="app.html"><h3>Cards</h3><p>Flashcards, Learn (multiple choice or typed), Test and Match. Type your answer and see which key ideas you hit.</p><span class="go">Open cards →</span></a>
-      <a class="card" href="app.html#ratio"><h3>Ratio drill</h3><p>All seven ratios with fresh figures every time, the formula shown as the exam gives it, and a typed interpretation check.</p><span class="go">Drill ratios →</span></a>
-      <a class="card" href="app.html#papers"><h3>Past papers</h3><p>Pick a year, answer the real questions, get a mark out of the total with what worked and what to add. Timed runs use your provisions.</p><span class="go">Choose a paper →</span></a>
+      <a class="card" href="app.html?s=business"><h3>Cards</h3><p>Flashcards, Learn (multiple choice or typed), Test and Match. Type your answer and see which key ideas you hit.</p><span class="go">Open cards →</span></a>
+      <a class="card" href="app.html?s=business#ratio"><h3>Ratio drill</h3><p>All seven ratios with fresh figures every time, the formula shown as the exam gives it, and a typed interpretation check.</p><span class="go">Drill ratios →</span></a>
+      <a class="card" href="app.html?s=business#papers"><h3>Past papers</h3><p>Pick a year, answer the real questions, get a mark out of the total with what worked and what to add. Timed runs use your provisions.</p><span class="go">Choose a paper →</span></a>
       <a class="card" href="resources.html"><h3>Resources</h3><p>611 documents from the Business Studies drive: trial papers from 21 schools, every Riverview exam with its marking criteria, exemplar answers, question banks, case studies and writing guides.</p><span class="go">Browse resources →</span></a>
-      <a class="card" href="app.html#stats"><h3>Progress</h3><p>XP levels from Intern to CEO, a daily goal, streaks, badges and progress by topic.</p><span class="go">See progress →</span></a>
     </div>
-    <p class="note" style="margin-top:1rem">Also: the <a href="app.html#guide">Exam guide</a> has the exam structure and timing, what each band looks like, the 35 NESA key words, and real 2012 answers sorted by band.</p>
+    <p class="note" style="margin-top:1rem">Also: the <a href="app.html?s=business#guide">Exam guide</a> has the exam structure and timing, what each band looks like, the 35 NESA key words, and real 2012 answers sorted by band.</p>
+  </section>
   </section>
 
   <section id="how">
@@ -118,7 +133,7 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
 </main>
 
 <footer><div class="wrap">
-  <p>Built for the 2026 HSC. Exam papers and marking guidelines © NSW Education Standards Authority; Task 1 materials © Saint Ignatius' College Riverview. Used here for study.</p>
+  <p>Built in Sydney for HSC students. Exam papers and marking guidelines © NSW Education Standards Authority; Task 1 materials © Saint Ignatius' College Riverview. Used here for study.</p>
   <p>Progress is saved in your browser, and in your account if you sign in. Answers are only sent for marking when you use AI marking.</p>
 </div></footer>
 </body>
