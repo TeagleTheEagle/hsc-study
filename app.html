@@ -118,6 +118,15 @@ main .wrap{padding-block:1rem 3rem;display:grid;gap:1rem}
 .row{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .row.between{justify-content:space-between}
 .small{font-size:.95rem;color:var(--muted)}
+.panel.examlist{gap:0}
+.examlist h3{font-size:1.1rem;margin:.8rem 0 .2rem}
+.examlist .yr{display:grid;grid-template-columns:3.6rem 1fr;gap:.6rem;align-items:start;padding:.55rem 0;border-top:1px solid var(--border)}
+.examlist .yr>b{font-size:1.1rem;padding-top:.45rem}
+.examlist .links{display:flex;flex-wrap:wrap;gap:.4rem}
+.examlist a.pdf{display:inline-flex;align-items:baseline;gap:.45rem;min-height:44px;padding:.5rem .8rem;border-radius:10px;background:var(--accent-soft);color:var(--ink);text-decoration:none;font-weight:700;font-size:1rem}
+.examlist a.pdf:hover{outline:2px solid var(--accent)}
+.examlist a.pdf small{font-weight:400;color:var(--muted);font-size:.85rem}
+.examlist .pending{display:inline-flex;align-items:center;min-height:44px;color:var(--muted);font-size:.95rem;font-style:italic}
 .seg{display:inline-flex;border:2px solid var(--border);border-radius:10px;overflow:hidden;flex-wrap:wrap}
 .seg button{border:0;border-radius:0;min-height:42px;padding:.3rem .8rem;background:var(--surface);font-size:.95rem}
 .seg button+button{border-left:2px solid var(--border)}
@@ -4309,6 +4318,8 @@ const SUBJ_BY=Object.fromEntries(SUBJECTS.map(s=>[s.id,s]));
 const SUBJ_DATA={};
 let SUBJ=SUBJ_BY.business;
 function isBiz(){ return SUBJ.id==='business'; }
+const EXAM_SUBJ=['english','maths-adv','maths-std2','biology','chemistry','physics','modern-history','ancient-history','legal'];
+function hasExams(){ return isBiz()||EXAM_SUBJ.includes(SUBJ.id); }
 // settings (exam date, length, provisions) are kept per subject; S.cfg is the active subject's
 if(!S.cfgBy||typeof S.cfgBy!=='object'||Array.isArray(S.cfgBy)) S.cfgBy={business:S.cfg};
 if(!S.cfgBy.business) S.cfgBy.business=S.cfg;
@@ -4418,7 +4429,7 @@ function goMode(m){ S.mode=m; if(SECTION_OF[m]==='study') S.lastStudy=m; save();
 function renderDecks(){
   const sec=SECTION_OF[S.mode]||'home';
   document.querySelectorAll('#mainnav button').forEach(b=>{ b.setAttribute('aria-current', b.dataset.section===sec?'page':'false'); b.onclick=()=>goMode(b.dataset.section==='study'?(S.lastStudy||'flash'):SECTION_DEFAULT[b.dataset.section]); });
-  for(const b of document.querySelectorAll('#mainnav button')){ if(['practice','papers','guide'].includes(b.dataset.section)) b.hidden=!isBiz(); }
+  for(const b of document.querySelectorAll('#mainnav button')){ if(['practice','guide'].includes(b.dataset.section)) b.hidden=!isBiz(); if(b.dataset.section==='papers') b.hidden=!hasExams(); }
   { const rl=$('#reslink'); if(rl) rl.style.display=isBiz()?'':'none'; }
   $('#subjbtn').onclick=openSubjects;
   $('#subbar').hidden=(sec!=='study');
@@ -4780,7 +4791,7 @@ function applySubject(id){
   else { TOPIC_ORDER.splice(0,TOPIC_ORDER.length,...BIZ_SAVED.order); Object.assign(TOPIC_NAME, BIZ_SAVED.names); XTOPICS.splice(0,XTOPICS.length,...BIZ_SAVED.xt.map(x=>x.slice())); }
   S.cfg=S.cfgBy[s.id]||(S.cfgBy[s.id]=defaultCfg(s));
   if(!decks().some(d=>d.id===S.deck)) S.deck='all';
-  if(!isBiz()&&['ratio','papers','guide'].includes(S.mode)) S.mode='home';
+  if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home';
   if(MF) MF.topic='all';
   F={list:[], i:0, flipped:false, key:'', typed:''}; L=null; T=null; M=null; TS=null; XT=null;
   invalidateCards();
@@ -5349,8 +5360,33 @@ function typedUnit(p,it,part){
 }
 
 // ----- views -----
+let NESA=null;
+function loadNesa(){ if(NESA) return Promise.resolve(NESA); return fetch('data/nesa-papers.json').then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(d=>NESA=d); }
+function nesaSize(b){ return b>=104858?(b/1048576).toFixed(1)+' MB':Math.max(1,Math.round(b/1024))+' KB'; }
+function renderExamList(v){
+  const intro=el('div',{class:'panel'}, el('h2',{},'Past papers'),
+    el('p',{},'Real NSW HSC exams for '+SUBJ.name+', each with NESA’s marking guidelines. Do one on paper under exam time, mark it with the guidelines, then rewrite your weakest answer.'),
+    el('p',{class:'small'},'Typed answers with AI marking, like Business Studies has, are coming for this subject. The PDFs open in a new tab.'));
+  v.append(intro);
+  const box=el('div',{class:'panel examlist'}, el('p',{class:'small'},'Loading the papers…')); v.append(box);
+  loadNesa().then(d=>{
+    box.innerHTML='';
+    const rs=d.papers.filter(r=>r.s===SUBJ.id);
+    if(!rs.length){ box.append(el('p',{},'No papers here yet.')); return; }
+    const KIND={exam:'Exam paper',mg:'Marking guidelines',feedback:'Marking feedback',sample:'Sample writing booklet (Section III)'}, ORD={exam:0,mg:1,feedback:2,sample:3};
+    const link=(r,label)=>el('a',{class:'pdf',href:d.base+r.f,target:'_blank',rel:'noopener'}, label||KIND[r.k], el('small',{},nesaSize(r.b)));
+    const years=(list,eng)=>{ const out=[]; for(const y of [...new Set(list.map(r=>r.y))].sort((a,b)=>b-a)){ const yr=list.filter(r=>r.y===y); const ls=el('div',{class:'links'});
+      if(eng){ for(const p of ['1','2']) for(const r of yr.filter(r=>r.p===p).sort((a,b)=>ORD[a.k]-ORD[b.k])) ls.append(link(r, r.k==='exam'?'Paper '+p:'Paper '+p+' guidelines')); }
+      else for(const r of yr.sort((a,b)=>ORD[a.k]-ORD[b.k])) ls.append(link(r));
+      if(!yr.some(r=>r.k==='mg')) ls.append(el('span',{class:'pending'},'Marking guidelines not out yet'));
+      out.push(el('div',{class:'yr'}, el('b',{},String(y)), ls)); } return out; };
+    if(SUBJ.id==='english'){ for(const [c,n] of [['adv','English Advanced'],['std','English Standard']]){ box.append(el('h3',{},n), ...years(rs.filter(r=>r.c===c),true)); } }
+    else box.append(...years(rs,false));
+  }).catch(()=>{ box.innerHTML=''; box.append(el('p',{},'Could not load the paper list. Check your connection, or open the ', el('a',{href:'exams.html#'+SUBJ.id},'HSC exams page'),'.')); });
+}
 function renderPapers(){
   const v=$('#view'); v.innerHTML='';
+  if(!isBiz()) return renderExamList(v);
   const p=S.pp.paper&&PBY[S.pp.paper]; if(!p){ S.pp.paper=null; S.pp.item=null; return renderPick(v); }
   if(!S.pp.item) return renderPaper(v,p);
   const list=pItems(p); const idx=list.findIndex(x=>x.it.id===S.pp.item); if(idx<0){ S.pp.item=null; return renderPaper(v,p); }
@@ -5651,7 +5687,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ if(!isBiz()&&['ratio','papers','guide'].includes(S.mode)) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); }
+function render(){ if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
