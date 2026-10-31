@@ -10,3 +10,5 @@ worker.js
 package.json
 package-lock.json
 .dev.vars
+mobile
+MOBILE.md
