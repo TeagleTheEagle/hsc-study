@@ -31,6 +31,10 @@ Blueprint section 20, narrowed to what exists after phase B (no billing yet). Ti
 - [ ] A photo of handwriting is marked and the transcription is visible.
 - [ ] `node tools/marking_bench.mjs` on the PC: agreement at or above 0.85 (record the number and date in last-run.json).
 
+## Marks report (phase E1)
+
+- [ ] Progress > Marks report: topics weakest first, untried topics say Not assessed, a rewritten answer shows every attempt, Copy as text pastes a readable summary.
+
 ## Business Studies flow
 
 - [ ] Today page: the plan for the day lists the weakest topic first and shows the days to the exam.

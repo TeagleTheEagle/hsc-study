@@ -180,3 +180,9 @@ Runs after the phase B script:
 2. `python3 tools/sw_version.py` stamps `sw.js` from the shell files. Always last.
 3. Checks: `node tools/check_phase_d.mjs` (needs the Playwright symlink; runs its own server on 8767).
 `sw.js` itself is hand-written (caching rules at the top of the file).
+
+## Bands for Days, phase E1: Marks report (31 Oct 2026)
+
+Runs after the phase D script and before `tools/sw_version.py`:
+1. `python3 tools/phase_e1_patch.py app.html`: the `#report` view under Progress (`renderReport`, `reportRows`, `reportTopics`, `reportPapers`, `reportWeeks`, `reportText`), a mark time (`mt`) stamped in `awardXP`, the time kept on each previous attempt in `startRewrite`, and "Marks report" links on Today and Stats. Refuses to run twice.
+2. Checks: `node tools/check_phase_e1.mjs` against the local server on 8766.

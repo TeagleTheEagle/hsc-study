@@ -292,6 +292,10 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
 .offlist{display:grid;margin-top:.4rem} .offrow{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.45rem 0;border-top:1.5px solid var(--border)} .offrow button{min-height:40px;padding:.3rem .9rem} .offpill{font-size:.85rem;padding:.15rem .7rem;border-radius:999px;background:var(--good-soft);color:var(--good-deep);font-weight:700}
 button,.act,.mainnav button,.subjgrid button,label.btnlike{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media (display-mode: standalone){ html{overscroll-behavior-y:none} }
+.rep table{width:100%;border-collapse:collapse;font-size:.95rem;margin-top:.4rem} .rep th{text-align:left;font-size:.8rem;color:var(--muted);font-weight:700;padding:.2rem .4rem} .rep td{padding:.4rem .4rem;border-top:1.5px solid var(--border);vertical-align:top} .rep td.num,.rep th.num{text-align:right;white-space:nowrap} .rep .na{color:var(--muted);font-style:italic}
+.rep .gain{color:var(--good-deep);font-weight:700} .rep .loss{color:var(--warn);font-weight:700} .rep .steps{font-variant-numeric:tabular-nums;white-space:nowrap}
+.trend{display:grid;gap:.45rem;margin-top:.4rem} .trend .wk{display:grid;grid-template-columns:7.5rem 1fr 7rem;gap:.6rem;align-items:center} .tbar{height:12px;background:var(--surface-2);border-radius:6px;overflow:hidden} .tbar span{display:block;height:100%;background:var(--accent)} .tbar span.cards{background:var(--good)}
+.rep .openq{min-height:36px;padding:.2rem .7rem;font-size:.9rem}
 .savestat{font-size:.85rem;color:var(--muted);padding:.1rem .55rem;border-radius:999px;background:var(--surface-2)} .savestat.ok{color:var(--good-deep);background:var(--good-soft)} .savestat.warn{color:var(--mid);background:var(--mid-soft)} .savestat.bad{color:var(--warn);background:var(--warn-soft)}
 .evid{margin:.2rem 0 .2rem .6rem;padding-left:.6rem;border-left:3px solid var(--good);font-style:italic;color:var(--muted)} .lowconf{background:var(--mid-soft);border-radius:10px;padding:.5rem .8rem;font-size:.95rem} .nextact{background:var(--accent-soft);border-radius:10px;padding:.5rem .8rem} .nextact b{color:var(--accent)}
 .lb{display:grid;gap:.4rem}
@@ -4462,11 +4466,11 @@ function confetti(){
 
 // ---------- header ----------
 // Five sections. A mode belongs to one section; 'test' belongs to Practice when it is the exam-style test.
-const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress'};
+const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress',report:'progress'};
 function sectionOf(m){ if(m==='test'&&isBiz()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
 const SECTION_DEFAULT={today:'home',subjects:'subjects',practice:'practice',library:'library',progress:'stats'};
 // Every mode has an address, so links can be shared and the Back button works.
-const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes'};
+const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes',report:'#report'};
 function hashFor(m){ if(m==='test') return (isBiz()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
 function modeOfHash(h){ h=String(h||'').replace(/^#/,''); if(!h||h.startsWith('import=')) return null; const [head,...rest]=h.split('/'); if(head==='test-cards') return {mode:'test',kind:'cards'}; if(head==='test') return {mode:'test',kind:'exam'}; if(head==='papers') return {mode:'papers',paper:rest[0]||null,item:rest[1]||null}; const m=Object.keys(HASH_OF).find(k=>HASH_OF[k]==='#'+head); return m?{mode:m}:null; }
 function applyHash(h){ const x=modeOfHash(h); if(!x) return false; S.mode=x.mode; if(x.kind) S.testKind=x.kind; if(x.mode==='papers'){ S.pp.paper=x.paper&&PBY[x.paper]?x.paper:null; S.pp.item=S.pp.paper&&x.item?x.item:null; } return true; }
@@ -4990,7 +4994,7 @@ function masteryMap(){
 }
 function startRewrite(p,it,part){
   const k=rkey(p,it,part), r=S.papers[k]; if(!r) return;
-  const prev=(r.prev||[]).concat([{m:r.m, how:r.how, a:String(r.a||'').slice(0,4000), imp:(r.r&&r.r.improvements)||[]}]).slice(-3);
+  const prev=(r.prev||[]).concat([{m:r.m, how:r.how, a:String(r.a||'').slice(0,4000), imp:(r.r&&r.r.improvements)||[], t:r.mt||r.t||Date.now()}]).slice(-3);
   setRec(p,it,part,{prev, how:undefined, r:null}); delete S.papers[k].m; save(); prender();
   setTimeout(()=>{ const b=document.querySelector('.rewritebox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50);
 }
@@ -5214,6 +5218,77 @@ function renderRatio(){
 
 // ---------- stats ----------
 let sprint=null;
+// ---------- phase E1: marks report ----------
+function dayOfMs(ms){ const y=new Date(ms); return y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); }
+function unitTopic(p,it,part){ if(isBiz()){ const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||((itemRow(p.id,it.id)||{}).topic)||'Other'; return t; } return (part&&part.topic)||it.topic||'General'; }
+function attemptsOf(r){ const out=(r.prev||[]).map(x=>({m:x.m,t:x.t||null})); if(typeof r.m==='number') out.push({m:r.m,t:r.mt||r.t||null}); return out.filter(x=>typeof x.m==='number'); }
+function reportRows(){
+  const rows=[];
+  for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const r=rec(p,it,u.part); if(!r) continue; const at=attemptsOf(r); if(!at.length) continue;
+    rows.push({p, it, part:u.part, max:u.max, topic:unitTopic(p,it,u.part), at, first:at[0].m, last:at[at.length-1].m, best:Math.max(...at.map(x=>x.m)), t:at[at.length-1].t||0, label:`${p.title} · Q${it.n}${u.part&&u.part.p?'('+u.part.p+')':''}`}); } } }
+  return rows;
+}
+function pctOf(got,max){ return max?Math.round(100*got/max):null; }
+function reportTopics(rows){
+  const names=isBiz()?TOPIC_ORDER.concat(['Other']):[...new Set(rows.map(r=>r.topic))].sort();
+  return names.map(t=>{ const rs=rows.filter(r=>r.topic===t); const max=rs.reduce((a,r)=>a+r.max,0); return {t, name:isBiz()?(TOPIC_NAME[t]||t):t, n:rs.length, max, last:rs.reduce((a,r)=>a+r.last,0), first:rs.reduce((a,r)=>a+r.first,0), rewrites:rs.filter(r=>r.at.length>1).length}; }).filter(x=>x.n||isBiz()).sort((a,b)=>(a.n?pctOf(a.last,a.max):101)-(b.n?pctOf(b.last,b.max):101));
+}
+function reportPapers(rows){
+  return PAPERS.map(p=>{ const rs=rows.filter(r=>r.p===p); const total=pItems(p).reduce((a,x)=>a+itemUnits(x.it).length,0); return {p, n:rs.length, total, max:rs.reduce((a,r)=>a+r.max,0), last:rs.reduce((a,r)=>a+r.last,0)}; }).filter(x=>x.n);
+}
+function reportWeeks(rows){
+  const t=today(); const out=[];
+  for(let i=3;i>=0;i--){ const end=dueDay(t,-7*i), start=dueDay(t,-7*i-6); const inWk=d=>d>=start&&d<=end;
+    let cards=0; for(const [d,n] of Object.entries(S.days||{})) if(inWk(d)) cards+=n;
+    let n=0, r=0; for(const x of S.sess||[]){ if(inWk(dayOfMs(x.a))){ n+=x.n; r+=x.r; } }
+    let got=0, max=0, marks=0; for(const row of rows) for(const a of row.at){ if(a.t&&inWk(dayOfMs(a.t))){ got+=a.m; max+=row.max; marks++; } }
+    out.push({start, end, cards, acc:n?Math.round(100*r/n):null, marks, pct:max?Math.round(100*got/max):null}); }
+  return out;
+}
+function fmtShort(d){ const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-AU',{day:'numeric',month:'short'}); }
+function reportText(){
+  const rows=reportRows(); const L=[]; L.push(`Bands for Days marks report · ${SUBJ.name} · ${fmtShort(today())}`);
+  const got=rows.reduce((a,r)=>a+r.last,0), max=rows.reduce((a,r)=>a+r.max,0);
+  L.push(rows.length?`${rows.length} answers marked · ${got}/${max} marks (${pctOf(got,max)}%) on the latest attempt`:'No typed answers marked yet.');
+  if(rows.length){ L.push('', 'By topic (weakest first)'); for(const x of reportTopics(rows)) L.push(x.n?`  ${x.name}: ${x.last}/${x.max} (${pctOf(x.last,x.max)}%)${x.rewrites?`, first attempts ${pctOf(x.first,x.max)}%`:''}`:`  ${x.name}: Not assessed`);
+    L.push('', 'By paper'); for(const x of reportPapers(rows)) L.push(`  ${x.p.title}: ${x.n}/${x.total} answered · ${x.last}/${x.max} (${pctOf(x.last,x.max)}%)`);
+    const rw=rows.filter(r=>r.at.length>1); if(rw.length){ L.push('', 'Rewrites'); for(const r of rw) L.push(`  ${r.label}: ${r.at.map(a=>a.m).join(' → ')} / ${r.max}`); } }
+  L.push('', 'Last four weeks'); for(const w of reportWeeks(rows)) L.push(`  ${fmtShort(w.start)} to ${fmtShort(w.end)}: ${w.cards} cards${w.acc!=null?` (${w.acc}% right)`:''}${w.marks?`, ${w.marks} marked answers at ${w.pct}%`:''}`);
+  L.push('', 'AI marks are estimates against the official criteria, not NESA results.');
+  return L.join('\n');
+}
+function renderReport(){
+  const v=$('#view'); v.innerHTML=''; v.classList.add('rep');
+  const rows=reportRows(); const got=rows.reduce((a,r)=>a+r.last,0), max=rows.reduce((a,r)=>a+r.max,0);
+  const rw=rows.filter(r=>r.at.length>1); const gain=rw.reduce((a,r)=>a+(r.last-r.first),0);
+  const head=el('div',{class:'panel hero'}, el('div',{class:'lab'},SUBJ.name), el('h2',{},'Marks report'),
+    el('p',{class:'small'}, rows.length?`${rows.length} typed answers marked · ${got}/${max} marks (${pctOf(got,max)}%) on your latest attempts${rw.length?` · ${rw.length} rewritten, ${gain>=0?'+':''}${gain} marks gained`:''}.`:hasExams()?'Nothing marked yet. Mark a typed answer under Practice > Past papers and it shows up here.':'This subject has no typed papers yet, so this report only shows your card work.'));
+  const copyBtn=el('button',{class:'ghost',onclick:async()=>{ const t=reportText(); try{ await navigator.clipboard.writeText(t); toast('Report copied. Paste it to a teacher or parent.'); }catch(e){ const ta=el('textarea',{'aria-label':'Report text'}); ta.value=t; head.append(ta); ta.select(); toast('Select the text below and copy it.'); } }},'Copy as text');
+  head.append(el('div',{class:'row'}, copyBtn, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Stats and badges')));
+  v.append(head);
+  if(rows.length){
+    const tp=el('div',{class:'panel'}, el('h2',{},'By topic'), el('p',{class:'small'},'Weakest first. The first-attempt column shows where rewrites are paying off.'));
+    const tb=el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Topic'), el('th',{class:'num'},'Answers'), el('th',{class:'num'},'First attempts'), el('th',{class:'num'},'Latest'))), el('tbody',{}));
+    for(const x of reportTopics(rows)){ tb.lastChild.append(el('tr',{}, el('td',{},x.name), el('td',{class:'num'}, x.n?String(x.n):'·'), el('td',{class:'num'}, x.n?`${pctOf(x.first,x.max)}%`:'·'), x.n?el('td',{class:'num'}, `${x.last}/${x.max} · ${pctOf(x.last,x.max)}%`):el('td',{class:'num na'},'Not assessed'))); }
+    tp.append(tb); v.append(tp);
+    const pp=el('div',{class:'panel'}, el('h2',{},'By paper'));
+    const pb=el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Paper'), el('th',{class:'num'},'Answered'), el('th',{class:'num'},'Marks'), el('th',{}))), el('tbody',{}));
+    for(const x of reportPapers(rows)) pb.lastChild.append(el('tr',{}, el('td',{}, x.p.title), el('td',{class:'num'}, `${x.n}/${x.total}`), el('td',{class:'num'}, `${x.last}/${x.max} · ${pctOf(x.last,x.max)}%`), el('td',{}, el('button',{class:'ghost openq',onclick:()=>{ S.pp.paper=x.p.id; S.pp.item=null; goMode('papers'); }},'Open'))));
+    pp.append(pb); v.append(pp);
+    const rp=el('div',{class:'panel'}, el('h2',{},'Rewrites, attempt by attempt'), el('p',{class:'small'}, rw.length?`Average gain per rewritten answer: ${rw.length?(gain/rw.length>=0?'+':'')+(gain/rw.length).toFixed(1):'0'} marks.`:'No rewrites yet. After a mark, "Rewrite it for more marks" keeps every attempt so you can see the climb here.'));
+    if(rw.length){ const rb=el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Question'), el('th',{class:'num'},'Attempts'), el('th',{class:'num'},'Change'), el('th',{}))), el('tbody',{}));
+      for(const r of rw.sort((a,b)=>b.t-a.t)){ const d=r.last-r.first; rb.lastChild.append(el('tr',{}, el('td',{}, r.label, el('div',{class:'small'}, r.t?fmtShort(dayOfMs(r.t)):'')), el('td',{class:'num steps'}, r.at.map(a=>a.m).join(' → ')+' / '+r.max), el('td',{class:'num '+(d>0?'gain':d<0?'loss':'')}, (d>0?'+':'')+d), el('td',{}, el('button',{class:'ghost openq',onclick:()=>{ S.pp.paper=r.p.id; S.mode='papers'; save(); openItem(r.it.id); }},'Open')))); }
+      rp.append(rb); }
+    v.append(rp);
+  }
+  const wk=reportWeeks(rows); const maxCards=Math.max(1,...wk.map(w=>w.cards));
+  const tr=el('div',{class:'panel'}, el('h2',{},'Last four weeks'), el('p',{class:'small'},'Cards answered each week with how many you got right, and the marks on typed answers marked that week.'));
+  const tl=el('div',{class:'trend'});
+  for(const w of wk){ tl.append(el('div',{class:'wk'}, el('span',{class:'small'}, fmtShort(w.start)+' – '+fmtShort(w.end)), el('div',{class:'tbar',title:`${w.cards} cards`}, el('span',{class:'cards',style:`width:${Math.round(100*w.cards/maxCards)}%`})), el('span',{class:'small'}, w.cards?`${w.cards} cards${w.acc!=null?' · '+w.acc+'%':''}`:'No cards'))); 
+    tl.append(el('div',{class:'wk'}, el('span',{}), el('div',{class:'tbar',title:w.marks?`${w.marks} marked answers`:'No marked answers'}, el('span',{style:`width:${w.pct!=null?w.pct:0}%`})), el('span',{class:'small'}, w.marks?`${w.marks} marked · ${w.pct}%`:'No marks'))); }
+  tr.append(tl); v.append(tr);
+  v.append(el('p',{class:'small'},'AI marks are estimates against the official criteria, not NESA results. Nothing is shown as a band prediction.'));
+}
 function renderStats(){
   const v=$('#view'); v.innerHTML='';
   const lv=levelInfo();
@@ -5226,7 +5301,7 @@ function renderStats(){
       el('div',{class:'stat'}, el('b',{},String(S.streak)), el('span',{},`day streak · ${days} study day${days===1?'':'s'}`)),
       el('div',{class:'stat'}, el('b',{},`${known} / ${all}`), el('span',{},`cards marked got it · ${mastd} mastered`))),
     el('div',{class:'row'}, el('span',{class:'small'},'Daily goal:'), seg([[20,'20'],[30,'30'],[50,'50'],[80,'80']], S.goal, val=>{S.goal=val; save(); renderStrip(); renderStats();}))));
-  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
+  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>goMode('report')},'Marks report'), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
   const dueN=dueCards().length, week=CARDS.filter(c=>{ const r=rvOf(c); return !!r&&r.due>today()&&r.due<=dueDay(today(),7); }).length;
   v.append(el('div',{class:'panel'}, el('h2',{},'Spaced reviews'), el('div',{class:'grid2'}, el('div',{class:'stat'}, el('b',{},String(dueN)), el('span',{},'cards due today')), el('div',{class:'stat'}, el('b',{},String(week)), el('span',{},'due in the next 7 days'))), el('p',{class:'small'},'Each card you get right comes back later: after 1 day, then 3, then 7 and so on. A wrong answer brings it back today. Mastered means remembered on 3 separate days and not due again for at least a week.'), el('div',{class:'row'}, el('button',{class:'primary',disabled:dueN?null:'',onclick:()=>{ S.filter='due'; S.deck='all'; goMode('flash'); }}, dueN?`Review ${dueN} due now`:'Nothing due right now'))));
   v.append(retentionPanel());
@@ -5360,7 +5435,7 @@ Return JSON only, no prose, in this exact shape:
 }
 function normalise(res,max){ let m=Number(res&&res.mark); if(!isFinite(m)) m=0; m=Math.max(0,Math.min(max,Math.round(m))); const arr=x=>Array.isArray(x)?x.map(String).slice(0,4):(x?[String(x)]:[]); const conf=/^(high|medium|low)$/.test(String(res.confidence||''))?String(res.confidence):''; return {m, band:String(res.band||''), verdict:String(res.verdict||''), strengths:arr(res.strengths), improvements:arr(res.improvements), model:String(res.model||''), evidence:arr(res.evidence), missing:arr(res.missing), next:String(res.next||''), conf}; }
 function aiRec(x,max){ return {m:x.m, x:max, how:'ai', r:{band:x.band,verdict:x.verdict,strengths:x.strengths,improvements:x.improvements,model:x.model,evidence:x.evidence||[],missing:x.missing||[],next:x.next||'',conf:x.conf||''}}; }
-function awardXP(p,it,part,m,max,how){ const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); if(!ok&&isBiz()){ const row=itemRow(p.id,it.id); const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||(row&&row.topic); if(t&&t!=='Other'){ if(!S.boost||typeof S.boost!=='object') S.boost={}; S.boost[t]=today(); } } recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
+function awardXP(p,it,part,m,max,how){ { const rr=S.papers[rkey(p,it,part)]; if(rr) rr.mt=Date.now(); } const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); if(!ok&&isBiz()){ const row=itemRow(p.id,it.id); const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||(row&&row.topic); if(t&&t!=='Other'){ if(!S.boost||typeof S.boost!=='object') S.boost={}; S.boost[t]=today(); } } recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
 document.addEventListener('click',e=>{ const im=e.target&&e.target.closest&&e.target.closest('img.stimimg,img.photothumb'); if(!im||im.closest('.imgzoom')) return; const prev=document.activeElement; const close=()=>{ ov.remove(); if(prev&&prev.focus) prev.focus(); }; const ov=el('div',{class:'imgzoom',role:'dialog','aria-modal':'true','aria-label':'Picture, zoomed in',tabindex:'-1',onkeydown:ev=>{ if(ev.key==='Escape') close(); },onclick:ev=>{ if(ev.target===ov) close(); }}, el('button',{class:'primary zclose',onclick:close},'Close ✕'), el('img',{src:im.src,alt:im.alt||''})); document.body.append(ov); ov.querySelector('.zclose').focus(); });
 function isMathsP(p){ return /^maths/.test((p&&p.subj)||''); }
 function isSciP(p){ return /^(biology|chemistry|physics)$/.test((p&&p.subj)||''); }
@@ -5723,7 +5798,7 @@ function renderHomeSubject(){
   const prog=el('div',{class:'panel'}, el('h2',{},'Where you stand'));
   prog.append(masteryMap());
   prog.append(retentionRow());
-  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
+  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('report')},'Marks report →'), el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
   v.append(prog);
   if(has&&days>=0&&rows.length){ const mins=Number(S.cfg.minsPerDay)||45; const sorted=rows.slice().sort((a,b)=>a.pct-b.pct); const panel=el('div',{class:'panel'}, el('h2',{},'Your plan'), el('p',{class:'small'},`${mins} minutes a day (change it in Settings), weakest topic first.`)); const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     for(let i=0;i<Math.min(4,days+1);i++){ const d=new Date(); d.setDate(d.getDate()+i); const label=i===0?'Today':i===1?'Tomorrow':names[d.getDay()]; const wk=sorted[i%Math.min(2,sorted.length)]; const a=Math.max(10,Math.round(mins*0.5)), b=mins-a;
@@ -5763,7 +5838,7 @@ function renderHome(){
   let pq=0,pg=0,pm=0; for(const p of PAPERS){ const st=paperStatus(p); pq+=pItems(p).filter(x=>itemStatus(p,x.it).done).length; pg+=st.got; pm+=st.max; }
   prog.append(el('div',{class:'deckrow'}, el('span',{},'Past papers'), el('span',{class:'small'}, pq?`${pq} questions marked · ${pg}/${pm} marks (${Math.round(100*pg/Math.max(1,pm))}%)`:'No questions marked yet'), el('span',{})));
   prog.append(retentionRow());
-  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
+  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('report')},'Marks report →'), el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
   v.append(prog);
   v.append(planPanel(days));
 }
@@ -5843,7 +5918,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); if(S.mode==='home') placeInstallCard(); if(PWA.waiting&&!$('.toast.action')) updateToast(); }
+function render(){ { const vv=$('#view'); if(vv&&S.mode!=='report') vv.classList.remove('rep'); } if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag, report:renderReport})[S.mode](); if(S.mode==='home') placeInstallCard(); if(PWA.waiting&&!$('.toast.action')) updateToast(); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
