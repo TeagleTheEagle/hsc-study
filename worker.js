@@ -259,11 +259,14 @@ async function plan(request, env) {
   const user = await userFromToken(env, token);
   if (!user) return json(401, { code: 'sign_in' });
   let rec = await planRecord(env, user.id);
-  // ?refresh=1 (sent when the student comes back from the Stripe portal): read the subscription from Stripe now instead of
-  // waiting for the webhook, so a cancellation or a card update shows at once. Stripe's own state is the freshest there is,
-  // so this write may supersede a webhook event that is still on its way.
-  if (new URL(request.url).searchParams.get('refresh') && billingOn(env) && rec && rec.sub) {
-    try { const sub = await stripe(env, 'GET', '/subscriptions/' + rec.sub); await applySubscription(env, sub, user.id, Math.floor(Date.now() / 1000), true); rec = await planRecord(env, user.id); }
+  // Re-read the subscription from Stripe when the app asks (?refresh=1, sent on the way back from the Stripe portal) or when
+  // a Plus record has not been checked against Stripe for 10 minutes. A cancellation or a card update then shows on the
+  // next page load even if its webhook event was missed or arrived before a fix (the record is Stripe's state, not a guess).
+  const now = Math.floor(Date.now() / 1000);
+  const asked = new URL(request.url).searchParams.get('refresh');
+  const stale = rec && rec.plan === 'plus' && now - Math.max(Number(rec.checked) || 0, Number(rec.updated) || 0) > 600;
+  if ((asked || stale) && billingOn(env) && rec && rec.sub) {
+    try { const sub = await stripe(env, 'GET', '/subscriptions/' + rec.sub); await applySubscription(env, sub, user.id, now, true); rec = await planRecord(env, user.id); }
     catch (e) { console.error('plan refresh failed', String((e && e.message) || e).slice(0, 160)); }
   }
   const a = await allowance(env, user.id);
@@ -347,20 +350,22 @@ function periodOf(sub) {
   const item = sub.items && sub.items.data && sub.items.data[0];
   return { start: Number(sub.current_period_start || (item && item.current_period_start) || 0), end: Number(sub.current_period_end || (item && item.current_period_end) || 0) };
 }
-// `force` marks a read straight from Stripe (the freshest state there is): it always applies, and is stamped no older than
-// the record it replaces, so a webhook event that is still on its way cannot undo it.
+// `force` marks a read straight from Stripe (the freshest state there is): it always applies, but it leaves the event clock
+// `updated` alone and stamps `checked` instead, so a webhook event still on its way (say a new subscription's checkout) is
+// not rejected as older afterwards.
 async function applySubscription(env, sub, uid, at, force) {
   uid = uid || (sub.metadata && sub.metadata.uid) || (sub.customer ? await env.MARKS.get('cust:' + sub.customer) : null);
   if (!uid) return false;
   const cur = await planRecord(env, uid);
   if (!force && cur && cur.updated && at && at < cur.updated) return false;   // an older event arriving late never overwrites a newer state
-  if (force) at = Math.max(Number(at) || 0, (cur && Number(cur.updated)) || 0) || Math.floor(Date.now() / 1000);
+  const now = Math.floor(Date.now() / 1000);
   const per = periodOf(sub);
   // Since Stripe's 2025 API versions a cancellation from the customer portal sets cancel_at (a timestamp) and leaves the
   // deprecated cancel_at_period_end false, so either means "ends at the period end".
   const cancelAt = Number(sub.cancel_at || 0);
   const cancelAtPeriodEnd = !!sub.cancel_at_period_end || (cancelAt > 0 && cancelAt <= per.end + 86400);
-  const rec = { plan: 'plus', status: String(sub.status || ''), customer: String(sub.customer || ''), sub: String(sub.id || ''), periodStart: per.start, periodEnd: per.end, cancelAtPeriodEnd, cancelAt, updated: at || Math.floor(Date.now() / 1000) };
+  const rec = { plan: 'plus', status: String(sub.status || ''), customer: String(sub.customer || ''), sub: String(sub.id || ''), periodStart: per.start, periodEnd: per.end, cancelAtPeriodEnd, cancelAt,
+    updated: force ? ((cur && Number(cur.updated)) || now) : (at || now), checked: force ? now : ((cur && Number(cur.checked)) || 0) };
   await Promise.all([env.MARKS.put('plan:' + uid, JSON.stringify(rec)), sub.customer ? env.MARKS.put('cust:' + sub.customer, uid) : null]);
   return true;
 }

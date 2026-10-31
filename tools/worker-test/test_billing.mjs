@@ -33,7 +33,7 @@ const answer = 'Outsourcing passes production to a specialist which lowers costs
 const mark = (suffix = '') => req('/api/mark', { method: 'POST', body: JSON.stringify({ key: 'nesa2025|21', answer: answer + suffix }) });
 
 // billing off
-let [s, d] = await J(await req('/api/plan', {}, 'tok', off));
+let [s, d] = await J(await req('/api/plan', {}, 'tok', off)); let d2;
 ok(s === 200 && d.billing === false && d.plan === 'free' && d.limit === 5 && d.period === 'day' && /T/.test(d.resets), 'billing off: plan is free, 5 a day, no upgrade offered');
 [s, d] = await J(await req('/api/billing/checkout', { method: 'POST' }, 'tok', off)); ok(s === 503 && d.code === 'billing_off', 'billing off: checkout refused');
 [s, d] = await J(await req('/api/billing/webhook', { method: 'POST', body: '{}' }, '', off)); ok(s === 503, 'billing off: webhook refused');
@@ -88,7 +88,17 @@ sub = { ...sub, cancel_at_period_end: false, cancel_at: sub.current_period_end }
 const before = stripeCalls.length;
 [s, d] = await J(await req('/api/plan?refresh=1'));
 ok(s === 200 && stripeCalls.length === before + 1 && stripeCalls[before].path === '/subscriptions/sub_1' && d.plan === 'plus' && d.cancelAtPeriodEnd === true, 'plan?refresh=1 re-reads the subscription from Stripe and shows the cancellation');
-[s, d] = await J(await req('/api/plan')); ok(stripeCalls.length === before + 1, 'a plain plan read does not call Stripe');
+[s, d] = await J(await req('/api/plan')); ok(stripeCalls.length === before + 1, 'a plain plan read just after does not call Stripe');
+// the refresh leaves the event clock alone, so a webhook event created after the last applied event still applies
+{ const r = JSON.parse(kv.get('plan:user-1')); ok(r.checked > 0 && r.updated === rec1.updated + 100, 'refresh stamps checked, not updated'); }
+[s, d] = await J(await hook(event('customer.subscription.updated', { ...sub, cancel_at: null, cancel_at_period_end: false }, rec1.updated + 110)));
+[s, d2] = await J(await req('/api/plan')); ok(d.applied === true && d2.cancelAtPeriodEnd === false, 'a later webhook event (the student un-cancelled) still applies after a refresh');
+// a Plus record not checked for 10 minutes is re-read from Stripe on an ordinary plan load (self-heals a missed webhook)
+{ const r = JSON.parse(kv.get('plan:user-1')); r.updated -= 900; r.checked = 0; kv.set('plan:user-1', JSON.stringify(r)); }
+sub = { ...sub, cancel_at: sub.current_period_end, cancel_at_period_end: false };
+{ const b2 = stripeCalls.length; [s, d] = await J(await req('/api/plan')); ok(stripeCalls.length === b2 + 1 && d.cancelAtPeriodEnd === true, 'a 10-minute-old Plus record is re-read from Stripe on a plain plan load'); }
+sub = { ...sub, cancel_at: null };
+[s, d] = await J(await hook(event('customer.subscription.updated', { ...sub, cancel_at_period_end: true, cancel_at: null }, rec1.updated + 115))); ok(d.applied === true, 'and the event clock still accepts the next event');
 let del = event('customer.subscription.deleted', { ...sub, status: 'canceled', cancel_at_period_end: false }, rec1.updated + 120);
 [s, d] = await J(await hook(del)); [s, d] = await J(await req('/api/plan'));
 ok(d.plan === 'plus' && d.status === 'canceled', 'cancelled but paid: Plus until the period ends');

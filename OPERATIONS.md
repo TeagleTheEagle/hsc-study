@@ -111,7 +111,7 @@ Run `supabase-feedback.sql` once in Supabase > SQL Editor. Students can only ins
 
 **Kill switch.** Set `STRIPE_PRICE_ID = ""` and push: Upgrade disappears, existing subscribers keep their Plus allowance and the webhook keeps running. Removing the webhook secret stops plan updates (Stripe retries for 3 days), so only do that to stop everything.
 
-**Cancellations.** The customer portal cancels with Stripe's `cancel_at` timestamp (its 2025 API deprecated `cancel_at_period_end`); the webhook reads both. Coming back from the portal the app calls `/api/plan?refresh=1`, which re-reads the subscription from Stripe and stores it, so "ends <date>" shows at once even if the webhook is slow.
+**Cancellations.** The customer portal cancels with Stripe's `cancel_at` timestamp (its 2025 API deprecated `cancel_at_period_end`); the webhook reads both. Coming back from the portal the app calls `/api/plan?refresh=1`, which re-reads the subscription from Stripe and stores it, so "ends <date>" shows at once even if the webhook is slow. A Plus record is also re-read from Stripe on any plan load when it has not been checked for 10 minutes (`checked` in the KV record), so a missed webhook heals itself on the next page load.
 
 **Support.** "Where is my Plus?" means the webhook has not landed: check Developers > Webhooks > the endpoint > recent deliveries (a 2xx means applied; a 502 means Stripe could not be reached from the Worker and it will retry). To fix a record by hand: `npx wrangler kv key put plan:<user id> '{"plan":"plus","status":"active","customer":"cus_…","sub":"sub_…","periodStart":<unix>,"periodEnd":<unix>,"cancelAtPeriodEnd":false,"updated":<unix>}' --namespace-id c669400708c643d0b421cb6ec5ffb401`.
 
