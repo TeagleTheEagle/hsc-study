@@ -23,18 +23,25 @@ const RESULT_SCHEMA = {
   additionalProperties: false,
 };
 
-// Business prompts are in data/mark-bank.json; other subjects in data/mark-bank-<prefix>.json,
-// where the prefix starts the paper id (en-adv-2025-p1|3 -> en).
-const BANKS = {};
-async function bank(env, url, key) {
-  const m = /^([a-z]{2,4})-/.exec(key || '');
+// Marking prompts: one small file per question in data/mark/<key>.json ('|' written as '__'), built by tools/split_bank.py
+// from the per-subject banks (data/mark-bank.json for Business, data/mark-bank-<prefix>.json for the rest, where the
+// prefix starts the paper id: en-adv-2025-p1|3 -> en). The Worker reads the small file, so a mark parses a few KB:
+// on the Workers Free plan a request gets 10 ms of CPU and parsing a whole 1 MB bank used it up (error 1102, no mark).
+// The big bank is only a fallback for a question whose small file is missing.
+const BANKS = {}, ENTRIES = {};
+async function entryFor(env, url, key) {
+  if (!/^[A-Za-z0-9|_.()-]{1,80}$/.test(key) || key.includes('__')) return null;
+  if (ENTRIES[key]) return ENTRIES[key];
+  const small = await env.ASSETS.fetch(new URL('/data/mark/' + key.replace(/\|/g, '__') + '.json', url));
+  if (small.ok) { try { const e = await small.json(); if (e && e.pre) { ENTRIES[key] = e; return e; } } catch (e) { /* fall through to the bank */ } }
+  const m = /^([a-z]{2,4})-/.exec(key);
   const file = m ? `/data/mark-bank-${m[1]}.json` : '/data/mark-bank.json';
   if (!BANKS[file]) {
     const res = await env.ASSETS.fetch(new URL(file, url));
-    if (!res.ok) return {};
+    if (!res.ok) return null;
     BANKS[file] = await res.json();
   }
-  return BANKS[file];
+  return BANKS[file][key] || null;
 }
 
 const json = (status, body) => new Response(JSON.stringify(body), {
@@ -69,25 +76,32 @@ function normalise(res, max) {
 }
 
 // One marking call: 90 s timeout, one automatic retry on a network error or 5xx (the SDK never retries a 4xx).
-async function askClaude(env, content) {
+// `pics` are site paths of question and marking-guideline pictures (Maths, sciences). They go by URL, so Anthropic fetches
+// them from the site and the Worker spends no CPU on base64; the retry inlines them in case a URL could not be fetched.
+async function askClaude(env, text, pics, photo, siteUrl) {
   const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 90000, maxRetries: 1, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) });
   const model = env.MODEL || 'claude-opus-5-5';
   const textOf = r => r.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
+  const content = blocks => blocks.length ? [...blocks, { type: 'text', text }] : text;
   let response;
   try {
+    const blocks = [...pics.map(p => imageUrlBlock(siteUrl, p)), ...(photo ? [photo] : [])];
     response = await client.beta.messages.create({
       model, max_tokens: 16000,
       betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default',
       output_config: { effort: 'medium', format: { type: 'json_schema', schema: RESULT_SCHEMA } },
-      messages: [{ role: 'user', content }],
+      messages: [{ role: 'user', content: content(blocks) }],
     });
   } catch (error) {
-    // A request-shape problem (an option this model or account doesn't take): retry once with the plain request.
+    // A request-shape problem (an option this model or account doesn't take, or a picture Anthropic could not fetch):
+    // retry once with the plain request and the pictures inlined.
     if (!(error instanceof Anthropic.BadRequestError)) throw error;
+    const inlined = (await Promise.all(pics.map(p => imageBlock(env, siteUrl, p)))).filter(Boolean);
+    const blocks = [...inlined, ...(photo ? [photo] : [])];
     response = await client.messages.create({
       model, max_tokens: 16000,
       output_config: { effort: 'medium' },
-      messages: [{ role: 'user', content }],
+      messages: [{ role: 'user', content: content(blocks) }],
     });
   }
   if (response.stop_reason === 'refusal') throw { code: 'refusal' };
@@ -111,7 +125,8 @@ async function ledger(env, day, rec) {
   await Promise.all([env.MARKS.put(key, JSON.stringify(rec), ttl), env.MARKS.put('t:' + day, JSON.stringify(tot), ttl)]);
 }
 
-// Maths entries list the question and marking-guideline pictures (served from the site) to send with the prompt.
+// Maths and science entries list the question and marking-guideline pictures (served from the site) to send with the prompt.
+function imageUrlBlock(siteUrl, path) { return { type: 'image', source: { type: 'url', url: new URL('/' + path, siteUrl).href } }; }
 function b64(buf) {
   const a = new Uint8Array(buf); let s = '';
   for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000));
@@ -123,11 +138,14 @@ async function imageBlock(env, url, path) {
   return { type: 'image', source: { type: 'base64', media_type: 'image/png', data: b64(await res.arrayBuffer()) } };
 }
 // A photo of handwritten working: a JPEG/PNG/WebP data URL under about 2 MB. null = none, false = not acceptable.
+// Only the header is checked here (a regex over 2 MB of base64 costs CPU the Free plan doesn't have); Anthropic validates the rest.
 function photoBlock(photo) {
   if (!photo) return null;
-  const m = /^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(photo));
-  if (!m || m[2].length > 2800000) return false;
-  return { type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } };
+  const s = String(photo), i = s.indexOf(';base64,');
+  const m = i > 0 && i < 40 ? /^data:(image\/(?:jpeg|png|webp))$/.exec(s.slice(0, i)) : null;
+  const n = s.length - i - 8;
+  if (!m || n > 2800000 || n < 64) return false;
+  return { type: 'image', source: { type: 'base64', media_type: m[1], data: s.slice(i + 8) } };
 }
 
 async function mark(request, env) {
@@ -142,7 +160,7 @@ async function mark(request, env) {
   const photo = photoBlock(body && body.photo);
   if (photo === false) return json(400, { code: 'bad_photo' });
 
-  const entry = (await bank(env, request.url, key))[key];
+  const entry = await entryFor(env, request.url, key);
   if (!entry) return json(404, { code: 'unknown_question' });
   if (!photo && answer.split(/\s+/).filter(Boolean).length < (entry.min || 8)) return json(400, { code: 'too_short' });
 
@@ -165,16 +183,19 @@ async function mark(request, env) {
   const t0 = Date.now();
   try {
     const text = entry.pre + answer.slice(0, 12000) + entry.post;
-    const imgs = (await Promise.all((entry.imgs || []).map(p => imageBlock(env, request.url, p)))).filter(Boolean);
-    if (photo) imgs.push(photo);
-    const out = await askClaude(env, imgs.length ? [...imgs, { type: 'text', text }] : text);
+    const out = await askClaude(env, text, entry.imgs || [], photo, request.url);
     result = normalise(out.parsed, entry.max); usage = out.usage; modelUsed = out.model;
   } catch (error) {
-    // A failed job never consumes the student's allowance.
+    // A failed job never consumes the student's allowance. The status and message go back to the app (its toast shows
+    // them) and to the log, so `npx wrangler tail bandsix` says why a mark failed.
+    const status = Number(error && error.status) || 0;
+    const message = String((error && error.message) || (error && error.code) || '').replace(/\s+/g, ' ').slice(0, 160);
+    console.error('mark failed', key, status, message);
     if (error instanceof Anthropic.RateLimitError) return json(503, { code: 'rate_limited' });
     if (Anthropic.APIConnectionTimeoutError && error instanceof Anthropic.APIConnectionTimeoutError) return json(504, { code: 'timeout' });
-    if (error instanceof Anthropic.APIError) return json(502, { code: 'upstream', status: error.status });
-    return json(502, { code: (error && error.code) || 'upstream' });
+    if (Anthropic.AuthenticationError && error instanceof Anthropic.AuthenticationError) return json(502, { code: 'auth', status, message });
+    if (error instanceof Anthropic.APIError) return json(502, { code: 'upstream', status, message });
+    return json(502, { code: (error && error.code) || 'upstream', message });
   }
   const ttl = { expirationTtl: 60 * 60 * 48 };
   await Promise.all([
@@ -237,7 +258,15 @@ async function plan(request, env) {
   if (!token) return json(200, { ...base, plan: 'free', signedIn: false });
   const user = await userFromToken(env, token);
   if (!user) return json(401, { code: 'sign_in' });
-  const a = await allowance(env, user.id); const rec = await planRecord(env, user.id);
+  let rec = await planRecord(env, user.id);
+  // ?refresh=1 (sent when the student comes back from the Stripe portal): read the subscription from Stripe now instead of
+  // waiting for the webhook, so a cancellation or a card update shows at once. Stripe's own state is the freshest there is,
+  // so this write may supersede a webhook event that is still on its way.
+  if (new URL(request.url).searchParams.get('refresh') && billingOn(env) && rec && rec.sub) {
+    try { const sub = await stripe(env, 'GET', '/subscriptions/' + rec.sub); await applySubscription(env, sub, user.id, Math.floor(Date.now() / 1000), true); rec = await planRecord(env, user.id); }
+    catch (e) { console.error('plan refresh failed', String((e && e.message) || e).slice(0, 160)); }
+  }
+  const a = await allowance(env, user.id);
   return json(200, { ...base, signedIn: true, ...allowanceOut(a), periodEnd: rec && rec.periodEnd ? new Date(rec.periodEnd * 1000).toISOString() : null, hasCustomer: !!(rec && rec.customer) });
 }
 
@@ -297,7 +326,7 @@ async function portal(request, env) {
   const rec = await planRecord(env, user.id);
   if (!rec || !rec.customer) return json(404, { code: 'no_customer' });
   try {
-    const session = await stripe(env, 'POST', '/billing_portal/sessions', { customer: rec.customer, return_url: siteOrigin(request, env) + '/app.html#home' });
+    const session = await stripe(env, 'POST', '/billing_portal/sessions', { customer: rec.customer, return_url: siteOrigin(request, env) + '/app.html?billing=portal#home' });
     return json(200, { url: session.url });
   } catch (e) { return json(502, { code: 'stripe', message: String(e.message || '').slice(0, 200) }); }
 }
@@ -318,13 +347,20 @@ function periodOf(sub) {
   const item = sub.items && sub.items.data && sub.items.data[0];
   return { start: Number(sub.current_period_start || (item && item.current_period_start) || 0), end: Number(sub.current_period_end || (item && item.current_period_end) || 0) };
 }
-async function applySubscription(env, sub, uid, at) {
+// `force` marks a read straight from Stripe (the freshest state there is): it always applies, and is stamped no older than
+// the record it replaces, so a webhook event that is still on its way cannot undo it.
+async function applySubscription(env, sub, uid, at, force) {
   uid = uid || (sub.metadata && sub.metadata.uid) || (sub.customer ? await env.MARKS.get('cust:' + sub.customer) : null);
   if (!uid) return false;
   const cur = await planRecord(env, uid);
-  if (cur && cur.updated && at && at < cur.updated) return false;   // an older event arriving late never overwrites a newer state
+  if (!force && cur && cur.updated && at && at < cur.updated) return false;   // an older event arriving late never overwrites a newer state
+  if (force) at = Math.max(Number(at) || 0, (cur && Number(cur.updated)) || 0) || Math.floor(Date.now() / 1000);
   const per = periodOf(sub);
-  const rec = { plan: 'plus', status: String(sub.status || ''), customer: String(sub.customer || ''), sub: String(sub.id || ''), periodStart: per.start, periodEnd: per.end, cancelAtPeriodEnd: !!sub.cancel_at_period_end, updated: at || Math.floor(Date.now() / 1000) };
+  // Since Stripe's 2025 API versions a cancellation from the customer portal sets cancel_at (a timestamp) and leaves the
+  // deprecated cancel_at_period_end false, so either means "ends at the period end".
+  const cancelAt = Number(sub.cancel_at || 0);
+  const cancelAtPeriodEnd = !!sub.cancel_at_period_end || (cancelAt > 0 && cancelAt <= per.end + 86400);
+  const rec = { plan: 'plus', status: String(sub.status || ''), customer: String(sub.customer || ''), sub: String(sub.id || ''), periodStart: per.start, periodEnd: per.end, cancelAtPeriodEnd, cancelAt, updated: at || Math.floor(Date.now() / 1000) };
   await Promise.all([env.MARKS.put('plan:' + uid, JSON.stringify(rec)), sub.customer ? env.MARKS.put('cust:' + sub.customer, uid) : null]);
   return true;
 }
@@ -367,7 +403,8 @@ export default {
       if (pathname === '/api/billing/portal') return await portal(request, env);
       if (pathname === '/api/billing/webhook') return await webhook(request, env);
     } catch (e) {
-      return json(500, { code: 'server_error' });
+      console.error('api failed', pathname, String((e && e.stack) || e).slice(0, 400));
+      return json(500, { code: 'server_error', message: String((e && e.message) || '').slice(0, 160) });
     }
     if (pathname.startsWith('/api/')) return json(404, { code: 'not_found' });
     return env.ASSETS.fetch(request);

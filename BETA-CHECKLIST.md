@@ -73,3 +73,7 @@ Activation (signed up and finished one session), seven-day return, marks per stu
 - [ ] Billing off (STRIPE_PRICE_ID empty): no Upgrade button anywhere, Free still 5 a day.
 - [ ] Live mode: one real purchase, refunded from the dashboard; the receipt email names Bands for Days.
 
+## After the marking and cancellation fixes (31 Oct 2026)
+
+- [ ] Signed in, mark one written answer with AI: a mark with evidence comes back and the toast counts down. If it fails, the toast now says why in brackets; screenshot it.
+- [ ] Manage billing > cancel > back on the site: the strip says "ends <date>" at once; the KV record shows `cancelAtPeriodEnd: true`.
