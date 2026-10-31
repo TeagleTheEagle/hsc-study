@@ -40,6 +40,12 @@ Blueprint section 20, narrowed to what exists after phase B (no billing yet). Ti
 - [ ] `supabase-classes.sql` has been run; Stats shows My class / Everyone and the class view lists classmates with the right count.
 - [ ] Copy invite link, open it in a private window: the sign-up form has the class code filled in.
 
+## Exam-style tests for every subject (phase E3)
+
+- [ ] Switch to Biology, Practice > Exam-style test: the topics are Module 5 to 8, a 10-question multiple-choice test runs with the question pictures, and the results page lists the misses by module.
+- [ ] Modern History > Exam-style test offers Written only; English > Find a question finds unseen-text questions by a word such as "analyse".
+- [ ] Business is unchanged: Operations, Marketing, Finance, Human resources, with Riverview Task 1 in the mix.
+
 ## Business Studies flow
 
 - [ ] Today page: the plan for the day lists the weakest topic first and shows the days to the exam.

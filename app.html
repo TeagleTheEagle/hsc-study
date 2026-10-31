@@ -4468,11 +4468,11 @@ function confetti(){
 // ---------- header ----------
 // Five sections. A mode belongs to one section; 'test' belongs to Practice when it is the exam-style test.
 const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress',report:'progress',class:'progress'};
-function sectionOf(m){ if(m==='test'&&isBiz()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
+function sectionOf(m){ if(m==='test'&&hasXT()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
 const SECTION_DEFAULT={today:'home',subjects:'subjects',practice:'practice',library:'library',progress:'stats'};
 // Every mode has an address, so links can be shared and the Back button works.
 const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes',report:'#report',class:'#class'};
-function hashFor(m){ if(m==='test') return (isBiz()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
+function hashFor(m){ if(m==='test') return (hasXT()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
 function modeOfHash(h){ h=String(h||'').replace(/^#/,''); if(!h||h.startsWith('import=')) return null; const [head,...rest]=h.split('/'); if(head==='test-cards') return {mode:'test',kind:'cards'}; if(head==='test') return {mode:'test',kind:'exam'}; if(head==='papers') return {mode:'papers',paper:rest[0]||null,item:rest[1]||null}; const m=Object.keys(HASH_OF).find(k=>HASH_OF[k]==='#'+head); return m?{mode:m}:null; }
 function applyHash(h){ const x=modeOfHash(h); if(!x) return false; S.mode=x.mode; if(x.kind) S.testKind=x.kind; if(x.mode==='papers'){ S.pp.paper=x.paper&&PBY[x.paper]?x.paper:null; S.pp.item=S.pp.paper&&x.item?x.item:null; } return true; }
 let NAV_POP=false;
@@ -4662,13 +4662,47 @@ function markTest(ok){ const c=T.q[T.i]; if(ok)T.right++; else T.missed.push(c);
 // ---------- shared: real exam questions by topic ----------
 const TOPIC_NAME={Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'Human resources',Other:'General',all:'All topics'};
 const XTOPICS=[['all','All topics'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources']];
+// ---------- phase E3: tests for every subject ----------
+function hasXT(){ return isBiz()||(hasExams()&&!!SUBJ.papers); }
+function tName(t){ return TOPIC_NAME[t]||t; }
+function normT(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+// a paper question's module/section, mapped onto the subject's card topic id when the names line up
+function xtMatch(c){
+  const forms=[String(c||'').trim(), String(c||'').split(/\s[—–-]\s/)[0].trim()].filter(Boolean);
+  for(const f of forms){ const A=normT(f), fl=f.toLowerCase(); if(A.length<4) continue;
+    for(const id of TOPIC_ORDER){ const name=String(TOPIC_NAME[id]||''); const names=[name, name.replace(/^[^:]*:\s*/,'')];
+      for(const nm of names){ const N=normT(nm); if(!N) continue; if(N===A||nm.toLowerCase().startsWith(fl+':')||(A.length>=6&&N.includes(A))||(N.length>=5&&A.includes(N))) return id; } } }
+  // first-word stem: 'Criminal investigation process' -> Crime
+  const words=String(c||'').toLowerCase().split(/[^a-z]+/).filter(w=>w.length>=4);
+  for(const id of TOPIC_ORDER){ const w=String(TOPIC_NAME[id]||'').toLowerCase().replace(/^[^:]*:\s*/,'').split(/[^a-z]+/)[0]||''; if(w.length>=5&&words.some(x=>x.startsWith(w.slice(0,4)))) return id; }
+  return null;
+}
+function xtTopicOf(it,s){
+  const cands=[it.area, it.topic, ...((it.parts||[]).map(p=>p.topic))].map(x=>String(x||'').trim()).filter(Boolean);
+  for(const c of cands){ const id=xtMatch(c); if(id) return id; }
+  const sec=String((s&&s.name)||'').split(' · ').pop().trim(); const sid=sec&&!/^section\s/i.test(sec)?xtMatch(sec):null; if(sid) return sid;
+  const fb=XT_FALLBACK[SUBJ.id]&&XT_FALLBACK[SUBJ.id](it,s); if(fb) return fb;
+  if(!cands.length) return 'General';
+  const raw=cands[0].split(/\s[—–-]\s/)[0].trim(); return raw.charAt(0).toUpperCase()+raw.slice(1);
+}
+// where a paper gives no module label, the exam's own layout says which topic a question is from
+const XT_FALLBACK={
+  legal:(it,s)=>{ const n=parseInt(it.n,10); const hr=TOPIC_ORDER.find(id=>/human rights/i.test(TOPIC_NAME[id]||'')), cr=TOPIC_ORDER.find(id=>/^crime$/i.test(TOPIC_NAME[id]||'')); if(it.type==='mc'&&n>=1&&n<=20) return n<=15?cr:hr; if(it.type==='sa'&&!/Section III|Option/i.test(String((s&&s.name)||''))) return hr; return null; }
+};
+function xtTopicOpts(){
+  if(isBiz()) return XTOPICS;
+  const have=new Set(itemIndex().map(r=>r.topic)); const out=[['all','All topics']];
+  for(const [k,n] of XTOPICS){ if(k!=='all'&&have.has(k)) out.push([k,n]); }
+  for(const t of [...have].filter(t=>!TOPIC_NAME[t]).sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}))) out.push([t,t]);
+  return out;
+}
 function deckTopic(){ if(!isBiz()) return TOPIC_ORDER.includes(S.deck)?S.deck:'all'; return ({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR',ratios:'Finance'})[S.deck]||'all'; }
 function itemIndex(){
-  if(!isBiz()) return [];
-  if(itemIndex.cache) return itemIndex.cache; const rows=[];
+  if(itemIndex.cache&&itemIndex.sid===SUBJ.id) return itemIndex.cache; const rows=[]; itemIndex.sid=SUBJ.id;
   for(const p of PAPERS){ for(const {s,it} of pItems(p)){
     if(it.type!=='mc'&&it.type!=='sa') continue; let topic;
-    if(it.type==='mc') topic=coarseTopic(it.topic, it.stem+' '+(it.pre||'')+' '+(it.opts||[]).join(' '));
+    if(!isBiz()) topic=xtTopicOf(it,s);
+    else if(it.type==='mc') topic=coarseTopic(it.topic, it.stem+' '+(it.pre||'')+' '+(it.opts||[]).join(' '));
     else { const cnt={}; for(const pt of it.parts){ const t=coarseTopic(pt.topic||it.topic||'', pt.text+' '+(it.stim||'')); cnt[t]=(cnt[t]||0)+1; } topic=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0]; }
     if(topic==='Other'&&p.src==='riv') topic='Operations';
     rows.push({p,s,it,type:it.type,topic,max:itemUnits(it).reduce((a,u)=>a+u.max,0)});
@@ -4695,8 +4729,8 @@ function stimFor(card,it){ if(it.type==='mc'){ return; } if(it.stim) card.append
 
 // ---------- Test: real HSC questions (default) or flashcard questions ----------
 let XT=null, XTIV=null;
-function testKindSeg(){ if(!isBiz()) return null; return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
-function renderTest(){ if(!isBiz()||(S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
+function testKindSeg(){ if(!hasXT()) return null; return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
+function renderTest(){ if(!hasXT()||(S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
 function xtRows(){ return XT.list.map(x=>itemRow(x.pid,x.iid)).filter(Boolean); }
 function xtNew(rows){ XT={list:rows.map(r=>({pid:r.p.id,iid:r.it.id})), i:0, started:true, done:false, t0:Date.now(), t1:null, fresh:{}}; }
 function xtStart(){
@@ -4728,24 +4762,30 @@ function renderExamTest(){
 }
 function xtNext(){ if(XT.i>=XT.list.length-1){ XT.done=true; XT.t1=Date.now(); } else XT.i++; render(); window.scrollTo({top:0}); }
 function renderXtSetup(v){
+  if(!isBiz()&&SUBJ.papers&&!SUBJ_PAPERS[SUBJ.id]){ v.append(el('div',{class:'panel'}, el('h2',{},'Exam-style test'), el('p',{class:'small'},'Loading the papers…'))); const want=SUBJ.id; loadSubjPapers().then(()=>{ if(SUBJ.id===want){ setPapers(); if(S.mode==='test') render(); } }).catch(()=>{ const n=v.querySelector('.panel p'); if(n) n.textContent='Could not load the papers. Check your connection and try again.'; }); return; }
+  setPapers();
   if(S.xtDeck!==S.deck){ S.xtTopic=deckTopic(); S.xtDeck=S.deck; }
+  const opts=xtTopicOpts(); if(!opts.some(([k])=>k===(S.xtTopic||'all'))) S.xtTopic='all';
+  const hasMC=itemIndex().some(r=>r.type==='mc'); if(!hasMC&&(S.xtFmt||'mc')!=='sa') S.xtFmt='sa';
   const topic=S.xtTopic||'all', fmt=S.xtFmt||'mc';
   const pool=t=>itemIndex().filter(r=>r.type===t&&(topic==='all'||r.topic===topic));
   const mcPool=pool('mc'), saPool=pool('sa');
   const weakN=mcPool.concat(saPool).filter(r=>{ const st=itemStatus(r.p,r.it); return st.done&&st.got/st.max<0.6; }).length;
   const n= fmt==='mc'? Math.min(S.xtN||10, mcPool.length) : fmt==='sa'? Math.min(S.xtSaN||1, saPool.length) : Math.min(10,mcPool.length)+Math.min(1,saPool.length);
   const est=fmt==='mc'? Array(n).fill({type:'mc'}) : fmt==='sa'? saPool.slice(0,n) : Array(Math.min(10,mcPool.length)).fill({type:'mc'}).concat(saPool.slice(0,1));
-  const what= fmt==='mc'? `${n} multiple-choice questions, the same style as Section I (20 questions, 1 mark each).` : fmt==='sa'? `${n} short-answer question${n===1?'':'s'} with a stimulus and parts, the same style as Section II. Written answers are marked against the official criteria.` : `10 multiple-choice questions and 1 short-answer question: a slice of Sections I and II.`;
+  const what= isBiz()? (fmt==='mc'? `${n} multiple-choice questions, the same style as Section I (20 questions, 1 mark each).` : fmt==='sa'? `${n} short-answer question${n===1?'':'s'} with a stimulus and parts, the same style as Section II. Written answers are marked against the official criteria.` : `10 multiple-choice questions and 1 short-answer question: a slice of Sections I and II.`)
+    : (fmt==='mc'? `${n} multiple-choice questions from past HSC papers, 1 mark each. They mark themselves.` : fmt==='sa'? `${n} written question${n===1?'':'s'} with parts, marked by AI against the official marking guidelines.` : `10 multiple-choice questions and 1 written question: a slice of a real paper.`);
+  const yrs=PAPERS.map(p=>p.year).filter(Boolean); const yspan=yrs.length?` (${Math.min(...yrs)} to ${Math.max(...yrs)})`:'';
   const box=el('div',{class:'panel'}, el('h2',{},'Exam-style test'),
-    el('p',{},'Real questions from the HSC Business Studies exams (2015 to 2025) and Riverview Task 1, in the format you will see in the exam. Multiple choice marks itself. Short answers are marked against the official marking criteria, with the sample answer and what the markers said.'),
+    el('p',{}, isBiz()?'Real questions from the HSC Business Studies exams (2015 to 2025) and Riverview Task 1, in the format you will see in the exam. Multiple choice marks itself. Short answers are marked against the official marking criteria, with the sample answer and what the markers said.':`Real questions from the NESA HSC ${SUBJ.name} exams${yspan}, by module or section. Multiple choice marks itself. Written answers are marked by AI against the official marking guidelines, or you can mark them yourself.`),
     testKindSeg(),
-    el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(XTOPICS, topic, val=>{ S.xtTopic=val; S.xtDeck=S.deck; save(); render(); })),
-    el('div',{class:'row'}, el('span',{class:'small'},'Format:'), seg([['mc','Multiple choice'],['sa','Short answer'],['mini','Mini exam']], fmt, val=>{ S.xtFmt=val; save(); render(); })),
+    el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(opts, topic, val=>{ S.xtTopic=val; S.xtDeck=S.deck; save(); render(); })),
+    el('div',{class:'row'}, el('span',{class:'small'},'Format:'), seg(hasMC?[['mc','Multiple choice'],['sa',isBiz()?'Short answer':'Written'],['mini','Mini exam']]:[['sa','Written']], fmt, val=>{ S.xtFmt=val; save(); render(); })),
     fmt==='mc'? el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[10,'10'],[20,'20 (a full Section I)']], S.xtN||10, val=>{ S.xtN=val; save(); render(); })) : fmt==='sa'? el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[1,'1'],[2,'2']], S.xtSaN||1, val=>{ S.xtSaN=val; save(); render(); })) : null,
     el('p',{}, what),
-    el('p',{class:'small'}, `${mcPool.length} multiple choice and ${saPool.length} short-answer questions in ${TOPIC_NAME[topic].toLowerCase()==='all topics'?'all topics':TOPIC_NAME[topic]}. ${weakN?`${weakN} you got wrong before come back first. `:''}About ${paceMins(est)} minutes at exam pace${hasProv()?' with your extra time':''}.`),
+    el('p',{class:'small'}, `${mcPool.length} multiple choice and ${saPool.length} ${isBiz()?'short-answer':'written'} questions in ${topic==='all'?'all topics':tName(topic)}. ${weakN?`${weakN} you got wrong before come back first. `:''}About ${paceMins(est)} minutes at exam pace${hasProv()?' with your extra time':''}.`),
     el('button',{class:'primary',disabled:n?null:'',onclick:xtStart}, n?'Start the test':'No questions in this format for this topic'),
-    el('p',{class:'small'},'Business reports and essays are under Past papers, with a timed run.'));
+    el('p',{class:'small'}, isBiz()?'Business reports and essays are under Past papers, with a timed run.':'Whole papers, with the extended responses, are under Past papers.'));
   v.append(box);
 }
 function renderXtResults(v){
@@ -4900,6 +4940,10 @@ function renderPractice(){
   } else if(hasExams()){
     const lastPaper=S.pp&&S.pp.paper&&PBY[S.pp.paper];
     acts.append(action('Past papers', lastPaper?`Continue ${lastPaper.title}`:(SUBJ.np?`${SUBJ.np} HSC papers, typed answers marked by AI`:'HSC exams and marking guidelines to download'), ()=>goMode('papers'), 'primary'));
+    if(SUBJ.papers){
+      acts.append(action('Exam-style test', 'Real HSC questions by module, marked like the exam', ()=>{ S.testKind='exam'; XT=null; goMode('test'); }));
+      acts.append(action('Find a question', 'Search every HSC question by words, module, year or verb', ()=>{ S.pp.paper=null; S.pp.item=null; goMode('papers'); }));
+    }
   }
   acts.append(action('Test on cards', 'Questions one at a time, typed or on paper, then mark yourself', ()=>{ S.testKind='cards'; T=null; goMode('test'); }));
   acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }));
@@ -5375,7 +5419,7 @@ const PEXTRA = {"guides":[{"label":"Writing extended responses (2015 guide)","hr
 let PAPERS = BIZ_PAPERS;
 let PBY = Object.fromEntries(PAPERS.map(p=>[p.id,p]));
 const SUBJ_PAPERS={};
-function setPapers(){ const want=isBiz()?BIZ_PAPERS:(SUBJ_PAPERS[SUBJ.id]||[]); if(PAPERS===want) return; PAPERS=want; PBY=Object.fromEntries(PAPERS.map(p=>[p.id,p])); qIndex.cache=null; }
+function setPapers(){ const want=isBiz()?BIZ_PAPERS:(SUBJ_PAPERS[SUBJ.id]||[]); if(PAPERS===want) return; PAPERS=want; PBY=Object.fromEntries(PAPERS.map(p=>[p.id,p])); qIndex.cache=null; itemIndex.cache=null; }
 function loadSubjPapers(){ const s=SUBJ; if(SUBJ_PAPERS[s.id]) return Promise.resolve(); return fetch(s.papers+'?v='+(s.pv||'1')).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(d=>{ SUBJ_PAPERS[s.id]=d; }); }
 const NESA_URL='https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/business-studies';
 if(!S.papers||typeof S.papers!=='object') S.papers={};
@@ -5642,7 +5686,7 @@ function openItem(id){ S.pp.item=id; save(); pushMode(); prender(); window.scrol
 const QVERB=/^(outline|explain|describe|discuss|analyse|evaluate|assess|identify|define|compare|distinguish|justify|recommend|propose|account for|examine|calculate|predict|interpret|summarise|clarify|classify|construct|contrast|demonstrate|extract|list|state|to what extent|how|why|what|which)\b/i;
 const TOPIC_WORDS={Operations:/operation|production|quality|supply chain|inventory|outsourc|performance objective|transformation|input|output|lean|technolog|global sourcing/g, Marketing:/marketing|brand|pric|promot|customer|segment|product life|distribution|place|advertis|sponsor|niche|mass market|e-marketing|global market/g, Finance:/financ|ratio|cash flow|profit|budget|debt|equity|liquidity|solvency|gearing|working capital|balance sheet|income statement|expense|revenue|capital|hedging|derivative|exchange rate/g, HR:/human resource|employ|staff|training|recruit|workplace|industrial|union|dispute|separation|remuneration|award|enterprise agreement|outsourcing of hr|work\/life|motivation|redundanc/g};
 function coarseTopic(raw,text){ const r=String(raw||'').toLowerCase(); if(/^operations/.test(r)) return 'Operations'; if(/^marketing/.test(r)) return 'Marketing'; if(/^finance/.test(r)) return 'Finance'; if(/^(human resources?|hr)/.test(r)) return 'HR'; const t=(r+' '+String(text||'')).toLowerCase(); let best='Other', bn=0; for(const [k,re] of Object.entries(TOPIC_WORDS)){ const n=(t.match(re)||[]).length; if(n>bn){ bn=n; best=k; } } return best; }
-function qIndex(){ if(!isBiz()) return []; if(qIndex.cache) return qIndex.cache; const rows=[]; for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const text=it.type==='mc'?it.stem:(u.part?u.part.text:it.text); const first=String(text||'').replace(/^[^A-Za-z]+/,''); const vm=first.match(QVERB); const verb=it.type==='mc'?'Multiple choice':(vm?vm[0].toLowerCase().replace(/^\w/,ch=>ch.toUpperCase()):'Other'); const raw=(u.part&&u.part.topic)||it.topic||''; rows.push({p,s,it,part:u.part,max:u.max,text:String(text||'').replace(/\s+/g,' ').slice(0,170),verb,topic:coarseTopic(raw,text),raw,type:it.type,year:p.year,src:p.src}); } } } return qIndex.cache=rows; }
+function qIndex(){ if(!hasXT()) return []; if(qIndex.cache) return qIndex.cache; const rows=[]; for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const text=it.type==='mc'?it.stem:(u.part?u.part.text:it.text); const first=String(text||'').replace(/^[^A-Za-z]+/,''); const vm=first.match(QVERB); const verb=it.type==='mc'?'Multiple choice':(vm?vm[0].toLowerCase().replace(/^\w/,ch=>ch.toUpperCase()):'Other'); const raw=(u.part&&u.part.topic)||it.topic||''; rows.push({p,s,it,part:u.part,max:u.max,text:String(text||'').replace(/\s+/g,' ').slice(0,170),verb,topic:isBiz()?coarseTopic(raw,text):xtTopicOf(it,s),raw,type:it.type,year:p.year,src:p.src}); } } } return qIndex.cache=rows; }
 let QF={q:'',topic:'all',year:'all',type:'all',verb:'all',status:'all',marks:'all'};
 function sel(opts,val,on){ const s=el('select',{class:'qsel',onchange:e=>on(e.target.value)}); for(const [v,l] of opts){ const o=el('option',{value:String(v)},l); if(String(v)===String(val)) o.selected=true; s.append(o); } return s; }
 function qMatches(r){ const q=QF.q.trim().toLowerCase(); if(q&&!(r.text+' '+r.raw+' '+r.p.title).toLowerCase().includes(q)) return false; if(QF.topic!=='all'&&r.topic!==QF.topic) return false; if(QF.year!=='all'&&String(r.year)!==QF.year) return false; if(QF.type!=='all'&&r.type!==QF.type) return false; if(QF.verb!=='all'&&r.verb!==QF.verb) return false; if(QF.marks!=='all'){ const m=r.max; if(QF.marks==='1'&&m!==1) return false; if(QF.marks==='2-3'&&(m<2||m>3)) return false; if(QF.marks==='4-6'&&(m<4||m>6)) return false; if(QF.marks==='7+'&&m<7) return false; } if(QF.status!=='all'){ const rc=rec(r.p,r.it,r.part); const done=!!rc&&typeof rc.m==='number'; if(QF.status==='new'&&done) return false; if(QF.status==='done'&&!done) return false; if(QF.status==='weak'&&!(done&&rc.m/r.max<0.6)) return false; } return true; }
@@ -5651,19 +5695,20 @@ function searchPanel(){
   const d=el('details',{class:'panel qsearch',open:active?'':null}, el('summary',{}, el('h2',{style:'display:inline'},'Find a question'), el('span',{class:'small'},` · ${all.length} questions and parts across ${PAPERS.length} papers`)));
   const years=[...new Set(all.map(r=>r.year))].sort((a,b)=>b-a); const verbs=[...new Set(all.map(r=>r.verb))].sort();
   const re=()=>prender();
-  const qin=el('input',{type:'search',class:'qsel',placeholder:'Words in the question, e.g. cash flow',value:QF.q,'aria-label':'Search questions'}); qin.addEventListener('change',()=>{ QF.q=qin.value; re(); }); qin.addEventListener('keydown',e=>{ if(e.key==='Enter'){ QF.q=qin.value; re(); } });
+  const topicOpts=isBiz()?[['all','Any topic'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources'],['Other','Other']]:[['all','Any topic']].concat(xtTopicOpts().slice(1)); if(!topicOpts.some(([k])=>k===QF.topic)) QF.topic='all';
+  const qin=el('input',{type:'search',class:'qsel',placeholder:isBiz()?'Words in the question, e.g. cash flow':'Words in the question or its topic',value:QF.q,'aria-label':'Search questions'}); qin.addEventListener('change',()=>{ QF.q=qin.value; re(); }); qin.addEventListener('keydown',e=>{ if(e.key==='Enter'){ QF.q=qin.value; re(); } });
   d.append(el('div',{class:'qfilters'}, qin,
-    sel([['all','Any topic'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources'],['Other','Other']],QF.topic,v=>{QF.topic=v; re();}),
+    sel(topicOpts,QF.topic,v=>{QF.topic=v; re();}),
     sel([['all','Any year'],...years.map(y=>[y,String(y)])],QF.year,v=>{QF.year=v; re();}),
-    sel([['all','Any type'],['mc','Multiple choice'],['sa','Short answer'],['long','Report or essay']],QF.type,v=>{QF.type=v; re();}),
+    sel([['all','Any type'],['mc','Multiple choice'],['sa',isBiz()?'Short answer':'Written, with parts'],['long',isBiz()?'Report or essay':'Extended response']],QF.type,v=>{QF.type=v; re();}),
     sel([['all','Any verb'],...verbs.map(x=>[x,x])],QF.verb,v=>{QF.verb=v; re();}),
     sel([['all','Any marks'],['1','1 mark'],['2-3','2 to 3'],['4-6','4 to 6'],['7+','7 or more']],QF.marks,v=>{QF.marks=v; re();}),
     sel([['all','Any status'],['new','Not attempted'],['done','Attempted'],['weak','Under 60%']],QF.status,v=>{QF.status=v; re();}),
     el('button',{class:'ghost',onclick:()=>{ QF={q:'',topic:'all',year:'all',type:'all',verb:'all',status:'all',marks:'all'}; re(); }},'Clear')));
-  const hits=all.filter(qMatches); d.append(el('p',{class:'small'}, `${hits.length} match${hits.length===1?'':'es'}${hits.length>60?', showing the first 60':''}. Topics are from the NESA mapping grid where it exists, otherwise guessed from the wording.`));
+  const hits=all.filter(qMatches); d.append(el('p',{class:'small'}, `${hits.length} match${hits.length===1?'':'es'}${hits.length>60?', showing the first 60':''}. ${isBiz()?'Topics are from the NESA mapping grid where it exists, otherwise guessed from the wording.':'Topics follow the module or section each question comes from.'}`));
   const list=el('div',{});
   for(const r of hits.slice(0,60)){ const rc=rec(r.p,r.it,r.part); const done=!!rc&&typeof rc.m==='number';
-    list.append(el('div',{class:'qrow'}, el('div',{class:'meta'}, `${r.p.title} · Q${r.it.n}${r.part?'('+r.part.p+')':''} · ${r.max} mark${r.max===1?'':'s'} · ${r.verb} · ${r.topic}${done?` · you got ${rc.m}/${r.max}`:''}`), el('div',{}, r.text), el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=r.p.id; S.pp.item=r.it.id; save(); prender(); window.scrollTo({top:0}); }}, done?'Open again':'Open'), r.raw?el('span',{class:'small'}, r.raw):null))); }
+    list.append(el('div',{class:'qrow'}, el('div',{class:'meta'}, `${r.p.title} · Q${r.it.n}${r.part?'('+r.part.p+')':''} · ${r.max} mark${r.max===1?'':'s'} · ${r.verb} · ${tName(r.topic)}${done?` · you got ${rc.m}/${r.max}`:''}`), el('div',{}, r.text||'(The question is a picture. Open it to see it.)'), el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=r.p.id; S.pp.item=r.it.id; save(); prender(); window.scrollTo({top:0}); }}, done?'Open again':'Open'), r.raw?el('span',{class:'small'}, r.raw):null))); }
   d.append(list); return d;
 }
 function renderPick(v){
@@ -5698,6 +5743,7 @@ function renderPickSubj(v){
   kp.append(el('div',{class:'inrow'}, ki, el('button',{class:'primary',onclick:()=>{ const v=ki.value.trim(); try{ if(v) localStorage.setItem('bss_apikey',v); else localStorage.removeItem('bss_apikey'); }catch(e){} SAMPLE=undefined; toast(v?'AI marking is on.':'AI marking key removed.'); renderPapers(); }},'Save key'), apiKey()?el('button',{class:'ghost',onclick:()=>{ try{ localStorage.removeItem('bss_apikey'); }catch(e){} SAMPLE=undefined; renderPapers(); }},'Remove key'):null));
   intro.append(kp);
   v.append(intro);
+  v.append(searchPanel());
   const grid=(ps)=>{ const g=el('div',{class:'pgrid'}); for(const p of ps){ const st=paperStatus(p); g.append(el('button',{class:'pbtn'+(st.done===st.n?' done':st.done?' part':''),onclick:()=>openPaper(p.id)}, el('b',{},p.title.replace(/^HSC /,'')), el('span',{}, st.done?`${st.done}/${st.n} done · ${st.got}/${st.max} marks`:`${st.n} questions · ${p.marks} marks`))); } return g; };
   const groups=[...new Set(PAPERS.map(p=>p.subjName||SUBJ.name))];
   for(const gname of groups){ const ps=PAPERS.filter(p=>(p.subjName||SUBJ.name)===gname).sort((a,b)=>b.year-a.year||(a.paper||0)-(b.paper||0)); const ys=ps.map(p=>p.year);
