@@ -292,6 +292,11 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
 .offlist{display:grid;margin-top:.4rem} .offrow{display:flex;justify-content:space-between;align-items:center;gap:.6rem;padding:.45rem 0;border-top:1.5px solid var(--border)} .offrow button{min-height:40px;padding:.3rem .9rem} .offpill{font-size:.85rem;padding:.15rem .7rem;border-radius:999px;background:var(--good-soft);color:var(--good-deep);font-weight:700}
 button,.act,.mainnav button,.subjgrid button,label.btnlike{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media (display-mode: standalone){ html{overscroll-behavior-y:none} }
+.rep table{width:100%;border-collapse:collapse;font-size:.95rem;margin-top:.4rem} .rep th{text-align:left;font-size:.8rem;color:var(--muted);font-weight:700;padding:.2rem .4rem} .rep td{padding:.4rem .4rem;border-top:1.5px solid var(--border);vertical-align:top} .rep td.num,.rep th.num{text-align:right;white-space:nowrap} .rep .na{color:var(--muted);font-style:italic}
+.rep .gain{color:var(--good-deep);font-weight:700} .rep .loss{color:var(--warn);font-weight:700} .rep .steps{font-variant-numeric:tabular-nums;white-space:nowrap}
+.trend{display:grid;gap:.45rem;margin-top:.4rem} .trend .wk{display:grid;grid-template-columns:7.5rem 1fr 7rem;gap:.6rem;align-items:center} .tbar{height:12px;background:var(--surface-2);border-radius:6px;overflow:hidden} .tbar span{display:block;height:100%;background:var(--accent)} .tbar span.cards{background:var(--good)}
+.rep .openq{min-height:36px;padding:.2rem .7rem;font-size:.9rem}
+.lbscope{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.3rem 0 .5rem}
 .savestat{font-size:.85rem;color:var(--muted);padding:.1rem .55rem;border-radius:999px;background:var(--surface-2)} .savestat.ok{color:var(--good-deep);background:var(--good-soft)} .savestat.warn{color:var(--mid);background:var(--mid-soft)} .savestat.bad{color:var(--warn);background:var(--warn-soft)}
 .evid{margin:.2rem 0 .2rem .6rem;padding-left:.6rem;border-left:3px solid var(--good);font-style:italic;color:var(--muted)} .lowconf{background:var(--mid-soft);border-radius:10px;padding:.5rem .8rem;font-size:.95rem} .nextact{background:var(--accent-soft);border-radius:10px;padding:.5rem .8rem} .nextact b{color:var(--accent)}
 .lb{display:grid;gap:.4rem}
@@ -4462,12 +4467,12 @@ function confetti(){
 
 // ---------- header ----------
 // Five sections. A mode belongs to one section; 'test' belongs to Practice when it is the exam-style test.
-const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress'};
-function sectionOf(m){ if(m==='test'&&isBiz()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
+const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress',report:'progress',class:'progress'};
+function sectionOf(m){ if(m==='test'&&hasXT()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
 const SECTION_DEFAULT={today:'home',subjects:'subjects',practice:'practice',library:'library',progress:'stats'};
 // Every mode has an address, so links can be shared and the Back button works.
-const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes'};
-function hashFor(m){ if(m==='test') return (isBiz()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
+const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes',report:'#report',class:'#class'};
+function hashFor(m){ if(m==='test') return (hasXT()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
 function modeOfHash(h){ h=String(h||'').replace(/^#/,''); if(!h||h.startsWith('import=')) return null; const [head,...rest]=h.split('/'); if(head==='test-cards') return {mode:'test',kind:'cards'}; if(head==='test') return {mode:'test',kind:'exam'}; if(head==='papers') return {mode:'papers',paper:rest[0]||null,item:rest[1]||null}; const m=Object.keys(HASH_OF).find(k=>HASH_OF[k]==='#'+head); return m?{mode:m}:null; }
 function applyHash(h){ const x=modeOfHash(h); if(!x) return false; S.mode=x.mode; if(x.kind) S.testKind=x.kind; if(x.mode==='papers'){ S.pp.paper=x.paper&&PBY[x.paper]?x.paper:null; S.pp.item=S.pp.paper&&x.item?x.item:null; } return true; }
 let NAV_POP=false;
@@ -4657,13 +4662,47 @@ function markTest(ok){ const c=T.q[T.i]; if(ok)T.right++; else T.missed.push(c);
 // ---------- shared: real exam questions by topic ----------
 const TOPIC_NAME={Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'Human resources',Other:'General',all:'All topics'};
 const XTOPICS=[['all','All topics'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources']];
+// ---------- phase E3: tests for every subject ----------
+function hasXT(){ return isBiz()||(hasExams()&&!!SUBJ.papers); }
+function tName(t){ return TOPIC_NAME[t]||t; }
+function normT(x){ return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,''); }
+// a paper question's module/section, mapped onto the subject's card topic id when the names line up
+function xtMatch(c){
+  const forms=[String(c||'').trim(), String(c||'').split(/\s[—–-]\s/)[0].trim()].filter(Boolean);
+  for(const f of forms){ const A=normT(f), fl=f.toLowerCase(); if(A.length<4) continue;
+    for(const id of TOPIC_ORDER){ const name=String(TOPIC_NAME[id]||''); const names=[name, name.replace(/^[^:]*:\s*/,'')];
+      for(const nm of names){ const N=normT(nm); if(!N) continue; if(N===A||nm.toLowerCase().startsWith(fl+':')||(A.length>=6&&N.includes(A))||(N.length>=5&&A.includes(N))) return id; } } }
+  // first-word stem: 'Criminal investigation process' -> Crime
+  const words=String(c||'').toLowerCase().split(/[^a-z]+/).filter(w=>w.length>=4);
+  for(const id of TOPIC_ORDER){ const w=String(TOPIC_NAME[id]||'').toLowerCase().replace(/^[^:]*:\s*/,'').split(/[^a-z]+/)[0]||''; if(w.length>=5&&words.some(x=>x.startsWith(w.slice(0,4)))) return id; }
+  return null;
+}
+function xtTopicOf(it,s){
+  const cands=[it.area, it.topic, ...((it.parts||[]).map(p=>p.topic))].map(x=>String(x||'').trim()).filter(Boolean);
+  for(const c of cands){ const id=xtMatch(c); if(id) return id; }
+  const sec=String((s&&s.name)||'').split(' · ').pop().trim(); const sid=sec&&!/^section\s/i.test(sec)?xtMatch(sec):null; if(sid) return sid;
+  const fb=XT_FALLBACK[SUBJ.id]&&XT_FALLBACK[SUBJ.id](it,s); if(fb) return fb;
+  if(!cands.length) return 'General';
+  const raw=cands[0].split(/\s[—–-]\s/)[0].trim(); return raw.charAt(0).toUpperCase()+raw.slice(1);
+}
+// where a paper gives no module label, the exam's own layout says which topic a question is from
+const XT_FALLBACK={
+  legal:(it,s)=>{ const n=parseInt(it.n,10); const hr=TOPIC_ORDER.find(id=>/human rights/i.test(TOPIC_NAME[id]||'')), cr=TOPIC_ORDER.find(id=>/^crime$/i.test(TOPIC_NAME[id]||'')); if(it.type==='mc'&&n>=1&&n<=20) return n<=15?cr:hr; if(it.type==='sa'&&!/Section III|Option/i.test(String((s&&s.name)||''))) return hr; return null; }
+};
+function xtTopicOpts(){
+  if(isBiz()) return XTOPICS;
+  const have=new Set(itemIndex().map(r=>r.topic)); const out=[['all','All topics']];
+  for(const [k,n] of XTOPICS){ if(k!=='all'&&have.has(k)) out.push([k,n]); }
+  for(const t of [...have].filter(t=>!TOPIC_NAME[t]).sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true}))) out.push([t,t]);
+  return out;
+}
 function deckTopic(){ if(!isBiz()) return TOPIC_ORDER.includes(S.deck)?S.deck:'all'; return ({Operations:'Operations',Marketing:'Marketing',Finance:'Finance',HR:'HR',ratios:'Finance'})[S.deck]||'all'; }
 function itemIndex(){
-  if(!isBiz()) return [];
-  if(itemIndex.cache) return itemIndex.cache; const rows=[];
+  if(itemIndex.cache&&itemIndex.sid===SUBJ.id) return itemIndex.cache; const rows=[]; itemIndex.sid=SUBJ.id;
   for(const p of PAPERS){ for(const {s,it} of pItems(p)){
     if(it.type!=='mc'&&it.type!=='sa') continue; let topic;
-    if(it.type==='mc') topic=coarseTopic(it.topic, it.stem+' '+(it.pre||'')+' '+(it.opts||[]).join(' '));
+    if(!isBiz()) topic=xtTopicOf(it,s);
+    else if(it.type==='mc') topic=coarseTopic(it.topic, it.stem+' '+(it.pre||'')+' '+(it.opts||[]).join(' '));
     else { const cnt={}; for(const pt of it.parts){ const t=coarseTopic(pt.topic||it.topic||'', pt.text+' '+(it.stim||'')); cnt[t]=(cnt[t]||0)+1; } topic=Object.entries(cnt).sort((a,b)=>b[1]-a[1])[0][0]; }
     if(topic==='Other'&&p.src==='riv') topic='Operations';
     rows.push({p,s,it,type:it.type,topic,max:itemUnits(it).reduce((a,u)=>a+u.max,0)});
@@ -4690,8 +4729,8 @@ function stimFor(card,it){ if(it.type==='mc'){ return; } if(it.stim) card.append
 
 // ---------- Test: real HSC questions (default) or flashcard questions ----------
 let XT=null, XTIV=null;
-function testKindSeg(){ if(!isBiz()) return null; return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
-function renderTest(){ if(!isBiz()||(S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
+function testKindSeg(){ if(!hasXT()) return null; return el('div',{class:'row'}, el('span',{class:'small'},'Questions from:'), seg([['exam','Real HSC exams'],['cards','My flashcards']], S.testKind||'exam', v=>{ S.testKind=v; save(); render(); })); }
+function renderTest(){ if(!hasXT()||(S.testKind||'exam')==='cards') return renderCardTest(); return renderExamTest(); }
 function xtRows(){ return XT.list.map(x=>itemRow(x.pid,x.iid)).filter(Boolean); }
 function xtNew(rows){ XT={list:rows.map(r=>({pid:r.p.id,iid:r.it.id})), i:0, started:true, done:false, t0:Date.now(), t1:null, fresh:{}}; }
 function xtStart(){
@@ -4723,24 +4762,30 @@ function renderExamTest(){
 }
 function xtNext(){ if(XT.i>=XT.list.length-1){ XT.done=true; XT.t1=Date.now(); } else XT.i++; render(); window.scrollTo({top:0}); }
 function renderXtSetup(v){
+  if(!isBiz()&&SUBJ.papers&&!SUBJ_PAPERS[SUBJ.id]){ v.append(el('div',{class:'panel'}, el('h2',{},'Exam-style test'), el('p',{class:'small'},'Loading the papers…'))); const want=SUBJ.id; loadSubjPapers().then(()=>{ if(SUBJ.id===want){ setPapers(); if(S.mode==='test') render(); } }).catch(()=>{ const n=v.querySelector('.panel p'); if(n) n.textContent='Could not load the papers. Check your connection and try again.'; }); return; }
+  setPapers();
   if(S.xtDeck!==S.deck){ S.xtTopic=deckTopic(); S.xtDeck=S.deck; }
+  const opts=xtTopicOpts(); if(!opts.some(([k])=>k===(S.xtTopic||'all'))) S.xtTopic='all';
+  const hasMC=itemIndex().some(r=>r.type==='mc'); if(!hasMC&&(S.xtFmt||'mc')!=='sa') S.xtFmt='sa';
   const topic=S.xtTopic||'all', fmt=S.xtFmt||'mc';
   const pool=t=>itemIndex().filter(r=>r.type===t&&(topic==='all'||r.topic===topic));
   const mcPool=pool('mc'), saPool=pool('sa');
   const weakN=mcPool.concat(saPool).filter(r=>{ const st=itemStatus(r.p,r.it); return st.done&&st.got/st.max<0.6; }).length;
   const n= fmt==='mc'? Math.min(S.xtN||10, mcPool.length) : fmt==='sa'? Math.min(S.xtSaN||1, saPool.length) : Math.min(10,mcPool.length)+Math.min(1,saPool.length);
   const est=fmt==='mc'? Array(n).fill({type:'mc'}) : fmt==='sa'? saPool.slice(0,n) : Array(Math.min(10,mcPool.length)).fill({type:'mc'}).concat(saPool.slice(0,1));
-  const what= fmt==='mc'? `${n} multiple-choice questions, the same style as Section I (20 questions, 1 mark each).` : fmt==='sa'? `${n} short-answer question${n===1?'':'s'} with a stimulus and parts, the same style as Section II. Written answers are marked against the official criteria.` : `10 multiple-choice questions and 1 short-answer question: a slice of Sections I and II.`;
+  const what= isBiz()? (fmt==='mc'? `${n} multiple-choice questions, the same style as Section I (20 questions, 1 mark each).` : fmt==='sa'? `${n} short-answer question${n===1?'':'s'} with a stimulus and parts, the same style as Section II. Written answers are marked against the official criteria.` : `10 multiple-choice questions and 1 short-answer question: a slice of Sections I and II.`)
+    : (fmt==='mc'? `${n} multiple-choice questions from past HSC papers, 1 mark each. They mark themselves.` : fmt==='sa'? `${n} written question${n===1?'':'s'} with parts, marked by AI against the official marking guidelines.` : `10 multiple-choice questions and 1 written question: a slice of a real paper.`);
+  const yrs=PAPERS.map(p=>p.year).filter(Boolean); const yspan=yrs.length?` (${Math.min(...yrs)} to ${Math.max(...yrs)})`:'';
   const box=el('div',{class:'panel'}, el('h2',{},'Exam-style test'),
-    el('p',{},'Real questions from the HSC Business Studies exams (2015 to 2025) and Riverview Task 1, in the format you will see in the exam. Multiple choice marks itself. Short answers are marked against the official marking criteria, with the sample answer and what the markers said.'),
+    el('p',{}, isBiz()?'Real questions from the HSC Business Studies exams (2015 to 2025) and Riverview Task 1, in the format you will see in the exam. Multiple choice marks itself. Short answers are marked against the official marking criteria, with the sample answer and what the markers said.':`Real questions from the NESA HSC ${SUBJ.name} exams${yspan}, by module or section. Multiple choice marks itself. Written answers are marked by AI against the official marking guidelines, or you can mark them yourself.`),
     testKindSeg(),
-    el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(XTOPICS, topic, val=>{ S.xtTopic=val; S.xtDeck=S.deck; save(); render(); })),
-    el('div',{class:'row'}, el('span',{class:'small'},'Format:'), seg([['mc','Multiple choice'],['sa','Short answer'],['mini','Mini exam']], fmt, val=>{ S.xtFmt=val; save(); render(); })),
+    el('div',{class:'row'}, el('span',{class:'small'},'Topic:'), seg(opts, topic, val=>{ S.xtTopic=val; S.xtDeck=S.deck; save(); render(); })),
+    el('div',{class:'row'}, el('span',{class:'small'},'Format:'), seg(hasMC?[['mc','Multiple choice'],['sa',isBiz()?'Short answer':'Written'],['mini','Mini exam']]:[['sa','Written']], fmt, val=>{ S.xtFmt=val; save(); render(); })),
     fmt==='mc'? el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[10,'10'],[20,'20 (a full Section I)']], S.xtN||10, val=>{ S.xtN=val; save(); render(); })) : fmt==='sa'? el('div',{class:'row'}, el('span',{class:'small'},'Questions:'), seg([[1,'1'],[2,'2']], S.xtSaN||1, val=>{ S.xtSaN=val; save(); render(); })) : null,
     el('p',{}, what),
-    el('p',{class:'small'}, `${mcPool.length} multiple choice and ${saPool.length} short-answer questions in ${TOPIC_NAME[topic].toLowerCase()==='all topics'?'all topics':TOPIC_NAME[topic]}. ${weakN?`${weakN} you got wrong before come back first. `:''}About ${paceMins(est)} minutes at exam pace${hasProv()?' with your extra time':''}.`),
+    el('p',{class:'small'}, `${mcPool.length} multiple choice and ${saPool.length} ${isBiz()?'short-answer':'written'} questions in ${topic==='all'?'all topics':tName(topic)}. ${weakN?`${weakN} you got wrong before come back first. `:''}About ${paceMins(est)} minutes at exam pace${hasProv()?' with your extra time':''}.`),
     el('button',{class:'primary',disabled:n?null:'',onclick:xtStart}, n?'Start the test':'No questions in this format for this topic'),
-    el('p',{class:'small'},'Business reports and essays are under Past papers, with a timed run.'));
+    el('p',{class:'small'}, isBiz()?'Business reports and essays are under Past papers, with a timed run.':'Whole papers, with the extended responses, are under Past papers.'));
   v.append(box);
 }
 function renderXtResults(v){
@@ -4895,6 +4940,10 @@ function renderPractice(){
   } else if(hasExams()){
     const lastPaper=S.pp&&S.pp.paper&&PBY[S.pp.paper];
     acts.append(action('Past papers', lastPaper?`Continue ${lastPaper.title}`:(SUBJ.np?`${SUBJ.np} HSC papers, typed answers marked by AI`:'HSC exams and marking guidelines to download'), ()=>goMode('papers'), 'primary'));
+    if(SUBJ.papers){
+      acts.append(action('Exam-style test', 'Real HSC questions by module, marked like the exam', ()=>{ S.testKind='exam'; XT=null; goMode('test'); }));
+      acts.append(action('Find a question', 'Search every HSC question by words, module, year or verb', ()=>{ S.pp.paper=null; S.pp.item=null; goMode('papers'); }));
+    }
   }
   acts.append(action('Test on cards', 'Questions one at a time, typed or on paper, then mark yourself', ()=>{ S.testKind='cards'; T=null; goMode('test'); }));
   acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }));
@@ -4990,7 +5039,7 @@ function masteryMap(){
 }
 function startRewrite(p,it,part){
   const k=rkey(p,it,part), r=S.papers[k]; if(!r) return;
-  const prev=(r.prev||[]).concat([{m:r.m, how:r.how, a:String(r.a||'').slice(0,4000), imp:(r.r&&r.r.improvements)||[]}]).slice(-3);
+  const prev=(r.prev||[]).concat([{m:r.m, how:r.how, a:String(r.a||'').slice(0,4000), imp:(r.r&&r.r.improvements)||[], t:r.mt||r.t||Date.now()}]).slice(-3);
   setRec(p,it,part,{prev, how:undefined, r:null}); delete S.papers[k].m; save(); prender();
   setTimeout(()=>{ const b=document.querySelector('.rewritebox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50);
 }
@@ -5214,6 +5263,107 @@ function renderRatio(){
 
 // ---------- stats ----------
 let sprint=null;
+// ---------- phase E1: marks report ----------
+function dayOfMs(ms){ const y=new Date(ms); return y.getFullYear()+'-'+String(y.getMonth()+1).padStart(2,'0')+'-'+String(y.getDate()).padStart(2,'0'); }
+function unitTopic(p,it,part){ if(isBiz()){ const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||((itemRow(p.id,it.id)||{}).topic)||'Other'; return t; } return (part&&part.topic)||it.topic||'General'; }
+function attemptsOf(r){ const out=(r.prev||[]).map(x=>({m:x.m,t:x.t||null})); if(typeof r.m==='number') out.push({m:r.m,t:r.mt||r.t||null}); return out.filter(x=>typeof x.m==='number'); }
+function reportRows(){
+  const rows=[];
+  for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const r=rec(p,it,u.part); if(!r) continue; const at=attemptsOf(r); if(!at.length) continue;
+    rows.push({p, it, part:u.part, max:u.max, topic:unitTopic(p,it,u.part), at, first:at[0].m, last:at[at.length-1].m, best:Math.max(...at.map(x=>x.m)), t:at[at.length-1].t||0, label:`${p.title} · Q${it.n}${u.part&&u.part.p?'('+u.part.p+')':''}`}); } } }
+  return rows;
+}
+function pctOf(got,max){ return max?Math.round(100*got/max):null; }
+function reportTopics(rows){
+  const names=isBiz()?TOPIC_ORDER.concat(['Other']):[...new Set(rows.map(r=>r.topic))].sort();
+  return names.map(t=>{ const rs=rows.filter(r=>r.topic===t); const max=rs.reduce((a,r)=>a+r.max,0); return {t, name:isBiz()?(TOPIC_NAME[t]||t):t, n:rs.length, max, last:rs.reduce((a,r)=>a+r.last,0), first:rs.reduce((a,r)=>a+r.first,0), rewrites:rs.filter(r=>r.at.length>1).length}; }).filter(x=>x.n||isBiz()).sort((a,b)=>(a.n?pctOf(a.last,a.max):101)-(b.n?pctOf(b.last,b.max):101));
+}
+function reportPapers(rows){
+  return PAPERS.map(p=>{ const rs=rows.filter(r=>r.p===p); const total=pItems(p).reduce((a,x)=>a+itemUnits(x.it).length,0); return {p, n:rs.length, total, max:rs.reduce((a,r)=>a+r.max,0), last:rs.reduce((a,r)=>a+r.last,0)}; }).filter(x=>x.n);
+}
+function reportWeeks(rows){
+  const t=today(); const out=[];
+  for(let i=3;i>=0;i--){ const end=dueDay(t,-7*i), start=dueDay(t,-7*i-6); const inWk=d=>d>=start&&d<=end;
+    let cards=0; for(const [d,n] of Object.entries(S.days||{})) if(inWk(d)) cards+=n;
+    let n=0, r=0; for(const x of S.sess||[]){ if(inWk(dayOfMs(x.a))){ n+=x.n; r+=x.r; } }
+    let got=0, max=0, marks=0; for(const row of rows) for(const a of row.at){ if(a.t&&inWk(dayOfMs(a.t))){ got+=a.m; max+=row.max; marks++; } }
+    out.push({start, end, cards, acc:n?Math.round(100*r/n):null, marks, pct:max?Math.round(100*got/max):null}); }
+  return out;
+}
+function fmtShort(d){ const x=new Date(d+'T00:00:00'); return x.toLocaleDateString('en-AU',{day:'numeric',month:'short'}); }
+function reportText(){
+  const rows=reportRows(); const L=[]; L.push(`Bands for Days marks report · ${SUBJ.name} · ${fmtShort(today())}`);
+  const got=rows.reduce((a,r)=>a+r.last,0), max=rows.reduce((a,r)=>a+r.max,0);
+  L.push(rows.length?`${rows.length} answers marked · ${got}/${max} marks (${pctOf(got,max)}%) on the latest attempt`:'No typed answers marked yet.');
+  if(rows.length){ L.push('', 'By topic (weakest first)'); for(const x of reportTopics(rows)) L.push(x.n?`  ${x.name}: ${x.last}/${x.max} (${pctOf(x.last,x.max)}%)${x.rewrites?`, first attempts ${pctOf(x.first,x.max)}%`:''}`:`  ${x.name}: Not assessed`);
+    L.push('', 'By paper'); for(const x of reportPapers(rows)) L.push(`  ${x.p.title}: ${x.n}/${x.total} answered · ${x.last}/${x.max} (${pctOf(x.last,x.max)}%)`);
+    const rw=rows.filter(r=>r.at.length>1); if(rw.length){ L.push('', 'Rewrites'); for(const r of rw) L.push(`  ${r.label}: ${r.at.map(a=>a.m).join(' → ')} / ${r.max}`); } }
+  L.push('', 'Last four weeks'); for(const w of reportWeeks(rows)) L.push(`  ${fmtShort(w.start)} to ${fmtShort(w.end)}: ${w.cards} cards${w.acc!=null?` (${w.acc}% right)`:''}${w.marks?`, ${w.marks} marked answers at ${w.pct}%`:''}`);
+  L.push('', 'AI marks are estimates against the official criteria, not NESA results.');
+  return L.join('\n');
+}
+function renderReport(){
+  const v=$('#view'); v.innerHTML=''; v.classList.add('rep');
+  const rows=reportRows(); const got=rows.reduce((a,r)=>a+r.last,0), max=rows.reduce((a,r)=>a+r.max,0);
+  const rw=rows.filter(r=>r.at.length>1); const gain=rw.reduce((a,r)=>a+(r.last-r.first),0);
+  const head=el('div',{class:'panel hero'}, el('div',{class:'lab'},SUBJ.name), el('h2',{},'Marks report'),
+    el('p',{class:'small'}, rows.length?`${rows.length} typed answers marked · ${got}/${max} marks (${pctOf(got,max)}%) on your latest attempts${rw.length?` · ${rw.length} rewritten, ${gain>=0?'+':''}${gain} marks gained`:''}.`:hasExams()?'Nothing marked yet. Mark a typed answer under Practice > Past papers and it shows up here.':'This subject has no typed papers yet, so this report only shows your card work.'));
+  const copyBtn=el('button',{class:'ghost',onclick:async()=>{ const t=reportText(); try{ await navigator.clipboard.writeText(t); toast('Report copied. Paste it to a teacher or parent.'); }catch(e){ const ta=el('textarea',{'aria-label':'Report text'}); ta.value=t; head.append(ta); ta.select(); toast('Select the text below and copy it.'); } }},'Copy as text');
+  head.append(el('div',{class:'row'}, copyBtn, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Stats and badges')));
+  v.append(head);
+  if(rows.length){
+    const tp=el('div',{class:'panel'}, el('h2',{},'By topic'), el('p',{class:'small'},'Weakest first. The first-attempt column shows where rewrites are paying off.'));
+    const tb=el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Topic'), el('th',{class:'num'},'Answers'), el('th',{class:'num'},'First attempts'), el('th',{class:'num'},'Latest'))), el('tbody',{}));
+    for(const x of reportTopics(rows)){ tb.lastChild.append(el('tr',{}, el('td',{},x.name), el('td',{class:'num'}, x.n?String(x.n):'·'), el('td',{class:'num'}, x.n?`${pctOf(x.first,x.max)}%`:'·'), x.n?el('td',{class:'num'}, `${x.last}/${x.max} · ${pctOf(x.last,x.max)}%`):el('td',{class:'num na'},'Not assessed'))); }
+    tp.append(tb); v.append(tp);
+    const pp=el('div',{class:'panel'}, el('h2',{},'By paper'));
+    const pb=el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Paper'), el('th',{class:'num'},'Answered'), el('th',{class:'num'},'Marks'), el('th',{}))), el('tbody',{}));
+    for(const x of reportPapers(rows)) pb.lastChild.append(el('tr',{}, el('td',{}, x.p.title), el('td',{class:'num'}, `${x.n}/${x.total}`), el('td',{class:'num'}, `${x.last}/${x.max} · ${pctOf(x.last,x.max)}%`), el('td',{}, el('button',{class:'ghost openq',onclick:()=>{ S.pp.paper=x.p.id; S.pp.item=null; goMode('papers'); }},'Open'))));
+    pp.append(pb); v.append(pp);
+    const rp=el('div',{class:'panel'}, el('h2',{},'Rewrites, attempt by attempt'), el('p',{class:'small'}, rw.length?`Average gain per rewritten answer: ${rw.length?(gain/rw.length>=0?'+':'')+(gain/rw.length).toFixed(1):'0'} marks.`:'No rewrites yet. After a mark, "Rewrite it for more marks" keeps every attempt so you can see the climb here.'));
+    if(rw.length){ const rb=el('table',{}, el('thead',{}, el('tr',{}, el('th',{},'Question'), el('th',{class:'num'},'Attempts'), el('th',{class:'num'},'Change'), el('th',{}))), el('tbody',{}));
+      for(const r of rw.sort((a,b)=>b.t-a.t)){ const d=r.last-r.first; rb.lastChild.append(el('tr',{}, el('td',{}, r.label, el('div',{class:'small'}, r.t?fmtShort(dayOfMs(r.t)):'')), el('td',{class:'num steps'}, r.at.map(a=>a.m).join(' → ')+' / '+r.max), el('td',{class:'num '+(d>0?'gain':d<0?'loss':'')}, (d>0?'+':'')+d), el('td',{}, el('button',{class:'ghost openq',onclick:()=>{ S.pp.paper=r.p.id; S.mode='papers'; save(); openItem(r.it.id); }},'Open')))); }
+      rp.append(rb); }
+    v.append(rp);
+  }
+  const wk=reportWeeks(rows); const maxCards=Math.max(1,...wk.map(w=>w.cards));
+  const tr=el('div',{class:'panel'}, el('h2',{},'Last four weeks'), el('p',{class:'small'},'Cards answered each week with how many you got right, and the marks on typed answers marked that week.'));
+  const tl=el('div',{class:'trend'});
+  for(const w of wk){ tl.append(el('div',{class:'wk'}, el('span',{class:'small'}, fmtShort(w.start)+' – '+fmtShort(w.end)), el('div',{class:'tbar',title:`${w.cards} cards`}, el('span',{class:'cards',style:`width:${Math.round(100*w.cards/maxCards)}%`})), el('span',{class:'small'}, w.cards?`${w.cards} cards${w.acc!=null?' · '+w.acc+'%':''}`:'No cards'))); 
+    tl.append(el('div',{class:'wk'}, el('span',{}), el('div',{class:'tbar',title:w.marks?`${w.marks} marked answers`:'No marked answers'}, el('span',{style:`width:${w.pct!=null?w.pct:0}%`})), el('span',{class:'small'}, w.marks?`${w.marks} marked · ${w.pct}%`:'No marks'))); }
+  tr.append(tl); v.append(tr);
+  v.append(el('p',{class:'small'},'AI marks are estimates against the official criteria, not NESA results. Nothing is shown as a band prediction.'));
+}
+// ---------- phase E2: classes ----------
+const LB={scope:'class'};
+function myClass(){ const c=ME&&ME.classCode; return (sync.state==='synced'&&c&&c!=='*')?c:''; }
+function inviteLink(code){ return location.origin+location.pathname+'?code='+encodeURIComponent(code); }
+async function renderClass(){
+  const v=$('#view'); v.innerHTML='';
+  const code=myClass(); const signed=sync.state==='synced';
+  const head=el('div',{class:'panel hero'}, el('div',{class:'lab'},'My class'), el('h2',{}, code?'Class '+code:'Your class'));
+  if(!signed){ head.append(el('p',{class:'small'},'Sign in to see your class. Everyone who signs up with the same class code is in it.'), el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('stats')},'Sign in'))); v.append(head); return; }
+  if(!code){ head.append(el('p',{class:'small'},'Your account has no class code, so there is no class view yet. Classmates who sign up with a class code see each other here.')); v.append(head); return; }
+  head.append(el('p',{class:'small'},'Everyone who signed up with code '+code+' is here. Share the invite link and classmates land on sign-up with the code filled in.'));
+  head.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:async()=>{ const link=inviteLink(code); try{ await navigator.clipboard.writeText(link); toast('Invite link copied.'); }catch(e){ window.prompt('Copy this invite link', link); } }},'Copy invite link'), el('button',{class:'ghost',onclick:()=>goMode('stats')},'Leaderboard and badges')));
+  v.append(head);
+  const box=el('div',{class:'panel',id:'classbox'}, el('p',{class:'small'},'Loading…')); v.append(box);
+  try{
+    const rows=await DBH.classScores(code); if(S.mode!=='class') return; box.innerHTML='';
+    const t=today(); const active=rows.filter(r=>r.updated_at&&dayOfMs(Date.parse(r.updated_at))===t).length;
+    const xp=rows.reduce((a,r)=>a+(r.xp||0),0), total=rows.reduce((a,r)=>a+(r.total||0),0), mastered=rows.reduce((a,r)=>a+(r.mastered||0),0);
+    box.append(el('h2',{},`${rows.length} member${rows.length===1?'':'s'}`), el('div',{class:'grid2'},
+      el('div',{class:'stat'}, el('b',{},String(active)), el('span',{},'studied today')),
+      el('div',{class:'stat'}, el('b',{},String(total)), el('span',{},'answers given, all together')),
+      el('div',{class:'stat'}, el('b',{},String(mastered)), el('span',{},'cards mastered, all together')),
+      el('div',{class:'stat'}, el('b',{},String(xp)), el('span',{},'class XP'))));
+    const list=el('div',{class:'lb'});
+    rows.forEach((r,i)=>{ const nm=(r.nick&&String(r.nick).trim())||'Someone'; const row=el('div',{class:'rowx'+(r.id===UID?' me':'')}, el('span',{class:'rk'},String(i+1)), el('span',{class:'nm'}), el('span',{}, `${r.xp||0} XP`, el('span',{class:'sub'},` · L${r.level||1}`)), el('span',{class:'sub'}, `🔥${r.streak||0} · ${r.mastered||0} mastered`)); row.querySelector('.nm').textContent=nm; list.append(row); });
+    if(!rows.length) list.append(el('p',{class:'small'},'No one in the class has scored yet. Answer a few cards and you will be first.'));
+    box.append(list);
+    if(!S.nick) box.append(el('p',{class:'small'},'Set a nickname under Stats so classmates know who you are.'));
+  }catch(e){ box.innerHTML=''; box.append(el('p',{class:'small'},'Could not load the class right now.')); }
+}
 function renderStats(){
   const v=$('#view'); v.innerHTML='';
   const lv=levelInfo();
@@ -5226,7 +5376,7 @@ function renderStats(){
       el('div',{class:'stat'}, el('b',{},String(S.streak)), el('span',{},`day streak · ${days} study day${days===1?'':'s'}`)),
       el('div',{class:'stat'}, el('b',{},`${known} / ${all}`), el('span',{},`cards marked got it · ${mastd} mastered`))),
     el('div',{class:'row'}, el('span',{class:'small'},'Daily goal:'), seg([[20,'20'],[30,'30'],[50,'50'],[80,'80']], S.goal, val=>{S.goal=val; save(); renderStrip(); renderStats();}))));
-  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
+  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>goMode('report')},'Marks report'), el('button',{onclick:()=>goMode('class')},'My class'), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
   const dueN=dueCards().length, week=CARDS.filter(c=>{ const r=rvOf(c); return !!r&&r.due>today()&&r.due<=dueDay(today(),7); }).length;
   v.append(el('div',{class:'panel'}, el('h2',{},'Spaced reviews'), el('div',{class:'grid2'}, el('div',{class:'stat'}, el('b',{},String(dueN)), el('span',{},'cards due today')), el('div',{class:'stat'}, el('b',{},String(week)), el('span',{},'due in the next 7 days'))), el('p',{class:'small'},'Each card you get right comes back later: after 1 day, then 3, then 7 and so on. A wrong answer brings it back today. Mastered means remembered on 3 separate days and not due again for at least a week.'), el('div',{class:'row'}, el('button',{class:'primary',disabled:dueN?null:'',onclick:()=>{ S.filter='due'; S.deck='all'; goMode('flash'); }}, dueN?`Review ${dueN} due now`:'Nothing due right now'))));
   v.append(retentionPanel());
@@ -5246,6 +5396,7 @@ function renderStats(){
     ac.append(el('p',{class:'small'},'Signed in'+(ME&&ME.name?' as '+ME.name:'')+'. Your progress is saved to your account and syncs to any device where you sign in.'), el('div',{class:'row'}, el('button',{class:'ghost',onclick:signOut},'Sign out')));
     const nick=el('input',{type:'text',id:'nickInput',maxlength:'24',placeholder:'Nickname for the leaderboard','aria-label':'Nickname'}); nick.value=S.nick||'';
     ac.append(el('div',{class:'inrow'}, nick, el('button',{onclick:()=>{ S.nick=nick.value.trim().slice(0,24); save(); clearTimeout(sync.timer); pushProgress(); toast('Nickname saved'); }},'Save nickname')));
+    if(myClass()) ac.append(el('div',{class:'row lbscope'}, seg([['class','My class'],['all','Everyone']], LB.scope, v=>{ LB.scope=v; renderStats(); }), el('button',{class:'ghost',onclick:()=>goMode('class')},'Class view →')));
     const lbBox=el('div',{class:'lb'}, el('p',{class:'small'},'Loading leaderboard…')); ac.append(lbBox); loadLeaderboard(lbBox);
     ac.append(feedbackBox());
   } else if(sync.state==='readonly'){
@@ -5268,7 +5419,7 @@ const PEXTRA = {"guides":[{"label":"Writing extended responses (2015 guide)","hr
 let PAPERS = BIZ_PAPERS;
 let PBY = Object.fromEntries(PAPERS.map(p=>[p.id,p]));
 const SUBJ_PAPERS={};
-function setPapers(){ const want=isBiz()?BIZ_PAPERS:(SUBJ_PAPERS[SUBJ.id]||[]); if(PAPERS===want) return; PAPERS=want; PBY=Object.fromEntries(PAPERS.map(p=>[p.id,p])); qIndex.cache=null; }
+function setPapers(){ const want=isBiz()?BIZ_PAPERS:(SUBJ_PAPERS[SUBJ.id]||[]); if(PAPERS===want) return; PAPERS=want; PBY=Object.fromEntries(PAPERS.map(p=>[p.id,p])); qIndex.cache=null; itemIndex.cache=null; }
 function loadSubjPapers(){ const s=SUBJ; if(SUBJ_PAPERS[s.id]) return Promise.resolve(); return fetch(s.papers+'?v='+(s.pv||'1')).then(r=>{ if(!r.ok) throw 0; return r.json(); }).then(d=>{ SUBJ_PAPERS[s.id]=d; }); }
 const NESA_URL='https://www.nsw.gov.au/education-and-training/nesa/curriculum/hsc-exam-papers/business-studies';
 if(!S.papers||typeof S.papers!=='object') S.papers={};
@@ -5360,7 +5511,7 @@ Return JSON only, no prose, in this exact shape:
 }
 function normalise(res,max){ let m=Number(res&&res.mark); if(!isFinite(m)) m=0; m=Math.max(0,Math.min(max,Math.round(m))); const arr=x=>Array.isArray(x)?x.map(String).slice(0,4):(x?[String(x)]:[]); const conf=/^(high|medium|low)$/.test(String(res.confidence||''))?String(res.confidence):''; return {m, band:String(res.band||''), verdict:String(res.verdict||''), strengths:arr(res.strengths), improvements:arr(res.improvements), model:String(res.model||''), evidence:arr(res.evidence), missing:arr(res.missing), next:String(res.next||''), conf}; }
 function aiRec(x,max){ return {m:x.m, x:max, how:'ai', r:{band:x.band,verdict:x.verdict,strengths:x.strengths,improvements:x.improvements,model:x.model,evidence:x.evidence||[],missing:x.missing||[],next:x.next||'',conf:x.conf||''}}; }
-function awardXP(p,it,part,m,max,how){ const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); if(!ok&&isBiz()){ const row=itemRow(p.id,it.id); const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||(row&&row.topic); if(t&&t!=='Other'){ if(!S.boost||typeof S.boost!=='object') S.boost={}; S.boost[t]=today(); } } recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
+function awardXP(p,it,part,m,max,how){ { const rr=S.papers[rkey(p,it,part)]; if(rr) rr.mt=Date.now(); } const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); if(!ok&&isBiz()){ const row=itemRow(p.id,it.id); const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||(row&&row.topic); if(t&&t!=='Other'){ if(!S.boost||typeof S.boost!=='object') S.boost={}; S.boost[t]=today(); } } recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
 document.addEventListener('click',e=>{ const im=e.target&&e.target.closest&&e.target.closest('img.stimimg,img.photothumb'); if(!im||im.closest('.imgzoom')) return; const prev=document.activeElement; const close=()=>{ ov.remove(); if(prev&&prev.focus) prev.focus(); }; const ov=el('div',{class:'imgzoom',role:'dialog','aria-modal':'true','aria-label':'Picture, zoomed in',tabindex:'-1',onkeydown:ev=>{ if(ev.key==='Escape') close(); },onclick:ev=>{ if(ev.target===ov) close(); }}, el('button',{class:'primary zclose',onclick:close},'Close ✕'), el('img',{src:im.src,alt:im.alt||''})); document.body.append(ov); ov.querySelector('.zclose').focus(); });
 function isMathsP(p){ return /^maths/.test((p&&p.subj)||''); }
 function isSciP(p){ return /^(biology|chemistry|physics)$/.test((p&&p.subj)||''); }
@@ -5535,7 +5686,7 @@ function openItem(id){ S.pp.item=id; save(); pushMode(); prender(); window.scrol
 const QVERB=/^(outline|explain|describe|discuss|analyse|evaluate|assess|identify|define|compare|distinguish|justify|recommend|propose|account for|examine|calculate|predict|interpret|summarise|clarify|classify|construct|contrast|demonstrate|extract|list|state|to what extent|how|why|what|which)\b/i;
 const TOPIC_WORDS={Operations:/operation|production|quality|supply chain|inventory|outsourc|performance objective|transformation|input|output|lean|technolog|global sourcing/g, Marketing:/marketing|brand|pric|promot|customer|segment|product life|distribution|place|advertis|sponsor|niche|mass market|e-marketing|global market/g, Finance:/financ|ratio|cash flow|profit|budget|debt|equity|liquidity|solvency|gearing|working capital|balance sheet|income statement|expense|revenue|capital|hedging|derivative|exchange rate/g, HR:/human resource|employ|staff|training|recruit|workplace|industrial|union|dispute|separation|remuneration|award|enterprise agreement|outsourcing of hr|work\/life|motivation|redundanc/g};
 function coarseTopic(raw,text){ const r=String(raw||'').toLowerCase(); if(/^operations/.test(r)) return 'Operations'; if(/^marketing/.test(r)) return 'Marketing'; if(/^finance/.test(r)) return 'Finance'; if(/^(human resources?|hr)/.test(r)) return 'HR'; const t=(r+' '+String(text||'')).toLowerCase(); let best='Other', bn=0; for(const [k,re] of Object.entries(TOPIC_WORDS)){ const n=(t.match(re)||[]).length; if(n>bn){ bn=n; best=k; } } return best; }
-function qIndex(){ if(!isBiz()) return []; if(qIndex.cache) return qIndex.cache; const rows=[]; for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const text=it.type==='mc'?it.stem:(u.part?u.part.text:it.text); const first=String(text||'').replace(/^[^A-Za-z]+/,''); const vm=first.match(QVERB); const verb=it.type==='mc'?'Multiple choice':(vm?vm[0].toLowerCase().replace(/^\w/,ch=>ch.toUpperCase()):'Other'); const raw=(u.part&&u.part.topic)||it.topic||''; rows.push({p,s,it,part:u.part,max:u.max,text:String(text||'').replace(/\s+/g,' ').slice(0,170),verb,topic:coarseTopic(raw,text),raw,type:it.type,year:p.year,src:p.src}); } } } return qIndex.cache=rows; }
+function qIndex(){ if(!hasXT()) return []; if(qIndex.cache) return qIndex.cache; const rows=[]; for(const p of PAPERS){ for(const {s,it} of pItems(p)){ for(const u of itemUnits(it)){ const text=it.type==='mc'?it.stem:(u.part?u.part.text:it.text); const first=String(text||'').replace(/^[^A-Za-z]+/,''); const vm=first.match(QVERB); const verb=it.type==='mc'?'Multiple choice':(vm?vm[0].toLowerCase().replace(/^\w/,ch=>ch.toUpperCase()):'Other'); const raw=(u.part&&u.part.topic)||it.topic||''; rows.push({p,s,it,part:u.part,max:u.max,text:String(text||'').replace(/\s+/g,' ').slice(0,170),verb,topic:isBiz()?coarseTopic(raw,text):xtTopicOf(it,s),raw,type:it.type,year:p.year,src:p.src}); } } } return qIndex.cache=rows; }
 let QF={q:'',topic:'all',year:'all',type:'all',verb:'all',status:'all',marks:'all'};
 function sel(opts,val,on){ const s=el('select',{class:'qsel',onchange:e=>on(e.target.value)}); for(const [v,l] of opts){ const o=el('option',{value:String(v)},l); if(String(v)===String(val)) o.selected=true; s.append(o); } return s; }
 function qMatches(r){ const q=QF.q.trim().toLowerCase(); if(q&&!(r.text+' '+r.raw+' '+r.p.title).toLowerCase().includes(q)) return false; if(QF.topic!=='all'&&r.topic!==QF.topic) return false; if(QF.year!=='all'&&String(r.year)!==QF.year) return false; if(QF.type!=='all'&&r.type!==QF.type) return false; if(QF.verb!=='all'&&r.verb!==QF.verb) return false; if(QF.marks!=='all'){ const m=r.max; if(QF.marks==='1'&&m!==1) return false; if(QF.marks==='2-3'&&(m<2||m>3)) return false; if(QF.marks==='4-6'&&(m<4||m>6)) return false; if(QF.marks==='7+'&&m<7) return false; } if(QF.status!=='all'){ const rc=rec(r.p,r.it,r.part); const done=!!rc&&typeof rc.m==='number'; if(QF.status==='new'&&done) return false; if(QF.status==='done'&&!done) return false; if(QF.status==='weak'&&!(done&&rc.m/r.max<0.6)) return false; } return true; }
@@ -5544,19 +5695,20 @@ function searchPanel(){
   const d=el('details',{class:'panel qsearch',open:active?'':null}, el('summary',{}, el('h2',{style:'display:inline'},'Find a question'), el('span',{class:'small'},` · ${all.length} questions and parts across ${PAPERS.length} papers`)));
   const years=[...new Set(all.map(r=>r.year))].sort((a,b)=>b-a); const verbs=[...new Set(all.map(r=>r.verb))].sort();
   const re=()=>prender();
-  const qin=el('input',{type:'search',class:'qsel',placeholder:'Words in the question, e.g. cash flow',value:QF.q,'aria-label':'Search questions'}); qin.addEventListener('change',()=>{ QF.q=qin.value; re(); }); qin.addEventListener('keydown',e=>{ if(e.key==='Enter'){ QF.q=qin.value; re(); } });
+  const topicOpts=isBiz()?[['all','Any topic'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources'],['Other','Other']]:[['all','Any topic']].concat(xtTopicOpts().slice(1)); if(!topicOpts.some(([k])=>k===QF.topic)) QF.topic='all';
+  const qin=el('input',{type:'search',class:'qsel',placeholder:isBiz()?'Words in the question, e.g. cash flow':'Words in the question or its topic',value:QF.q,'aria-label':'Search questions'}); qin.addEventListener('change',()=>{ QF.q=qin.value; re(); }); qin.addEventListener('keydown',e=>{ if(e.key==='Enter'){ QF.q=qin.value; re(); } });
   d.append(el('div',{class:'qfilters'}, qin,
-    sel([['all','Any topic'],['Operations','Operations'],['Marketing','Marketing'],['Finance','Finance'],['HR','Human resources'],['Other','Other']],QF.topic,v=>{QF.topic=v; re();}),
+    sel(topicOpts,QF.topic,v=>{QF.topic=v; re();}),
     sel([['all','Any year'],...years.map(y=>[y,String(y)])],QF.year,v=>{QF.year=v; re();}),
-    sel([['all','Any type'],['mc','Multiple choice'],['sa','Short answer'],['long','Report or essay']],QF.type,v=>{QF.type=v; re();}),
+    sel([['all','Any type'],['mc','Multiple choice'],['sa',isBiz()?'Short answer':'Written, with parts'],['long',isBiz()?'Report or essay':'Extended response']],QF.type,v=>{QF.type=v; re();}),
     sel([['all','Any verb'],...verbs.map(x=>[x,x])],QF.verb,v=>{QF.verb=v; re();}),
     sel([['all','Any marks'],['1','1 mark'],['2-3','2 to 3'],['4-6','4 to 6'],['7+','7 or more']],QF.marks,v=>{QF.marks=v; re();}),
     sel([['all','Any status'],['new','Not attempted'],['done','Attempted'],['weak','Under 60%']],QF.status,v=>{QF.status=v; re();}),
     el('button',{class:'ghost',onclick:()=>{ QF={q:'',topic:'all',year:'all',type:'all',verb:'all',status:'all',marks:'all'}; re(); }},'Clear')));
-  const hits=all.filter(qMatches); d.append(el('p',{class:'small'}, `${hits.length} match${hits.length===1?'':'es'}${hits.length>60?', showing the first 60':''}. Topics are from the NESA mapping grid where it exists, otherwise guessed from the wording.`));
+  const hits=all.filter(qMatches); d.append(el('p',{class:'small'}, `${hits.length} match${hits.length===1?'':'es'}${hits.length>60?', showing the first 60':''}. ${isBiz()?'Topics are from the NESA mapping grid where it exists, otherwise guessed from the wording.':'Topics follow the module or section each question comes from.'}`));
   const list=el('div',{});
   for(const r of hits.slice(0,60)){ const rc=rec(r.p,r.it,r.part); const done=!!rc&&typeof rc.m==='number';
-    list.append(el('div',{class:'qrow'}, el('div',{class:'meta'}, `${r.p.title} · Q${r.it.n}${r.part?'('+r.part.p+')':''} · ${r.max} mark${r.max===1?'':'s'} · ${r.verb} · ${r.topic}${done?` · you got ${rc.m}/${r.max}`:''}`), el('div',{}, r.text), el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=r.p.id; S.pp.item=r.it.id; save(); prender(); window.scrollTo({top:0}); }}, done?'Open again':'Open'), r.raw?el('span',{class:'small'}, r.raw):null))); }
+    list.append(el('div',{class:'qrow'}, el('div',{class:'meta'}, `${r.p.title} · Q${r.it.n}${r.part?'('+r.part.p+')':''} · ${r.max} mark${r.max===1?'':'s'} · ${r.verb} · ${tName(r.topic)}${done?` · you got ${rc.m}/${r.max}`:''}`), el('div',{}, r.text||'(The question is a picture. Open it to see it.)'), el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>{ S.pp.paper=r.p.id; S.pp.item=r.it.id; save(); prender(); window.scrollTo({top:0}); }}, done?'Open again':'Open'), r.raw?el('span',{class:'small'}, r.raw):null))); }
   d.append(list); return d;
 }
 function renderPick(v){
@@ -5591,6 +5743,7 @@ function renderPickSubj(v){
   kp.append(el('div',{class:'inrow'}, ki, el('button',{class:'primary',onclick:()=>{ const v=ki.value.trim(); try{ if(v) localStorage.setItem('bss_apikey',v); else localStorage.removeItem('bss_apikey'); }catch(e){} SAMPLE=undefined; toast(v?'AI marking is on.':'AI marking key removed.'); renderPapers(); }},'Save key'), apiKey()?el('button',{class:'ghost',onclick:()=>{ try{ localStorage.removeItem('bss_apikey'); }catch(e){} SAMPLE=undefined; renderPapers(); }},'Remove key'):null));
   intro.append(kp);
   v.append(intro);
+  v.append(searchPanel());
   const grid=(ps)=>{ const g=el('div',{class:'pgrid'}); for(const p of ps){ const st=paperStatus(p); g.append(el('button',{class:'pbtn'+(st.done===st.n?' done':st.done?' part':''),onclick:()=>openPaper(p.id)}, el('b',{},p.title.replace(/^HSC /,'')), el('span',{}, st.done?`${st.done}/${st.n} done · ${st.got}/${st.max} marks`:`${st.n} questions · ${p.marks} marks`))); } return g; };
   const groups=[...new Set(PAPERS.map(p=>p.subjName||SUBJ.name))];
   for(const gname of groups){ const ps=PAPERS.filter(p=>(p.subjName||SUBJ.name)===gname).sort((a,b)=>b.year-a.year||(a.paper||0)-(b.paper||0)); const ys=ps.map(p=>p.year);
@@ -5723,7 +5876,7 @@ function renderHomeSubject(){
   const prog=el('div',{class:'panel'}, el('h2',{},'Where you stand'));
   prog.append(masteryMap());
   prog.append(retentionRow());
-  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
+  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('report')},'Marks report →'), el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
   v.append(prog);
   if(has&&days>=0&&rows.length){ const mins=Number(S.cfg.minsPerDay)||45; const sorted=rows.slice().sort((a,b)=>a.pct-b.pct); const panel=el('div',{class:'panel'}, el('h2',{},'Your plan'), el('p',{class:'small'},`${mins} minutes a day (change it in Settings), weakest topic first.`)); const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     for(let i=0;i<Math.min(4,days+1);i++){ const d=new Date(); d.setDate(d.getDate()+i); const label=i===0?'Today':i===1?'Tomorrow':names[d.getDay()]; const wk=sorted[i%Math.min(2,sorted.length)]; const a=Math.max(10,Math.round(mins*0.5)), b=mins-a;
@@ -5763,7 +5916,7 @@ function renderHome(){
   let pq=0,pg=0,pm=0; for(const p of PAPERS){ const st=paperStatus(p); pq+=pItems(p).filter(x=>itemStatus(p,x.it).done).length; pg+=st.got; pm+=st.max; }
   prog.append(el('div',{class:'deckrow'}, el('span',{},'Past papers'), el('span',{class:'small'}, pq?`${pq} questions marked · ${pg}/${pm} marks (${Math.round(100*pg/Math.max(1,pm))}%)`:'No questions marked yet'), el('span',{})));
   prog.append(retentionRow());
-  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
+  prog.append(el('div',{class:'row'}, el('button',{class:'ghost',onclick:()=>goMode('report')},'Marks report →'), el('button',{class:'ghost',onclick:()=>goMode('stats')},'Full stats, badges and leaderboard →')));
   v.append(prog);
   v.append(planPanel(days));
 }
@@ -5843,7 +5996,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); if(S.mode==='home') placeInstallCard(); if(PWA.waiting&&!$('.toast.action')) updateToast(); }
+function render(){ { const vv=$('#view'); if(vv&&S.mode!=='report') vv.classList.remove('rep'); } if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag, report:renderReport, class:renderClass})[S.mode](); if(S.mode==='home') placeInstallCard(); if(PWA.waiting&&!$('.toast.action')) updateToast(); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
@@ -6276,11 +6429,11 @@ function pushScore(force){
 }
 async function loadLeaderboard(box){
   try{
-    const snap=await DBH.collection('scores').orderBy('xp','desc').limit(20).get();
-    const rows=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    const useClass=LB.scope==='class'&&!!myClass()&&!!DBH.classScores;
+    const rows=useClass?(await DBH.classScores(myClass())).slice(0,20):(await DBH.collection('scores').orderBy('xp','desc').limit(20).get()).docs.map(d=>({id:d.id, ...d.data()}));
     const ps=USERH?await USERH.profiles(rows.map(r=>r.id)):{};
     box.innerHTML='';
-    if(!rows.length){ box.append(el('p',{class:'small'},'No scores yet. Answer a few cards and you will be first on the board.')); return; }
+    if(!rows.length){ box.append(el('p',{class:'small'},useClass?'No one in your class has scored yet. Answer a few cards and you will be first.':'No scores yet. Answer a few cards and you will be first on the board.')); return; }
     rows.forEach((r,i)=>{ const nm=(r.nick&&String(r.nick).trim())||(ps[r.id]&&ps[r.id].name)||'Someone'; const row=el('div',{class:'rowx'+(r.id===UID?' me':'')}, el('span',{class:'rk'},String(i+1)), el('span',{class:'nm'}), el('span',{}, `${r.xp||0} XP`, el('span',{class:'sub'},` · L${r.level||1}`)), el('span',{class:'sub'}, `🔥${r.streak||0} · ${r.mastered||0} mastered`)); row.querySelector('.nm').textContent=nm+(r.id===UID?' (you)':''); box.append(row); });
   }catch(e){ box.innerHTML=''; box.append(el('p',{class:'small'},'Leaderboard could not load right now.')); }
 }
@@ -6318,12 +6471,13 @@ function supaShim(client, uid){
           const {data:w,error}=await client.from('progress').upsert({user_id:uid, doc:d, updated_at:new Date().toISOString()}).select('updated_at').single(); if(error) throw supaErr(error); sync.remoteAt=(w&&w.updated_at)||sync.remoteAt; }
       };
     },
+    async classScores(code){ const {data,error}=await client.from('scores').select('*').eq('class_code',code).order('xp',{ascending:false}).limit(200); if(error) throw supaErr(error); return (data||[]).map(r=>({id:r.user_id, ...r})); },
     collection(name){ let lim=20; const q={ orderBy(){ return q; }, limit(n){ lim=n; return q; }, async get(){ const {data,error}=await client.from('scores').select('*').order('xp',{ascending:false}).limit(lim); if(error) throw supaErr(error); return {docs:(data||[]).map(r=>({id:r.user_id, data:()=>r}))}; } }; return q; }
   };
 }
 async function startSync(session){
   sync.err=null; sync.retry=0; clearTimeout(sync.retryT);
-  UID=session.user.id; DBH=supaShim(SB,UID); ME={name:session.user.email||''}; USERH={profiles:async()=>({}), me:async()=>ME};
+  UID=session.user.id; DBH=supaShim(SB,UID); ME={name:session.user.email||'', classCode:String(((session.user.user_metadata||{}).class_code)||'').trim().toUpperCase()}; USERH={profiles:async()=>({}), me:async()=>ME};
   sync.state='loading'; renderAccount();
   const snap=await DBH.doc('data/users/'+UID+'/progress').get();
   if(snap.exists){ mergeRemote(snap.data()); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
@@ -6426,6 +6580,7 @@ function offlinePanel(){
     offlineState(s).then(st=>{ row.lastChild.remove(); if(st==='builtin') row.append(el('span',{class:'offpill'},'Always available')); else if(st==='saved') row.append(el('span',{class:'offpill'},'Saved ✓')); else if(st==='none'){ const b=el('button',{class:'ghost',onclick:()=>saveOffline(s,b)},'Save'); row.append(b); } else row.append(el('span',{class:'small'},'Not supported in this browser')); }); }
   return p;
 }
+{ const qc=new URLSearchParams(location.search).get('code'); if(qc&&qc.trim()){ AUTH.code=qc.trim().toUpperCase(); AUTH.mode='up'; AUTH.open=true; } }
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
 </script>

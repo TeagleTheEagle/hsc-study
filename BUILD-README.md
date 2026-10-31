@@ -180,3 +180,23 @@ Runs after the phase B script:
 2. `python3 tools/sw_version.py` stamps `sw.js` from the shell files. Always last.
 3. Checks: `node tools/check_phase_d.mjs` (needs the Playwright symlink; runs its own server on 8767).
 `sw.js` itself is hand-written (caching rules at the top of the file).
+
+## Bands for Days, phase E1: Marks report (31 Oct 2026)
+
+Runs after the phase D script and before `tools/sw_version.py`:
+1. `python3 tools/phase_e1_patch.py app.html`: the `#report` view under Progress (`renderReport`, `reportRows`, `reportTopics`, `reportPapers`, `reportWeeks`, `reportText`), a mark time (`mt`) stamped in `awardXP`, the time kept on each previous attempt in `startRewrite`, and "Marks report" links on Today and Stats. Refuses to run twice.
+2. Checks: `node tools/check_phase_e1.mjs` against the local server on 8766.
+
+## Bands for Days, phase E2: classes (31 Oct 2026)
+
+Runs after phase E1 and before `tools/sw_version.py`:
+1. `python3 tools/phase_e2_patch.py app.html`: the class code from sign-up travels with the session (`ME.classCode`), the leaderboard shows My class by default with an Everyone toggle (`LB.scope`, `DBH.classScores`), the `#class` view (`renderClass`: members, totals, invite link), and `?code=` on the address pre-fills the sign-up form. Refuses to run twice.
+2. One-off in Supabase: `supabase-classes.sql` (adds `class_code` to `public.scores`, filled by a trigger from the sign-up metadata, and back-fills existing rows). Until it is run the class leaderboard is empty and the class view shows no members.
+3. Checks: `node tools/check_phase_e2.mjs` against the local server on 8766.
+
+## Bands for Days, phase E3: exam-style tests for every subject (31 Oct 2026)
+
+Runs after phase E2 and before `tools/sw_version.py`:
+1. `python3 tools/phase_e3_patch.py app.html`: the Exam-style test (`#test`) and Find a question work for every subject with typed papers, not only Business. `hasXT()` replaces the `isBiz()` gates in routing, `testKindSeg`, `renderTest`, `itemIndex` and `qIndex`. Each paper question is given a topic by `xtTopicOf(it, section)`: its module/section label (`area`, else `topic`, else a part's topic, else the section name) matched onto the subject's card topics by `xtMatch` (same name, "Module 5" against "Module 5: Heredity", one name inside the other, or a first-word stem such as "Criminal …" for Crime), with a per-subject fallback in `XT_FALLBACK` (Legal: MC 1 to 15 are Crime and 16 to 20 Human rights, every short answer outside the options is Human rights). Labels that match nothing are kept as they are (histories: "Ancient Societies", "National Studies"). The test setup loads the subject's papers first, lists only topics that have questions (`xtTopicOpts`), offers Written only where a subject has no multiple choice (English, the histories), and Practice shows Exam-style test and Find a question for every such subject. Find a question sits on each subject's Past papers page with the same topic list. Refuses to run twice.
+2. Checks: `node tools/check_phase_e3.mjs` against the local server on 8766 (Biology, Legal, Modern History, English, Business unchanged).
+
