@@ -6608,7 +6608,13 @@ if(!new URLSearchParams(location.search).get('s')&&S.subj&&S.subj!=='business') 
 // ---------- phase D: offline (service worker), install prompt, saved subjects ----------
 const PWA={reg:null, waiting:null};
 const DATA_CACHE='bfd-data-v1';
-function updateToast(){ let t=$('.toast'); if(t) t.remove(); t=el('div',{class:'toast action',role:'status'}, 'A new version is ready. ', el('button',{class:'tbtn',onclick:()=>{ if(PWA.waiting) PWA.waiting.postMessage({type:'SKIP_WAITING'}); }},'Reload')); document.body.append(t); clearTimeout(toastT); }
+// Keep phones on the same version as the website: check for a new version every time the app (or tab) comes back to the
+// foreground, and if it had been in the background for 30 minutes or more, switch to the new version straight away instead of
+// asking (drafts are autosaved, so nothing is lost). Mid-session, the "new version ready" toast still lets the student choose.
+let hiddenAt=0, PWA_AUTO=0;
+function swApply(){ if(PWA.waiting){ PWA.waiting.postMessage({type:'SKIP_WAITING'}); return true; } return false; }
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ hiddenAt=Date.now(); return; } const away=!!hiddenAt&&Date.now()-hiddenAt>=30*60000; hiddenAt=0; if(!PWA.reg) return; try{ PWA.reg.update().catch(()=>{}); }catch(e){} if(away){ PWA_AUTO=Date.now()+60000; swApply(); } });
+function updateToast(){ if(PWA_AUTO>Date.now()&&swApply()) return; let t=$('.toast'); if(t) t.remove(); t=el('div',{class:'toast action',role:'status'}, 'A new version is ready. ', el('button',{class:'tbtn',onclick:()=>{ if(PWA.waiting) PWA.waiting.postMessage({type:'SKIP_WAITING'}); }},'Reload')); document.body.append(t); clearTimeout(toastT); }
 if('serviceWorker' in navigator){
   window.addEventListener('load',()=>{ navigator.serviceWorker.register('sw.js').then(reg=>{ PWA.reg=reg; const track=w=>{ if(!w) return; w.addEventListener('statechange',()=>{ if(w.state==='installed'&&navigator.serviceWorker.controller){ PWA.waiting=w; updateToast(); } }); }; if(reg.waiting&&navigator.serviceWorker.controller){ PWA.waiting=reg.waiting; updateToast(); } track(reg.installing); reg.addEventListener('updatefound',()=>track(reg.installing)); }).catch(()=>{}); });
   navigator.serviceWorker.addEventListener('controllerchange',()=>{ if(PWA.waiting){ PWA.waiting=null; location.reload(); } });
