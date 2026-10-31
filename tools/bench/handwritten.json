@@ -1,0 +1,4 @@
+[
+ {"key":"nesa2022|22a","label":"HSC 2022 Q22(a) partial: one factor, no link to the stimulus","kind":"partial","max":3,"answer":"A psychological factor influencing customer choice is perception. Customers buy products they perceive as high quality or good value, so a business tries to shape perception through branding and advertising.","expect":[1,2],"confidence":["high","medium"]},
+ {"key":"nesa2021|24b","label":"HSC 2021 Q24(b) partial: generic, repeats one point","kind":"partial","max":4,"answer":"Outsourcing is good because it saves money. The business can use another company to do the work, which is cheaper. This means the business saves money and can spend it on other things. It is a good strategy to save money.","expect":[1,2],"confidence":["high","medium"]}
+]

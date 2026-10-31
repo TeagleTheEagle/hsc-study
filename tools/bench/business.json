@@ -1,0 +1,620 @@
+[
+ {
+  "key": "nesa2025|21a",
+  "label": "HSC 2025 Q21(a) sample answer",
+  "kind": "sample",
+  "max": 2,
+  "answer": "The cafe can demonstrate corporate social responsibility by donating food to a local charity that supports the community.",
+  "expect": [
+   1,
+   2
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2025|21a",
+  "label": "HSC 2025 Q21(a) off-topic (sample from Q24(ai))",
+  "kind": "offtopic",
+  "max": 2,
+  "answer": "Current assets = (Cash at bank + accounts receivable + inventory) ÷ (Overdraft + Accounts payable) = ($5000 + $20000 + $5000) ÷ ($9000 + $11000) = $30000 ÷ $20000 = 1.5 = 1.5 : 1",
+  "expect": [
+   0,
+   0
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2025|21a",
+  "label": "HSC 2025 Q21(a) one-line stub",
+  "kind": "stub",
+  "max": 2,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2025|23b",
+  "label": "HSC 2025 Q23(b) sample answer",
+  "kind": "sample",
+  "max": 4,
+  "answer": "Ratios can be compared across different years, against industry standards or benchmarks. In this business, the expense ratio has declined; the business is not efficiently spending funds and can begin to control expenses which may improve profitability.\nAnalysis of the gearing ratio and return on equity against industry averages shows the business is performing poorly. They may decide to use equity and not borrow more as they are already highly geared and taking more risks than others, which affects their long-term viability.",
+  "expect": [
+   3,
+   4
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2025|23b",
+  "label": "HSC 2025 Q23(b) off-topic (sample from Q22(b))",
+  "kind": "offtopic",
+  "max": 4,
+  "answer": "Superannuation is a legal requirement that all employees are entitled to under Minimum Standards. Under the Fair Work Act (2009) it is illegal to prohibit union membership in Australia. This business has breached these two requirements in their advertisement.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2025|23b",
+  "label": "HSC 2025 Q23(b) one-line stub",
+  "kind": "stub",
+  "max": 4,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2024|21c",
+  "label": "HSC 2024 Q21(c) sample answer",
+  "kind": "sample",
+  "max": 4,
+  "answer": "If customers are able to choose their own toppings and flavours they are more likely to provide feedback on their favourite flavour and topping combinations. They may return to the store for repeat purchases which will lead to an increase in sales. However, this will come at a cost to the business as this will require a variety of ingredients and an increase in time required to make each item.",
+  "expect": [
+   3,
+   4
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2024|21c",
+  "label": "HSC 2024 Q21(c) off-topic (sample from Q24(c))",
+  "kind": "offtopic",
+  "max": 4,
+  "answer": "Valuing assets is the process of estimating how much assets are worth. It is problematic to value assets in a financial report as their value changes over time and the process is subjective. For example, land values tend to increase in value therefore, the balance sheet understates the net value of the business. Capitalising expenses involves the business recording an expense as an asset on the balance sheet rather than an expense in the income statement. This would appear as a higher net income for the business, misleading potential investors.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2024|21c",
+  "label": "HSC 2024 Q21(c) one-line stub",
+  "kind": "stub",
+  "max": 4,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2024|24ai",
+  "label": "HSC 2024 Q24(ai) sample answer",
+  "kind": "sample",
+  "max": 2,
+  "answer": "Current assets = (Cash at bank + accounts receivable + inventory) ÷ (Overdraft + Accounts payable) = ($5000 + $20000 + $5000) ÷ ($9000 + $11000) = $30000 ÷ $20000 = 1.5 = 1.5 : 1",
+  "expect": [
+   1,
+   2
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2024|24ai",
+  "label": "HSC 2024 Q24(ai) off-topic (sample from Q22(d))",
+  "kind": "offtopic",
+  "max": 2,
+  "answer": "The induction process introduces new employees to the workplace. Induction can enhance employee understanding of workplace culture, policies and procedures, allowing them to make a significant contribution to the business from the outset of their employment enhancing employee competence, providing a positive attitude to the job and the business.",
+  "expect": [
+   0,
+   0
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2024|24ai",
+  "label": "HSC 2024 Q24(ai) one-line stub",
+  "kind": "stub",
+  "max": 2,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2023|22b",
+  "label": "HSC 2023 Q22(b) sample answer",
+  "kind": "sample",
+  "max": 3,
+  "answer": "Superannuation is a legal requirement that all employees are entitled to under Minimum Standards. Under the Fair Work Act (2009) it is illegal to prohibit union membership in Australia. This business has breached these two requirements in their advertisement.",
+  "expect": [
+   2,
+   3
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2023|22b",
+  "label": "HSC 2023 Q22(b) off-topic (sample from Q21(a))",
+  "kind": "offtopic",
+  "max": 3,
+  "answer": "Customers are a transformed resource in the operations process. If the customer provides information to the builder about, for example, the materials, paint colours, or size of the house, they are acting as an input in the construction of the new home.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2023|22b",
+  "label": "HSC 2023 Q22(b) one-line stub",
+  "kind": "stub",
+  "max": 3,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2023|24c",
+  "label": "HSC 2023 Q24(c) sample answer",
+  "kind": "sample",
+  "max": 5,
+  "answer": "Valuing assets is the process of estimating how much assets are worth. It is problematic to value assets in a financial report as their value changes over time and the process is subjective. For example, land values tend to increase in value therefore, the balance sheet understates the net value of the business. Capitalising expenses involves the business recording an expense as an asset on the balance sheet rather than an expense in the income statement. This would appear as a higher net income for the business, misleading potential investors.",
+  "expect": [
+   4,
+   5
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2023|24c",
+  "label": "HSC 2023 Q24(c) off-topic (sample from Q23(b))",
+  "kind": "offtopic",
+  "max": 5,
+  "answer": "Recruitment involves identifying and attracting appropriate employees for a role. A contractor could provide specialist recruitment skills that may not be present in a business which would allow the business to focus on other core functions.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2023|24c",
+  "label": "HSC 2023 Q24(c) one-line stub",
+  "kind": "stub",
+  "max": 5,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2022|22d",
+  "label": "HSC 2022 Q22(d) sample answer",
+  "kind": "sample",
+  "max": 3,
+  "answer": "The induction process introduces new employees to the workplace. Induction can enhance employee understanding of workplace culture, policies and procedures, allowing them to make a significant contribution to the business from the outset of their employment enhancing employee competence, providing a positive attitude to the job and the business.",
+  "expect": [
+   2,
+   3
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2022|22d",
+  "label": "HSC 2022 Q22(d) off-topic (sample from Q21(c))",
+  "kind": "offtopic",
+  "max": 3,
+  "answer": "Changes in technology can influence a business's ability to create and sell its product/service. A change in technology usually allows for an increase in speed and production which generally means a reduction in time spent making the product eg Samsung uses CAD and robotics to manufacture their products which has caused their assembly based labour force to be retrenched. Globalisation, which involves increased economic integration, can also increase production and create cost saving measures. Globalisation allows businesses to benefit from lower production and labour costs found overseas which may lead to the outsourcing of jobs overseas. For example, Bonds moved their manufacturing operations offshore to take advantage of cheaper labour costs leading to Australian staff retrenchment.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2022|22d",
+  "label": "HSC 2022 Q22(d) one-line stub",
+  "kind": "stub",
+  "max": 3,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2021|21a",
+  "label": "HSC 2021 Q21(a) sample answer",
+  "kind": "sample",
+  "max": 2,
+  "answer": "Customers are a transformed resource in the operations process. If the customer provides information to the builder about, for example, the materials, paint colours, or size of the house, they are acting as an input in the construction of the new home.",
+  "expect": [
+   1,
+   2
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2021|21a",
+  "label": "HSC 2021 Q21(a) off-topic (sample from Q24(c))",
+  "kind": "offtopic",
+  "max": 2,
+  "answer": "Discounts for early payments. This is where the business provides a discount to customers if they pay early to encourage faster debt collection. This could be in line with penalties for late payments to encourage this efficiency.",
+  "expect": [
+   0,
+   0
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2021|21a",
+  "label": "HSC 2021 Q21(a) one-line stub",
+  "kind": "stub",
+  "max": 2,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2021|23b",
+  "label": "HSC 2021 Q23(b) sample answer",
+  "kind": "sample",
+  "max": 2,
+  "answer": "Recruitment involves identifying and attracting appropriate employees for a role. A contractor could provide specialist recruitment skills that may not be present in a business which would allow the business to focus on other core functions.",
+  "expect": [
+   1,
+   2
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2021|23b",
+  "label": "HSC 2021 Q23(b) off-topic (sample from Q22(c))",
+  "kind": "offtopic",
+  "max": 2,
+  "answer": "A disadvantage associated with using equity financing is that a business uses owner's equity or retained profits to finance its key business functions. Due to this they are unable to claim a tax deduction as no funds are borrowed. As retained profits are re-invested into the business, the investor is unable to invest in other opportunities, which may provide better returns.",
+  "expect": [
+   0,
+   0
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2021|23b",
+  "label": "HSC 2021 Q23(b) one-line stub",
+  "kind": "stub",
+  "max": 2,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2020|21c",
+  "label": "HSC 2020 Q21(c) sample answer",
+  "kind": "sample",
+  "max": 4,
+  "answer": "Changes in technology can influence a business's ability to create and sell its product/service. A change in technology usually allows for an increase in speed and production which generally means a reduction in time spent making the product eg Samsung uses CAD and robotics to manufacture their products which has caused their assembly based labour force to be retrenched. Globalisation, which involves increased economic integration, can also increase production and create cost saving measures. Globalisation allows businesses to benefit from lower production and labour costs found overseas which may lead to the outsourcing of jobs overseas. For example, Bonds moved their manufacturing operations offshore to take advantage of cheaper labour costs leading to Australian staff retrenchment.",
+  "expect": [
+   3,
+   4
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2020|21c",
+  "label": "HSC 2020 Q21(c) off-topic (sample from Q21(b))",
+  "kind": "offtopic",
+  "max": 4,
+  "answer": "Quality control involves checking quality at various points during a process. The business could introduce checklists where the quality of repairs could be checked at different points during the repair process eg standard of welding, painting, checking oil and tyres. An advantage is that the repairs will meet customer expectations of quality for all repairs. Quality assurance involves ensuring that quality meets a certain set of standards. For instance, the business could ensure its repairs meet Australian quality assurance standards for the repair of large trucks. The business must ensure that national standards are met. This would help differentiate it from other repairers, potentially increasing its market share.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2020|21c",
+  "label": "HSC 2020 Q21(c) one-line stub",
+  "kind": "stub",
+  "max": 4,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2020|24c",
+  "label": "HSC 2020 Q24(c) sample answer",
+  "kind": "sample",
+  "max": 3,
+  "answer": "Discounts for early payments. This is where the business provides a discount to customers if they pay early to encourage faster debt collection. This could be in line with penalties for late payments to encourage this efficiency.",
+  "expect": [
+   2,
+   3
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2020|24c",
+  "label": "HSC 2020 Q24(c) off-topic (sample from Q24(b))",
+  "kind": "offtopic",
+  "max": 3,
+  "answer": "The accounts receivable turnover measures how long it takes the business to collect money from its debtors. The business wants to improve its cash flow by decreasing the length of time it takes to collect its debts thus reducing financial costs. This could be done by using debt collection agencies or factoring. These however are a cost to the business. The business offering a shorter interest-free period will also improve its accounts receivable turnover.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2020|24c",
+  "label": "HSC 2020 Q24(c) one-line stub",
+  "kind": "stub",
+  "max": 3,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2019|22c",
+  "label": "HSC 2019 Q22(c) sample answer",
+  "kind": "sample",
+  "max": 3,
+  "answer": "A disadvantage associated with using equity financing is that a business uses owner's equity or retained profits to finance its key business functions. Due to this they are unable to claim a tax deduction as no funds are borrowed. As retained profits are re-invested into the business, the investor is unable to invest in other opportunities, which may provide better returns.",
+  "expect": [
+   2,
+   3
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2019|22c",
+  "label": "HSC 2019 Q22(c) off-topic (sample from Q21(a))",
+  "kind": "offtopic",
+  "max": 3,
+  "answer": "The cafe can demonstrate corporate social responsibility by donating food to a local charity that supports the community.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2019|22c",
+  "label": "HSC 2019 Q22(c) one-line stub",
+  "kind": "stub",
+  "max": 3,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2018|21b",
+  "label": "HSC 2018 Q21(b) sample answer",
+  "kind": "sample",
+  "max": 6,
+  "answer": "Quality control involves checking quality at various points during a process. The business could introduce checklists where the quality of repairs could be checked at different points during the repair process eg standard of welding, painting, checking oil and tyres. An advantage is that the repairs will meet customer expectations of quality for all repairs. Quality assurance involves ensuring that quality meets a certain set of standards. For instance, the business could ensure its repairs meet Australian quality assurance standards for the repair of large trucks. The business must ensure that national standards are met. This would help differentiate it from other repairers, potentially increasing its market share.",
+  "expect": [
+   5,
+   6
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2018|21b",
+  "label": "HSC 2018 Q21(b) off-topic (sample from Q23(b))",
+  "kind": "offtopic",
+  "max": 6,
+  "answer": "Ratios can be compared across different years, against industry standards or benchmarks. In this business, the expense ratio has declined; the business is not efficiently spending funds and can begin to control expenses which may improve profitability.\nAnalysis of the gearing ratio and return on equity against industry averages shows the business is performing poorly. They may decide to use equity and not borrow more as they are already highly geared and taking more risks than others, which affects their long-term viability.",
+  "expect": [
+   0,
+   2
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2018|21b",
+  "label": "HSC 2018 Q21(b) one-line stub",
+  "kind": "stub",
+  "max": 6,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2018|24b",
+  "label": "HSC 2018 Q24(b) sample answer",
+  "kind": "sample",
+  "max": 3,
+  "answer": "The accounts receivable turnover measures how long it takes the business to collect money from its debtors. The business wants to improve its cash flow by decreasing the length of time it takes to collect its debts thus reducing financial costs. This could be done by using debt collection agencies or factoring. These however are a cost to the business. The business offering a shorter interest-free period will also improve its accounts receivable turnover.",
+  "expect": [
+   2,
+   3
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2018|24b",
+  "label": "HSC 2018 Q24(b) off-topic (sample from Q21(c))",
+  "kind": "offtopic",
+  "max": 3,
+  "answer": "If customers are able to choose their own toppings and flavours they are more likely to provide feedback on their favourite flavour and topping combinations. They may return to the store for repeat purchases which will lead to an increase in sales. However, this will come at a cost to the business as this will require a variety of ingredients and an increase in time required to make each item.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": null
+ },
+ {
+  "key": "nesa2018|24b",
+  "label": "HSC 2018 Q24(b) one-line stub",
+  "kind": "stub",
+  "max": 3,
+  "answer": "It helps the business a lot and is very important for success.",
+  "expect": [
+   0,
+   1
+  ],
+  "confidence": [
+   "low",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2022|22a",
+  "label": "HSC 2022 Q22(a) partial: one factor, no link to the stimulus",
+  "kind": "partial",
+  "max": 3,
+  "answer": "A psychological factor influencing customer choice is perception. Customers buy products they perceive as high quality or good value, so a business tries to shape perception through branding and advertising.",
+  "expect": [
+   1,
+   2
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ },
+ {
+  "key": "nesa2021|24b",
+  "label": "HSC 2021 Q24(b) partial: generic, repeats one point",
+  "kind": "partial",
+  "max": 4,
+  "answer": "Outsourcing is good because it saves money. The business can use another company to do the work, which is cheaper. This means the business saves money and can spend it on other things. It is a good strategy to save money.",
+  "expect": [
+   1,
+   2
+  ],
+  "confidence": [
+   "high",
+   "medium"
+  ]
+ }
+]

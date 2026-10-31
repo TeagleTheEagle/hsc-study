@@ -125,3 +125,14 @@ Blueprint: /mnt/project-files/hsc-study/BLUEPRINT-V2.md (plan in PHASE-A-B-PLAN.
 3. `python3 tools/counts.py` writes every number quoted on index.html, exams.html and resources.html (elements marked `data-count`) from the data; `--check` fails if a page number differs from the data. Run it after register.py / build_exams.py.
 4. Checks: serve the repo root (`python3 -m http.server 8766`), symlink Playwright (`ln -s /opt/node-tools/node_modules node_modules` in the cloud container) and run `node tools/check_phase_a.mjs`.
 Operations (backups, restore test, rollback): OPERATIONS.md and tools/backup_supabase.mjs.
+
+## Bands for Days, phase B (31 Oct 2026)
+
+Runs after the phase A scripts above:
+1. `python3 tools/phase_b_patch.py app.html` adds drafts saved while typing (one `input` listener on the answer box; the older 700 ms saver is removed), the save-status chip (`sync` object, `saveStatusText`, `renderSaveStatus`), retry with backoff, offline and expired-session states, the newer-progress merge guard in `supaShim.set`, the richer marking result (`aiRec` with evidence, missing, next, confidence; `resultBox` layout), the missed-question boost (`S.boost`, used by `buildSession`) and the feedback box (`feedbackBox`). Refuses to run twice.
+2. `node tools/build_bank.mjs` rebuilds `data/mark-bank*.json` from `buildPrompt()` in app.html whenever the prompt changes (the Worker reads these files, not app.html).
+3. `node tools/make_bench.mjs` regenerates `tools/bench/business.json` from the question bank.
+4. Worker: `worker.js` (structured result schema, idempotency key, usage ledger, failed jobs not counted). Test with `bash tools/worker-test/run.sh`.
+5. Checks: `node tools/check_phase_b.mjs` (needs the local server and the Playwright symlink as in phase A) and `node tools/check_phase_a.mjs` again.
+6. One-off in Supabase: `supabase-feedback.sql`.
+Acceptance list for the beta: BETA-CHECKLIST.md.

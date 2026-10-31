@@ -42,5 +42,28 @@ The progress doc has a version (`v`, now 5). The app upgrades older docs on load
 ## Checks before a release
 
 - `node tools/check_phase_a.mjs` (Playwright) against a local server: navigation, hashes, subject links, counts.
+- `node tools/check_phase_b.mjs` (Playwright, uses `tools/supabase_stub.js` instead of the real Supabase): drafts, the save-status chip, retries, offline, expired sessions, merge of newer progress from another device, the marking feedback layout, missed-question boost, feedback box.
+- `bash tools/worker-test/run.sh`: the Worker with a stub Anthropic SDK: first mark, repeat not counted, ledger, failed job not counted, too-short answer, limits.
 - `python3 tools/counts.py --check` confirms the landing numbers match the data files.
 - Open the PR preview build on a phone and a desktop.
+
+## Marking usage ledger (phase B)
+
+Every successful mark writes two KV records in `MARKS` (35-day expiry): `l:<day>:<timestamp>:<first 8 chars of user id>` with the question key, tokens in and out, model and duration, and a running total `t:<day>` (`{n, in, out}`). Repeated identical answers within ten minutes return the cached result and are not counted; a failed model call returns 502, 503 or 504 and is not counted either.
+
+To read a day's totals on the PC:
+
+```
+npx wrangler kv key get --namespace-id c669400708c643d0b421cb6ec5ffb401 t:2026-11-01
+npx wrangler kv key list --namespace-id c669400708c643d0b421cb6ec5ffb401 --prefix l:2026-11-01
+```
+
+Rough cost per mark: input tokens x $5 per million plus output tokens x $25 per million for Opus. The daily total gives the day's spend; compare it with the global cap (`GLOBAL_DAILY_CAP`).
+
+## Marking benchmark (phase B)
+
+`tools/bench/business.json` holds 46 cases built from the sample answers in the Business question bank (`node tools/make_bench.mjs` regenerates it) plus two handwritten partial answers in `handwritten.json`. `node tools/marking_bench.mjs` runs them through the same prompt the site uses and writes `tools/bench/last-run.json` with the agreement rate. It needs `ANTHROPIC_API_KEY` in the terminal environment (never in a file). Release rule: agreement at or above 0.85 before changing the prompt on `main`; run it on the PC when the prompt or the model changes.
+
+## Feedback table (phase B)
+
+Run `supabase-feedback.sql` once in Supabase > SQL Editor. Students can only insert their own rows; read them in Table editor > feedback.
