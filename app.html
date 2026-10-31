@@ -416,6 +416,7 @@ dialog#subjdlg::backdrop{background:rgba(0,0,0,.45)}
 .subjgrid button:disabled{opacity:.55;cursor:default}
 body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{visibility:hidden}
 .subjnote{font-size:.9rem;color:var(--muted)}
+.planline{display:inline-flex;flex-wrap:wrap;gap:.4rem .6rem;align-items:center}.planline .offer{display:block;max-width:60ch;margin-top:.3rem;line-height:1.45}.planline .offer button{margin:.4rem .4rem 0 0}
 </style>
 
 <header class="top">
@@ -5559,7 +5560,40 @@ async function markTyped(p,it,part,ta,btn){
     else { toast('Marking did not come back cleanly. Mark it yourself against the criteria.'); openSelfMark(p,it,part); }
   }
 }
-const MARKQ={limit:5, left:null};
+// ---------- phase C: plans ----------
+const MARKQ={limit:5, left:null, plan:'free', period:'day', resets:null, billing:false};
+const PLAN={loaded:false, loading:false, data:null, offer:false, busy:false};
+function takeQuota(q){ if(!q) return; if(q.limit) MARKQ.limit=q.limit; if(q.plan) MARKQ.plan=q.plan; if(q.period) MARKQ.period=q.period; if(q.resets) MARKQ.resets=q.resets; if(typeof q.billing==='boolean') MARKQ.billing=q.billing; if(typeof q.left==='number') MARKQ.left=q.left; }
+function planDay(iso){ const d=iso?new Date(iso):null; if(!d||isNaN(d)) return ''; return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',timeZone:'Australia/Sydney'}); }
+function resetsText(){ if(MARKQ.period==='month') return MARKQ.resets?'They reset on '+planDay(MARKQ.resets)+'.':'They reset each month.'; return 'They reset tomorrow.'; }
+function marksLeftText(n){ if(MARKQ.plan==='plus') return n===0?'That was your last Plus AI mark for this period. '+resetsText():n+' of '+MARKQ.limit+' Plus AI marks left this period.'; return n===0?'That was your last free AI mark for today. They reset tomorrow.':n+' free AI mark'+(n===1?'':'s')+' left today.'; }
+function moreMarksText(){ return (MARKQ.plan==='plus'?'Plus gives you '+MARKQ.limit+' AI marks a month.':'Signed-in students get '+MARKQ.limit+' free AI marks a day.')+(MARKQ.billing&&MARKQ.plan!=='plus'?' Plus (under your account at the top) gives 100 a month. Other ways to get more:':' Two ways to get more:'); }
+async function authToken(){ try{ const {data:sd}=await SB.auth.getSession(); return sd&&sd.session&&sd.session.access_token||''; }catch(e){ return ''; } }
+async function loadPlan(force){ if(PLAN.loading||(PLAN.loaded&&!force)) return; if(!SB||!UID) return; PLAN.loading=true; try{ const tok=await authToken(); if(!tok) return; const r=await fetch('/api/plan',{headers:{authorization:'Bearer '+tok},cache:'no-store'}); if(!r.ok) return; PLAN.data=await r.json(); PLAN.loaded=true; takeQuota(PLAN.data); }catch(e){} finally{ PLAN.loading=false; renderAccount(); } }
+async function billingGo(kind){ if(PLAN.busy) return; PLAN.busy=true; renderAccount(); try{ const tok=await authToken(); const r=await fetch('/api/billing/'+kind,{method:'POST',headers:{authorization:'Bearer '+tok}}); const d=await r.json().catch(()=>({})); if(r.ok&&d.url){ location.href=d.url; return; } const c=d.code||''; toast(c==='billing_off'?'Plus is not available yet.':c==='already_plus'?'You already have Plus.':c==='no_customer'?'No billing record found for this account yet.':c==='sign_in'?'Sign in again first.':'The billing page could not be opened. Try again in a minute.'); }catch(e){ toast('No connection to the billing service. Check your internet.'); } finally{ PLAN.busy=false; renderAccount(); } }
+function planLine(){
+  const d=PLAN.data; if(!PLAN.loaded){ if(!PLAN.loading) loadPlan(); return el('span',{class:'small'},'Checking your plan…'); }
+  const box=el('span',{class:'planline'});
+  if(d.plan==='plus'){
+    const when=planDay(d.resets);
+    box.append(el('span',{class:'pill on'},'Plus'), el('span',{}, d.status==='past_due'?'Your last payment failed. Update your card to keep Plus.':`${d.left} of ${d.limit} AI marks left this period${when?(d.cancelAtPeriodEnd?' · ends ':' · renews ')+when:''}.`));
+    if(d.billing&&d.hasCustomer) box.append(el('button',{class:'ghost',disabled:PLAN.busy?'':null,onclick:()=>billingGo('portal')}, PLAN.busy?'Opening…':'Manage billing'));
+    return box;
+  }
+  box.append(el('span',{class:'pill'},'Free'), el('span',{}, `${d.dailyFree} AI marks a day.`));
+  if(d.billing){
+    if(d.hasCustomer&&d.status==='past_due') box.append(el('span',{},' Your Plus payment failed and the grace week has ended. '), el('button',{class:'ghost',disabled:PLAN.busy?'':null,onclick:()=>billingGo('portal')}, PLAN.busy?'Opening…':'Update card'));
+    else if(!PLAN.offer) box.append(el('button',{class:'ghost',onclick:()=>{ PLAN.offer=true; renderAccount(); }},'Upgrade to Plus'));
+    else box.append(el('span',{class:'offer'},
+      el('b',{},`Plus: ${d.plusMonthly} AI marks a month for ${d.price}. `),
+      'Marks reset on your renewal date and unused ones do not roll over. Cancel any time under Manage billing and keep Plus until the end of the period you paid for. Everything in Free stays free, and your sets, answers and feedback are never removed. Payment is taken by Stripe; this site never sees your card. ',
+      el('button',{class:'primary',disabled:PLAN.busy?'':null,onclick:()=>billingGo('checkout')}, PLAN.busy?'Opening…':'Continue to secure checkout'),
+      el('button',{class:'ghost',onclick:()=>{ PLAN.offer=false; renderAccount(); }},'Not now')));
+  }
+  return box;
+}
+// Back from Stripe: ?billing=success means the webhook will switch the plan within a minute; poll for it.
+function billingReturn(){ try{ const u=new URL(location.href); const b=u.searchParams.get('billing'); if(!b) return; u.searchParams.delete('billing'); history.replaceState(null,'',u.pathname+(u.search||'')+u.hash); if(b==='success'){ toast('Thanks. Plus switches on as soon as Stripe confirms the payment, usually within a minute.'); let n=0; const tick=()=>{ n++; loadPlan(true).then(()=>{ if(PLAN.data&&PLAN.data.plan==='plus'){ toast('Plus is on: '+PLAN.data.limit+' AI marks a month.'); return; } if(n<10) setTimeout(tick,4000); }); }; setTimeout(tick,2000); } }catch(e){} }
 async function markOnServer(p,it,part,text,max,btn){
   btn.disabled=true; btn.textContent='Marking…'; announce('Marking your answer');
   let r=null, data={};
@@ -5567,22 +5601,23 @@ async function markOnServer(p,it,part,text,max,btn){
     const {data:sd}=await SB.auth.getSession(); const tok=sd&&sd.session&&sd.session.access_token;
     if(tok){ r=await fetch('/api/mark',{method:'POST',headers:{'content-type':'application/json',authorization:'Bearer '+tok},body:JSON.stringify({key:rkey(p,it,part),answer:withPartA(p,it,part,text),photo:PHOTO[rkey(p,it,part)]||undefined})}); try{ data=await r.json(); }catch(e){} }
   }catch(e){ toast('No connection to the marking service. Check your internet, or self-mark.'); openSelfMark(p,it,part); return; }
-  if(data.limit) MARKQ.limit=data.limit;
+  takeQuota(data);
   if(r&&r.ok&&data.result){
     const x=normalise(data.result,max); setRec(p,it,part,aiRec(x,max)); awardXP(p,it,part,x.m,max,'ai');
-    MARKQ.left=data.left; toast(data.left===0?'That was your last free AI mark for today. They reset tomorrow.':data.left+' free AI mark'+(data.left===1?'':'s')+' left today.');
+    MARKQ.left=data.left; toast(marksLeftText(data.left)); if(PLAN.loaded&&PLAN.data){ PLAN.data.left=data.left; PLAN.data.used=data.used; renderAccount(); }
     prender(); setTimeout(()=>{ const b=document.querySelector('.markbox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); return;
   }
   const c=data.code||(r?'':'sign_in');
-  if(c==='daily_limit'){ MARKQ.left=0; toast('You have used today\'s '+MARKQ.limit+' free AI marks. Mark this one yourself; they reset tomorrow.'); }
+  if(c==='daily_limit'){ MARKQ.left=0; toast('You have used today\'s '+MARKQ.limit+' free AI marks. Mark this one yourself; they reset tomorrow.'+(MARKQ.billing?' Plus gives 100 a month.':'')); }
+  else if(c==='plan_limit'){ MARKQ.left=0; toast('You have used this period\'s '+MARKQ.limit+' Plus AI marks. '+resetsText()+' Mark this one yourself for now.'); }
   else if(c==='sign_in') toast('Sign in again to use free AI marking. For now, mark this one yourself.');
   else if(c==='busy_today'||c==='rate_limited') toast('AI marking is busy right now. Mark this one yourself, or try again later.');
   else if(c==='not_configured') toast('Free AI marking is not switched on yet. Mark this one yourself against the criteria.');
   else toast('Marking did not come back cleanly. Mark it yourself against the criteria.');
   openSelfMark(p,it,part);
 }
-async function loadQuota(){ try{ if(!SB||!UID) return; const {data:sd}=await SB.auth.getSession(); const tok=sd&&sd.session&&sd.session.access_token; if(!tok) return; const r=await fetch('/api/quota',{headers:{authorization:'Bearer '+tok}}); const q=await r.json(); if(q.limit) MARKQ.limit=q.limit; MARKQ.on=q.on; if(typeof q.left==='number'){ MARKQ.left=q.left; const n=$('#aiNote'); if(n&&!apiKey()) n.textContent=aiNoteText(); } }catch(e){} }
-function aiNoteText(){ if(UID){ if(MARKQ.on===false) return 'Free AI marking is not switched on yet, so written answers use self-marking with the criteria and sample answers shown.'; return 'Free AI marking is on while you are signed in: '+(MARKQ.left==null?MARKQ.limit+' marked answers a day.':MARKQ.left+' of '+MARKQ.limit+' left today.')+' For more, add your own API key below.'; } return 'Sign in (it is free) to get '+MARKQ.limit+' AI-marked answers a day. Until then, written answers use self-marking with the criteria and sample answers shown.'; }
+async function loadQuota(){ try{ if(!SB||!UID) return; const {data:sd}=await SB.auth.getSession(); const tok=sd&&sd.session&&sd.session.access_token; if(!tok) return; const r=await fetch('/api/quota',{headers:{authorization:'Bearer '+tok}}); const q=await r.json(); takeQuota(q); MARKQ.on=q.on; if(typeof q.left==='number'){ MARKQ.left=q.left; const n=$('#aiNote'); if(n&&!apiKey()) n.textContent=aiNoteText(); } }catch(e){} }
+function aiNoteText(){ if(UID){ if(MARKQ.on===false) return 'Free AI marking is not switched on yet, so written answers use self-marking with the criteria and sample answers shown.'; if(MARKQ.plan==='plus') return 'Plus AI marking is on: '+(MARKQ.left==null?MARKQ.limit+' marked answers a month.':MARKQ.left+' of '+MARKQ.limit+' left this period.'); return 'Free AI marking is on while you are signed in: '+(MARKQ.left==null?MARKQ.limit+' marked answers a day.':MARKQ.left+' of '+MARKQ.limit+' left today.')+(MARKQ.billing?' For more, upgrade to Plus under your account at the top, or add your own API key below.':' For more, add your own API key below.'); } return 'Sign in (it is free) to get '+MARKQ.limit+' AI-marked answers a day. Until then, written answers use self-marking with the criteria and sample answers shown.'; }
 const SELF={}; // key -> {m}
 function openSelfMark(p,it,part){ SELF[rkey(p,it,part)]={m:null}; prender(); setTimeout(()=>{ const b=document.querySelector('.selfmark'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); }
 function selfMarkBox(p,it,part){
@@ -5715,7 +5750,7 @@ function renderPick(v){
   const intro=el('div',{class:'panel'}, el('h2',{},'Past papers'), el('p',{},'Pick a paper, answer the real questions, and get marked against the official marking criteria. Multiple choice marks itself. Written answers are marked by AI against the criteria, sample answer and marker comments (or you can self-mark). You can also download every paper and marking guide.'));
   loadQuota(); const sm=getSample(); intro.append(el('p',{class:'small',id:'aiNote'},'Checking whether AI marking is available…')); sm.then(s=>{ const n=$('#aiNote'); if(n) n.textContent=apiKey()?'AI marking is on, using your API key (kept only in this browser).':s?'AI marking is on. The first time you press Mark you will be asked to allow it.':aiNoteText(); });
   const kp=el('details',{class:'keypanel'}, el('summary',{}, apiKey()?'AI marking: on (your API key)':'More AI marking'));
-  kp.append(el('p',{class:'small'},'Signed-in students get '+MARKQ.limit+' free AI marks a day. Two ways to get more:'));
+  kp.append(el('p',{class:'small'},moreMarksText()));
   kp.append(el('p',{class:'small'}, el('b',{},'1. '), 'Open the ', el('a',{href:CLAUDE_LINK,target:'_blank',rel:'noopener'},'Claude version of this study set'), ', which has AI marking and account sync built in.'));
   kp.append(el('p',{class:'small'}, el('b',{},'2. '), 'Paste an Anthropic API key from console.anthropic.com. It stays in this browser only (never sent anywhere except api.anthropic.com) and each marked answer costs a cent or two.'));
   const ki=el('input',{type:'password',id:'apiKeyInput',placeholder:'sk-ant-…','aria-label':'Anthropic API key',autocomplete:'off'}); ki.value=apiKey();
@@ -5736,7 +5771,7 @@ function renderPickSubj(v){
   const intro=el('div',{class:'panel'}, el('h2',{},'Past papers'), el('p',{},'Real HSC exams for '+SUBJ.name+'. Pick a paper, then a question. Type your answer and it is marked against NESA’s marking criteria and sample answers, or mark it yourself. Write on paper first if that suits you, then type it in.'));
   loadQuota(); const sm=getSample(); intro.append(el('p',{class:'small',id:'aiNote'},'Checking whether AI marking is available…')); sm.then(s=>{ const n=$('#aiNote'); if(n) n.textContent=apiKey()?'AI marking is on, using your API key (kept only in this browser).':s?'AI marking is on. The first time you press Mark you will be asked to allow it.':aiNoteText(); });
   const kp=el('details',{class:'keypanel'}, el('summary',{}, apiKey()?'AI marking: on (your API key)':'More AI marking'));
-  kp.append(el('p',{class:'small'},'Signed-in students get '+MARKQ.limit+' free AI marks a day. Two ways to get more:'));
+  kp.append(el('p',{class:'small'},moreMarksText()));
   kp.append(el('p',{class:'small'}, el('b',{},'1. '), 'Open the ', el('a',{href:CLAUDE_LINK,target:'_blank',rel:'noopener'},'Claude version of this study set'), ', which has AI marking and account sync built in.'));
   kp.append(el('p',{class:'small'}, el('b',{},'2. '), 'Paste an Anthropic API key from console.anthropic.com. It stays in this browser only (never sent anywhere except api.anthropic.com) and each marked answer costs a cent or two.'));
   const ki=el('input',{type:'password',id:'apiKeyInput',placeholder:'sk-ant-…','aria-label':'Anthropic API key',autocomplete:'off'}); ki.value=apiKey();
@@ -6444,7 +6479,7 @@ function renderAccount(){
   if(sync.state==='expired'){ a.append(el('span',{class:'pill'},'Signed out'), el('span',{},'Your sign-in expired. Everything is kept on this device; sign in again to keep syncing. '), el('button',{class:'ghost',onclick:()=>{ AUTH.open=!AUTH.open; renderAccount(); }}, AUTH.open?'Close':'Sign in again')); if(AUTH.open) a.append(authForm()); return; }
   if(sync.state==='synced'){
     const pill=el('span',{class:'pill on'}); if(ME&&ME.avatarUrl){ pill.append(el('img',{src:ME.avatarUrl,alt:''})); } pill.append(document.createTextNode('Signed in'+(ME&&ME.name?' as '+ME.name:'')));
-    a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'), el('button',{class:'ghost',onclick:signOut},'Sign out'));
+    a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'), el('button',{class:'ghost',onclick:signOut},'Sign out'), planLine());
   } else if(sync.state==='readonly'){
     a.append(el('span',{class:'pill'},'Signed in · device only'), el('span',{},'This share level cannot save to an account. Progress stays on this device.'));
   } else if(sync.state==='loading'){
@@ -6581,7 +6616,7 @@ function offlinePanel(){
   return p;
 }
 { const qc=new URLSearchParams(location.search).get('code'); if(qc&&qc.trim()){ AUTH.code=qc.trim().toUpperCase(); AUTH.mode='up'; AUTH.open=true; } }
-render(); renderAccount(); initSync();
+render(); renderAccount(); initSync(); billingReturn();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
 </script>
 

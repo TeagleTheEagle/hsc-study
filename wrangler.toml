@@ -19,6 +19,9 @@ run_worker_first = ["/api/*"]
 binding = "MARKS"
 id = "c669400708c643d0b421cb6ec5ffb401"
 
+# Plans (phase C). Billing stays OFF until the secrets STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET are set
+# (wrangler secret put ... --name bandsix) and STRIPE_PRICE_ID below is the Plus price id (price_...). See OPERATIONS.md "Billing".
+# PLUS_MONTHLY marks per billing period for Plus; DAILY_LIMIT a day stays the Free allowance (blueprint 15: never cut quietly).
 # Public settings. The Supabase key here is the publishable one (same as in app.html).
 # The Anthropic key is a secret: wrangler secret put ANTHROPIC_API_KEY
 [vars]
@@ -27,9 +30,13 @@ SUPA_KEY = "sb_publishable_NbyHQeXmH1ovRyHYOmFMXA_OEub4F2z"
 DAILY_LIMIT = "5"
 GLOBAL_DAILY_CAP = "300"
 MODEL = "claude-opus-5-5"
+PLUS_MONTHLY = "100"
+PLUS_PRICE_TEXT = "A$9.99 a month"
+STRIPE_PRICE_ID = ""
 
 # Preview URLs (<version>-bandsix.<account>.workers.dev) so every PR build gets a link in the PR comment.
 preview_urls = true
 
 # PR branches deploy with `wrangler preview`, which requires this block (it can stay empty).
 [previews]
+

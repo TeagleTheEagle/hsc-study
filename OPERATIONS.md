@@ -44,6 +44,7 @@ The progress doc has a version (`v`, now 5). The app upgrades older docs on load
 - `node tools/check_phase_a.mjs` (Playwright) against a local server: navigation, hashes, subject links, counts.
 - `node tools/check_phase_b.mjs` (Playwright, uses `tools/supabase_stub.js` instead of the real Supabase): drafts, the save-status chip, retries, offline, expired sessions, merge of newer progress from another device, the marking feedback layout, missed-question boost, feedback box.
 - `bash tools/worker-test/run.sh`: the Worker with a stub Anthropic SDK: first mark, repeat not counted, ledger, failed job not counted, too-short answer, limits.
+- `node tools/check_phase_c.mjs` (Playwright, Worker routes stubbed): the plan line, Upgrade to Plus only when billing is on, the terms, the hop to checkout and back, Plus wording on marks, plan_limit, cancel-at-period-end, past due, Manage billing. The Worker side of billing is in `tools/worker-test/run.sh` (test_billing.mjs: fake Stripe, signed webhooks, duplicates, out-of-order events, grace week).
 - `node tools/check_phase_d.mjs` (Playwright, starts its own server on 8767 and stops it mid-run): worker installs, app and a saved subject load with the server down, marking refused offline with the draft kept, install card, new-version reload.
 - `node tools/check_phase_e1.mjs` (Playwright): the Marks report with seeded attempts (topics weakest first, Not assessed, rewrites attempt by attempt, four-week trend, text export, routing).
 - `node tools/check_phase_e2.mjs` (Playwright, fake Supabase): class leaderboard, class view, invite link, sign-up pre-fill, no-class-code case.
@@ -85,3 +86,28 @@ Run `supabase-classes.sql` once. It adds `class_code` to `public.scores`, filled
 ## Feedback table (phase B)
 
 Run `supabase-feedback.sql` once in Supabase > SQL Editor. Students can only insert their own rows; read them in Table editor > feedback.
+
+## Billing: Free and Plus (phase C)
+
+**What is built.** Free stays what the site has always promised: `DAILY_LIMIT` (5) AI marks a day, reset at midnight Sydney. Plus is `PLUS_MONTHLY` (100) AI marks per billing period for `PLUS_PRICE_TEXT` (A$9.99 a month), reset on the renewal date, no rollover. The Worker decides the plan from the KV record `plan:<user id>` (written only by the Stripe webhook) and counts Plus marks in `pm:<user id>:<period start>`; Free marks keep using `u:<user id>:<day>`. Routes: `GET /api/plan`, `POST /api/billing/checkout` (Stripe hosted Checkout), `POST /api/billing/portal` (Stripe customer portal: change card, cancel, receipts), `POST /api/billing/webhook` (signed; idempotent on the event id; an older event never overwrites a newer state). Cancelled-but-paid keeps Plus to the end of the period; a failed renewal keeps Plus for 7 days then drops to Free until the card is fixed. Nothing is charged for features that do not exist: Plus is the larger marking allowance, nothing else.
+
+**Billing is off** until the two secrets and the price id are set. With it off the app shows only the Free plan (no Upgrade button); the checkout and webhook routes answer 503.
+
+**Opening the Stripe account** (the account holder must be 18 or over, so a parent may have to open it, with Ben as a team member):
+1. dashboard.stripe.com/register. Business type individual or sole trader is fine; Stripe will ask for ID, an address, and a bank account (BSB and account number) for payouts. If it asks for an ABN, one is free at abr.gov.au. Business name on statements: Bands for Days.
+2. Stay in **Test mode** first. Product catalogue > Add product: "Bands for Days Plus", recurring, A$9.99 a month. Copy the price id (`price_…`).
+3. Settings > Billing > Customer portal: turn on "Cancel subscriptions", "Update payment methods" and "Invoice history", then Save.
+4. Developers > Webhooks > Add endpoint: `https://bandsfordays.com/api/billing/webhook`, events `checkout.session.completed`, `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.paid`, `invoice.payment_failed`. Copy the signing secret (`whsec_…`).
+5. Developers > API keys: copy the secret key (`sk_test_…`). Never paste it into chat, a file in the repo, or the site.
+6. On the PC, in `C:\Users\jonny\bandsix-ops`:
+   `npx wrangler secret put STRIPE_SECRET_KEY --name bandsix` (paste the key when asked), then `npx wrangler secret put STRIPE_WEBHOOK_SECRET --name bandsix`. Secrets survive every GitHub deploy.
+7. In wrangler.toml set `STRIPE_PRICE_ID = "price_…"` and push to main. A minute later the account strip shows Upgrade to Plus.
+8. Test: sign in, Upgrade to Plus, pay with card 4242 4242 4242 4242 (any future expiry, any CVC). Within a minute the strip says Plus with 100 marks. Mark one answer (the count drops), open Manage billing, cancel: the strip says "ends <date>" and Plus stays until then. Check the KV record: `npx wrangler kv key get plan:<user id> --namespace-id c669400708c643d0b421cb6ec5ffb401`.
+9. Go live: switch the dashboard to Live mode and repeat steps 2 to 7 with the live product, live webhook endpoint and live keys (`sk_live_…`, a new `whsec_…`). Make one real purchase and refund it from the dashboard.
+
+**Before charging anyone**, decide and write down: the refund rule (the app says "cancel any time, keep Plus to the end of the paid period"; refunds beyond that are at your discretion, and Australian Consumer Law still applies), and GST (under A$75,000 a year turnover there is no GST registration; the price is shown as the total either way). Put the answer in BETA-CHECKLIST.md.
+
+**Kill switch.** Set `STRIPE_PRICE_ID = ""` and push: Upgrade disappears, existing subscribers keep their Plus allowance and the webhook keeps running. Removing the webhook secret stops plan updates (Stripe retries for 3 days), so only do that to stop everything.
+
+**Support.** "Where is my Plus?" means the webhook has not landed: check Developers > Webhooks > the endpoint > recent deliveries (a 2xx means applied; a 502 means Stripe could not be reached from the Worker and it will retry). To fix a record by hand: `npx wrangler kv key put plan:<user id> '{"plan":"plus","status":"active","customer":"cus_…","sub":"sub_…","periodStart":<unix>,"periodEnd":<unix>,"cancelAtPeriodEnd":false,"updated":<unix>}' --namespace-id c669400708c643d0b421cb6ec5ffb401`.
+

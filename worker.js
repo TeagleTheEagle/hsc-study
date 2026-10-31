@@ -1,6 +1,8 @@
 // Bands for Days Worker (Cloudflare Worker "bandsix"): serves the static site, plus /api/mark, which marks a typed past-paper
-// answer with Claude for signed-in students (DAILY_LIMIT a day each, GLOBAL_DAILY_CAP site-wide).
-// The Anthropic key is the ANTHROPIC_API_KEY secret (wrangler secret put); it never reaches the browser.
+// answer with Claude for signed-in students (Free: DAILY_LIMIT a day each; Plus: PLUS_MONTHLY a month; GLOBAL_DAILY_CAP site-wide),
+// /api/quota and /api/plan (what the student has left), and /api/billing/* (Stripe hosted checkout, billing portal, webhook).
+// Secrets (wrangler secret put): ANTHROPIC_API_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET. None of them ever reaches the browser.
+// Billing is off until STRIPE_SECRET_KEY and STRIPE_PRICE_ID are set; then the site shows Upgrade to Plus (blueprint 12 to 16).
 import Anthropic from '@anthropic-ai/sdk';
 
 const RESULT_SCHEMA = {
@@ -148,14 +150,15 @@ async function mark(request, env) {
   if (!user) return json(401, { code: 'sign_in' });
 
   const day = sydneyDay();
-  const limit = Number(env.DAILY_LIMIT || 5), cap = Number(env.GLOBAL_DAILY_CAP || 300);
-  const ukey = 'u:' + user.id + ':' + day, gkey = 'g:' + day;
+  const cap = Number(env.GLOBAL_DAILY_CAP || 300);
+  const a = await allowance(env, user.id); const limit = a.limit, used = a.used;
+  const ukey = a.key, gkey = 'g:' + day;
   // The same answer sent again within 10 minutes (a double tap, a retry after a dropped connection) gets the
   // same result and is not counted twice (blueprint 14).
   const rkey = 'r:' + (await sha256(user.id + '|' + key + '|' + answer + '|' + (photo ? photo.source.data.length : 0)));
-  const [used, total, repeat] = await Promise.all([env.MARKS.get(ukey), env.MARKS.get(gkey), env.MARKS.get(rkey)]).then(v => [Number(v[0] || 0), Number(v[1] || 0), v[2]]);
-  if (repeat) { try { return json(200, { result: JSON.parse(repeat), limit, left: Math.max(0, limit - used), repeated: true }); } catch (e) { /* fall through and mark again */ } }
-  if (used >= limit) return json(429, { code: 'daily_limit', limit, left: 0 });
+  const [total, repeat] = await Promise.all([env.MARKS.get(gkey), env.MARKS.get(rkey)]).then(v => [Number(v[0] || 0), v[1]]);
+  if (repeat) { try { return json(200, { result: JSON.parse(repeat), ...allowanceOut(a), repeated: true }); } catch (e) { /* fall through and mark again */ } }
+  if (used >= limit) return json(429, { code: a.plan === 'plus' ? 'plan_limit' : 'daily_limit', ...allowanceOut(a), left: 0 });
   if (total >= cap) return json(503, { code: 'busy_today' });
 
   let result, usage = { in: 0, out: 0 }, modelUsed = '';
@@ -175,22 +178,182 @@ async function mark(request, env) {
   }
   const ttl = { expirationTtl: 60 * 60 * 48 };
   await Promise.all([
-    env.MARKS.put(ukey, String(used + 1), ttl), env.MARKS.put(gkey, String(total + 1), ttl),
+    env.MARKS.put(ukey, String(used + 1), { expirationTtl: a.ttl }), env.MARKS.put(gkey, String(total + 1), ttl),
     env.MARKS.put(rkey, JSON.stringify(result), { expirationTtl: 600 }),
-    ledger(env, day, { t: Date.now(), u: user.id, k: key, mark: result.mark, max: entry.max, conf: result.confidence, in: usage.in, out: usage.out, ms: Date.now() - t0, model: modelUsed, photo: !!photo }).catch(() => {}),
+    ledger(env, day, { t: Date.now(), u: user.id, k: key, mark: result.mark, max: entry.max, conf: result.confidence, in: usage.in, out: usage.out, ms: Date.now() - t0, model: modelUsed, photo: !!photo, plan: a.plan }).catch(() => {}),
   ]);
-  return json(200, { result, limit, left: Math.max(0, limit - used - 1) });
+  return json(200, { result, ...allowanceOut(a), used: used + 1, left: Math.max(0, limit - used - 1) });
 }
+
+// ---------- plans and entitlements (blueprint 12 to 16) ----------
+// Free: DAILY_LIMIT AI marks a day (the promise the site has made since launch; blueprint 15 says never cut it quietly).
+// Plus: PLUS_MONTHLY marks per billing period, reset on the renewal date; no rollover.
+// The plan record plan:<uid> in KV is written only by the Stripe webhook, so entitlements are enforced server-side.
+function billingOn(env) { return !!(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_ID); }
+async function planRecord(env, uid) {
+  try { return JSON.parse((await env.MARKS.get('plan:' + uid)) || 'null'); } catch (e) { return null; }
+}
+const PAST_DUE_GRACE = 7 * 86400;
+function isPlus(rec, now = Date.now() / 1000) {
+  if (!rec || rec.plan !== 'plus') return false;
+  if (rec.status === 'active' || rec.status === 'trialing') return true;
+  if (rec.status === 'canceled') return Number(rec.periodEnd || 0) > now;           // cancelled but paid: access to the end of the period
+  if (rec.status === 'past_due') return Number(rec.periodStart || 0) + PAST_DUE_GRACE > now;  // a failed renewal gets a week to fix the card
+  return false;
+}
+function nextSydneyMidnight() {
+  const d = new Date(); for (let i = 1; i <= 48; i++) { const t = new Date(d.getTime() + i * 1800000); if (t.toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' }) !== sydneyDay()) { const h = t.toLocaleTimeString('en-GB', { timeZone: 'Australia/Sydney', hour: '2-digit', minute: '2-digit' }); if (h <= '00:30') return t.toISOString(); } }
+  return new Date(d.getTime() + 86400000).toISOString();
+}
+// What a student may use right now: { plan, status, limit, used, left, period: 'day'|'month', resets, key }.
+async function allowance(env, uid) {
+  const rec = await planRecord(env, uid);
+  if (isPlus(rec)) {
+    const key = 'pm:' + uid + ':' + Number(rec.periodStart || 0), limit = Number(env.PLUS_MONTHLY || 100);
+    const used = Number((await env.MARKS.get(key)) || 0);
+    return { plan: 'plus', status: rec.status, limit, used, left: Math.max(0, limit - used), period: 'month', resets: new Date(Number(rec.periodEnd || 0) * 1000).toISOString(), cancelAtPeriodEnd: !!rec.cancelAtPeriodEnd, key, ttl: 60 * 86400 };
+  }
+  const key = 'u:' + uid + ':' + sydneyDay(), limit = Number(env.DAILY_LIMIT || 5);
+  const used = Number((await env.MARKS.get(key)) || 0);
+  return { plan: 'free', status: rec && rec.plan === 'plus' ? rec.status : 'none', limit, used, left: Math.max(0, limit - used), period: 'day', resets: nextSydneyMidnight(), key, ttl: 48 * 3600 };
+}
+function allowanceOut(a) { return { plan: a.plan, status: a.status, limit: a.limit, used: a.used, left: a.left, period: a.period, resets: a.resets, cancelAtPeriodEnd: !!a.cancelAtPeriodEnd }; }
 
 async function quota(request, env) {
   const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
   const limit = Number(env.DAILY_LIMIT || 5);
-  if (!env.ANTHROPIC_API_KEY) return json(200, { on: false, limit });
-  if (!token) return json(200, { on: true, limit, left: null });
+  if (!env.ANTHROPIC_API_KEY) return json(200, { on: false, limit, billing: billingOn(env) });
+  if (!token) return json(200, { on: true, limit, left: null, billing: billingOn(env) });
   const user = await userFromToken(env, token);
-  if (!user) return json(200, { on: true, limit, left: null });
-  const used = Number((await env.MARKS.get('u:' + user.id + ':' + sydneyDay())) || 0);
-  return json(200, { on: true, limit, left: Math.max(0, limit - used) });
+  if (!user) return json(200, { on: true, limit, left: null, billing: billingOn(env) });
+  const a = await allowance(env, user.id);
+  return json(200, { on: true, billing: billingOn(env), ...allowanceOut(a) });
+}
+
+// GET /api/plan: the student's plan and allowance for the account panel.
+async function plan(request, env) {
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const base = { billing: billingOn(env), price: env.PLUS_PRICE_TEXT || 'A$9.99 a month', plusMonthly: Number(env.PLUS_MONTHLY || 100), dailyFree: Number(env.DAILY_LIMIT || 5) };
+  if (!token) return json(200, { ...base, plan: 'free', signedIn: false });
+  const user = await userFromToken(env, token);
+  if (!user) return json(401, { code: 'sign_in' });
+  const a = await allowance(env, user.id); const rec = await planRecord(env, user.id);
+  return json(200, { ...base, signedIn: true, ...allowanceOut(a), periodEnd: rec && rec.periodEnd ? new Date(rec.periodEnd * 1000).toISOString() : null, hasCustomer: !!(rec && rec.customer) });
+}
+
+// ---------- Stripe (hosted checkout, billing portal, signed webhooks; no card data ever touches this code) ----------
+function form(params, prefix = '') {
+  const out = [];
+  for (const [k, v] of Object.entries(params)) {
+    const key = prefix ? `${prefix}[${k}]` : k;
+    if (v === undefined || v === null) continue;
+    if (Array.isArray(v)) v.forEach((x, i) => out.push(typeof x === 'object' ? form(x, `${key}[${i}]`) : `${encodeURIComponent(`${key}[${i}]`)}=${encodeURIComponent(x)}`));
+    else if (typeof v === 'object') out.push(form(v, key));
+    else out.push(`${encodeURIComponent(key)}=${encodeURIComponent(v)}`);
+  }
+  return out.join('&');
+}
+async function stripe(env, method, path, params, idem) {
+  const res = await fetch('https://api.stripe.com/v1' + path, {
+    method, headers: { authorization: 'Bearer ' + env.STRIPE_SECRET_KEY, 'content-type': 'application/x-www-form-urlencoded', ...(idem ? { 'idempotency-key': idem } : {}) },
+    body: method === 'GET' ? undefined : form(params || {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error((data.error && data.error.message) || 'stripe'), { code: 'stripe', status: res.status });
+  return data;
+}
+function siteOrigin(request, env) { return env.SITE_ORIGIN || new URL(request.url).origin; }
+
+// POST /api/billing/checkout -> { url } of a Stripe Checkout page for Plus.
+async function checkout(request, env) {
+  if (request.method !== 'POST') return json(405, { code: 'method' });
+  if (!billingOn(env)) return json(503, { code: 'billing_off' });
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const user = token ? await userFromToken(env, token) : null;
+  if (!user) return json(401, { code: 'sign_in' });
+  const rec = await planRecord(env, user.id);
+  if (isPlus(rec)) return json(409, { code: 'already_plus' });
+  const origin = siteOrigin(request, env);
+  const params = {
+    mode: 'subscription', client_reference_id: user.id, allow_promotion_codes: 'true',
+    line_items: [{ price: env.STRIPE_PRICE_ID, quantity: 1 }],
+    success_url: origin + '/app.html?billing=success#home', cancel_url: origin + '/app.html?billing=cancel#home',
+    metadata: { uid: user.id }, subscription_data: { metadata: { uid: user.id } },
+  };
+  if (rec && rec.customer) params.customer = rec.customer; else if (user.email) params.customer_email = user.email;
+  try {
+    const session = await stripe(env, 'POST', '/checkout/sessions', params, 'co:' + user.id + ':' + Math.floor(Date.now() / 60000));
+    return json(200, { url: session.url });
+  } catch (e) { return json(502, { code: 'stripe', message: String(e.message || '').slice(0, 200) }); }
+}
+
+// POST /api/billing/portal -> { url } of the Stripe customer portal (change card, cancel, receipts).
+async function portal(request, env) {
+  if (request.method !== 'POST') return json(405, { code: 'method' });
+  if (!billingOn(env)) return json(503, { code: 'billing_off' });
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const user = token ? await userFromToken(env, token) : null;
+  if (!user) return json(401, { code: 'sign_in' });
+  const rec = await planRecord(env, user.id);
+  if (!rec || !rec.customer) return json(404, { code: 'no_customer' });
+  try {
+    const session = await stripe(env, 'POST', '/billing_portal/sessions', { customer: rec.customer, return_url: siteOrigin(request, env) + '/app.html#home' });
+    return json(200, { url: session.url });
+  } catch (e) { return json(502, { code: 'stripe', message: String(e.message || '').slice(0, 200) }); }
+}
+
+// Stripe-Signature: t=<unix>,v1=<hmac sha256 of "<t>.<body>">; reject anything older than 5 minutes.
+async function verifyStripe(secret, header, body) {
+  const parts = Object.fromEntries(String(header || '').split(',').map(x => x.split('=')).filter(x => x.length === 2));
+  const t = Number(parts.t), v1 = parts.v1; if (!t || !v1) return false;
+  if (Math.abs(Date.now() / 1000 - t) > 300) return false;
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = [...new Uint8Array(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(t + '.' + body)))].map(b => b.toString(16).padStart(2, '0')).join('');
+  if (sig.length !== v1.length) return false;
+  let diff = 0; for (let i = 0; i < sig.length; i++) diff |= sig.charCodeAt(i) ^ v1.charCodeAt(i);
+  return diff === 0;
+}
+// A subscription object (from an event or a fetch) becomes the plan record. Newer Stripe API versions keep the period on the item.
+function periodOf(sub) {
+  const item = sub.items && sub.items.data && sub.items.data[0];
+  return { start: Number(sub.current_period_start || (item && item.current_period_start) || 0), end: Number(sub.current_period_end || (item && item.current_period_end) || 0) };
+}
+async function applySubscription(env, sub, uid, at) {
+  uid = uid || (sub.metadata && sub.metadata.uid) || (sub.customer ? await env.MARKS.get('cust:' + sub.customer) : null);
+  if (!uid) return false;
+  const cur = await planRecord(env, uid);
+  if (cur && cur.updated && at && at < cur.updated) return false;   // an older event arriving late never overwrites a newer state
+  const per = periodOf(sub);
+  const rec = { plan: 'plus', status: String(sub.status || ''), customer: String(sub.customer || ''), sub: String(sub.id || ''), periodStart: per.start, periodEnd: per.end, cancelAtPeriodEnd: !!sub.cancel_at_period_end, updated: at || Math.floor(Date.now() / 1000) };
+  await Promise.all([env.MARKS.put('plan:' + uid, JSON.stringify(rec)), sub.customer ? env.MARKS.put('cust:' + sub.customer, uid) : null]);
+  return true;
+}
+// POST /api/billing/webhook: idempotent on the event id; handles checkout completed, subscription changes and invoices.
+async function webhook(request, env) {
+  if (request.method !== 'POST') return json(405, { code: 'method' });
+  if (!env.STRIPE_WEBHOOK_SECRET) return json(503, { code: 'billing_off' });
+  const body = await request.text();
+  if (!(await verifyStripe(env.STRIPE_WEBHOOK_SECRET, request.headers.get('stripe-signature'), body))) return json(400, { code: 'bad_signature' });
+  let event; try { event = JSON.parse(body); } catch (e) { return json(400, { code: 'bad_request' }); }
+  if (!event || !event.id || !event.type) return json(400, { code: 'bad_request' });
+  if (await env.MARKS.get('evt:' + event.id)) return json(200, { received: true, duplicate: true });
+  const obj = (event.data && event.data.object) || {}; const at = Number(event.created || 0);
+  let applied = false;
+  try {
+    if (event.type === 'checkout.session.completed' && obj.mode === 'subscription' && obj.subscription) {
+      const uid = obj.client_reference_id || (obj.metadata && obj.metadata.uid);
+      if (uid && obj.customer) await env.MARKS.put('cust:' + obj.customer, uid);
+      const sub = await stripe(env, 'GET', '/subscriptions/' + obj.subscription);
+      applied = await applySubscription(env, sub, uid, at);
+    } else if (/^customer\.subscription\.(created|updated|deleted|paused|resumed)$/.test(event.type)) {
+      applied = await applySubscription(env, obj, null, at);
+    } else if (/^invoice\.(paid|payment_failed|payment_action_required)$/.test(event.type)) {
+      const subId = typeof obj.subscription === 'string' ? obj.subscription : (obj.subscription && obj.subscription.id) || (obj.parent && obj.parent.subscription_details && obj.parent.subscription_details.subscription);
+      if (subId) { const sub = await stripe(env, 'GET', '/subscriptions/' + subId); applied = await applySubscription(env, sub, null, at); }
+    }
+  } catch (e) { return json(502, { code: 'stripe', message: String(e.message || '').slice(0, 200) }); }   // Stripe retries a non-2xx
+  await env.MARKS.put('evt:' + event.id, '1', { expirationTtl: 30 * 86400 });
+  return json(200, { received: true, applied });
 }
 
 export default {
@@ -199,6 +362,10 @@ export default {
     try {
       if (pathname === '/api/mark') return await mark(request, env);
       if (pathname === '/api/quota') return await quota(request, env);
+      if (pathname === '/api/plan') return await plan(request, env);
+      if (pathname === '/api/billing/checkout') return await checkout(request, env);
+      if (pathname === '/api/billing/portal') return await portal(request, env);
+      if (pathname === '/api/billing/webhook') return await webhook(request, env);
     } catch (e) {
       return json(500, { code: 'server_error' });
     }
