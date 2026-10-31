@@ -1,0 +1,30 @@
+import worker from './worker.js';
+let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
+const kv = new Map(); const MARKS = { async get(k) { return kv.has(k) ? kv.get(k) : null; }, async put(k, v) { kv.set(k, v); } };
+const bank = { 'nesa2025|21': { max: 4, pre: 'PRE ', post: ' POST' } };
+const env = { ANTHROPIC_API_KEY: 'x', SUPA_URL: 'https://supa.test', SUPA_KEY: 'k', DAILY_LIMIT: '5', GLOBAL_DAILY_CAP: '300', MARKS, ASSETS: { async fetch(u) { return new Response(JSON.stringify(bank), { status: String(u).includes('mark-bank.json') ? 200 : 404 }); } } };
+globalThis.fetch = async (url, init) => { if (String(url).includes('/auth/v1/user')) return new Response(JSON.stringify({ id: 'user-1' }), { status: 200 }); return new Response('{}', { status: 404 }); };
+let calls = 0, mode = 'ok';
+globalThis.__claude = async req => { calls++; if (mode === 'fail') { const { default: A } = await import('@anthropic-ai/sdk'); throw new A.APIError(500, 'down'); }
+  return { stop_reason: 'end_turn', model: 'claude-test', usage: { input_tokens: 1200, output_tokens: 300 }, content: [{ type: 'text', text: JSON.stringify({ mark: 3, band: '3', verdict: 'v', strengths: [], improvements: [], evidence: ['q'], missing: [], next: 'n', confidence: 'high', model: 'm' }) }] }; };
+const post = (body, tok = 'tok') => worker.fetch(new Request('https://bandsfordays.com/api/mark', { method: 'POST', headers: { 'content-type': 'application/json', ...(tok ? { authorization: 'Bearer ' + tok } : {}) }, body: JSON.stringify(body) }), env);
+const answer = 'Outsourcing passes production to a specialist which lowers costs but reduces control over quality.';
+let r = await post({ key: 'nesa2025|21', answer }); let d = await r.json();
+ok(r.status === 200 && d.result.mark === 3 && d.left === 4 && d.result.next === 'n' && d.result.confidence === 'high', 'first mark: 200, left 4, new fields pass through');
+r = await post({ key: 'nesa2025|21', answer }); d = await r.json();
+ok(r.status === 200 && d.repeated === true && d.left === 4 && calls === 1, 'same answer again: cached, not counted, no second model call');
+const day = new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Sydney' });
+ok(kv.get('u:user-1:' + day) === '1', 'per-user counter is 1');
+const tot = JSON.parse(kv.get('t:' + day)); ok(tot.n === 1 && tot.in === 1200 && tot.out === 300, 'ledger daily total records tokens');
+ok([...kv.keys()].some(k => k.startsWith('l:' + day + ':')), 'ledger has a per-mark record');
+mode = 'fail'; r = await post({ key: 'nesa2025|21', answer: answer + ' Second attempt.' }); d = await r.json();
+ok(r.status === 502 && d.code === 'upstream' && kv.get('u:user-1:' + day) === '1', 'failed job: 502 and the allowance is not consumed');
+mode = 'ok'; r = await post({ key: 'nesa2025|21', answer: 'too short' }); d = await r.json(); ok(r.status === 400 && d.code === 'too_short', 'too short rejected');
+r = await post({ key: 'nope|1', answer }); ok(r.status === 404, 'unknown question 404');
+r = await post({ key: 'nesa2025|21', answer }, ''); ok(r.status === 401, 'no token 401');
+for (let i = 0; i < 4; i++) { r = await post({ key: 'nesa2025|21', answer: answer + ' variant ' + i }); }
+r = await post({ key: 'nesa2025|21', answer: answer + ' one more' }); d = await r.json();
+ok(r.status === 429 && d.code === 'daily_limit', 'sixth distinct answer today hits the 5-a-day limit');
+r = await worker.fetch(new Request('https://bandsfordays.com/api/quota', { headers: { authorization: 'Bearer tok' } }), env); d = await r.json();
+ok(d.on === true && d.limit === 5 && d.left === 0, 'quota reports 0 left');
+console.log(fails ? `${fails} check(s) failed` : 'worker checks passed'); process.exit(fails ? 1 : 0);

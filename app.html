@@ -282,6 +282,9 @@ summary{cursor:pointer;font-weight:700;min-height:36px;display:flex;align-items:
 .account .pill{display:inline-flex;align-items:center;gap:.4rem;padding:.15rem .7rem;border-radius:999px;border:1.5px solid var(--border);color:var(--ink);font-weight:700;font-size:.85rem}
 .account .pill.on{border-color:var(--good);background:var(--good-soft)}
 .account img{width:22px;height:22px;border-radius:50%}
+.fbbox{display:grid;gap:.5rem;margin-top:.4rem} .fbta{font:inherit;font-size:1rem;min-height:5.5rem;padding:.6rem .8rem;border:2px solid var(--border);border-radius:12px;background:var(--surface);color:var(--ink);width:100%;resize:vertical}
+.savestat{font-size:.85rem;color:var(--muted);padding:.1rem .55rem;border-radius:999px;background:var(--surface-2)} .savestat.ok{color:var(--good-deep);background:var(--good-soft)} .savestat.warn{color:var(--mid);background:var(--mid-soft)} .savestat.bad{color:var(--warn);background:var(--warn-soft)}
+.evid{margin:.2rem 0 .2rem .6rem;padding-left:.6rem;border-left:3px solid var(--good);font-style:italic;color:var(--muted)} .lowconf{background:var(--mid-soft);border-radius:10px;padding:.5rem .8rem;font-size:.95rem} .nextact{background:var(--accent-soft);border-radius:10px;padding:.5rem .8rem} .nextact b{color:var(--accent)}
 .lb{display:grid;gap:.4rem}
 .lb .rowx{display:grid;grid-template-columns:2rem 1fr auto auto;gap:.6rem;align-items:center;padding:.45rem .6rem;border-radius:10px;background:var(--surface-2);font-variant-numeric:tabular-nums}
 .lb .rowx.me{outline:2px solid var(--accent)}
@@ -4903,13 +4906,16 @@ function weakestTopic(){ return TOPIC_ORDER.map(t=>[t,topicStrength(t)]).sort((a
 function buildSession(topic){
   const steps=[]; const due=shuffled(dueCards()).slice(0,10); const used=new Set(due.map(c=>c.id));
   for(const c of due) steps.push({k:'card', id:c.id, why:'Due for review'});
-  for(const c of prioritised(CARDS.filter(c=>c.t===topic&&status(c)!=='k'&&!used.has(c.id))).slice(0,8)) steps.push({k:'card', id:c.id, why:`${TOPIC_NAME[topic]}: your weakest topic`});
+  for(const c of prioritised(CARDS.filter(c=>c.t===topic&&status(c)!=='k'&&!used.has(c.id))).slice(0,8)){ used.add(c.id); steps.push({k:'card', id:c.id, why:`${TOPIC_NAME[topic]}: your weakest topic`}); }
+  // Topics where you lost marks on a real exam question in the last 2 days come back as cards (blueprint 5 and 10).
+  for(const [t,d] of Object.entries(S.boost||{})){ if(t===topic||!TOPIC_ORDER.includes(t)||daysBetween(d,today())>2) continue; for(const c of prioritised(CARDS.filter(c=>c.t===t&&status(c)!=='k'&&!used.has(c.id))).slice(0,5)){ used.add(c.id); steps.push({k:'card', id:c.id, why:`${TOPIC_NAME[t]}: from a missed exam question`}); } }
   for(const r of pickItems('mc',topic,5)) steps.push({k:'mc', pid:r.p.id, iid:r.it.id, why:'Real HSC multiple choice'});
   const sa=shuffled(qIndex().filter(r=>r.type==='sa'&&r.topic===topic&&r.max>=2&&r.max<=4)).sort((a,b)=>{ const da=rec(a.p,a.it,a.part), db=rec(b.p,b.it,b.part); return (da&&typeof da.m==='number'?1:0)-(db&&typeof db.m==='number'?1:0); })[0];
   if(sa) steps.push({k:'sa', pid:sa.p.id, iid:sa.it.id, part:sa.part.p, why:`Short answer · ${sa.max} marks`});
   return steps;
 }
 if(!S.diag||typeof S.diag!=='object'||Array.isArray(S.diag)) S.diag={};
+if(!S.boost||typeof S.boost!=='object'||Array.isArray(S.boost)) S.boost={};
 let DG=null;
 function diagDone(){ return !!S.diag[SUBJ.id]; }
 function diagFor(t){ const d=S.diag[SUBJ.id]; return d&&d.r&&d.r[t]?{ok:d.r[t][0],n:d.r[t][1]}:null; }
@@ -4991,7 +4997,8 @@ function renderToday(){
   if(!TS||!TS.started){
     const topic=(TS&&TS.topic)||weakestTopic(); const steps=buildSession(topic); TS={topic, steps, started:false};
     const nCard=steps.filter(s=>s.k==='card').length, nDue=steps.filter(s=>s.why==='Due for review').length, nMc=steps.filter(s=>s.k==='mc').length, sa=steps.find(s=>s.k==='sa');
-    const parts=[]; if(nDue) parts.push(`${nDue} card${nDue===1?'':'s'} due for review`); if(nCard-nDue) parts.push(`${nCard-nDue} ${TOPIC_NAME[topic]} card${nCard-nDue===1?'':'s'} you have not got yet`); if(nMc) parts.push(`${nMc} real HSC multiple-choice question${nMc===1?'':'s'}`); if(sa) parts.push('1 short answer, marked against the official criteria');
+    const nBoost=steps.filter(s=>/missed exam question/.test(s.why||'')).length, dueAll=dueCards().length;
+    const parts=[]; if(nDue) parts.push(`${nDue} card${nDue===1?'':'s'} due for review`+(dueAll>nDue?` (${dueAll-nDue} more roll over to tomorrow)`:'')); if(nCard-nDue-nBoost) parts.push(`${nCard-nDue-nBoost} ${TOPIC_NAME[topic]} card${nCard-nDue-nBoost===1?'':'s'} you have not got yet`); if(nBoost) parts.push(`${nBoost} card${nBoost===1?'':'s'} from a topic where you lost marks on an exam question`); if(nMc) parts.push(`${nMc} real HSC multiple-choice question${nMc===1?'':'s'}`); if(sa) parts.push('1 short answer, marked against the official criteria');
     const l=S.lastSession;
     v.append(el('div',{class:'panel'}, el('h2',{},'Today’s session'),
       el('p',{},`One guided run, start to finish. About ${sessMins(steps)} minutes.`),
@@ -5230,6 +5237,7 @@ function renderStats(){
     const nick=el('input',{type:'text',id:'nickInput',maxlength:'24',placeholder:'Nickname for the leaderboard','aria-label':'Nickname'}); nick.value=S.nick||'';
     ac.append(el('div',{class:'inrow'}, nick, el('button',{onclick:()=>{ S.nick=nick.value.trim().slice(0,24); save(); clearTimeout(sync.timer); pushProgress(); toast('Nickname saved'); }},'Save nickname')));
     const lbBox=el('div',{class:'lb'}, el('p',{class:'small'},'Loading leaderboard…')); ac.append(lbBox); loadLeaderboard(lbBox);
+    ac.append(feedbackBox());
   } else if(sync.state==='readonly'){
     ac.append(el('p',{class:'small'},'You are signed in, but this share level cannot save progress to an account, so progress stays on this device. Ask the owner to invite you by email as an editor.'));
   } else {
@@ -5335,11 +5343,14 @@ STUDENT RESPONSE:
 ${text.slice(0,12000)}
 """
 
+Rules: the mark is an estimate against the listed criteria only; never invent criteria that are not listed. Quote the student's own words as evidence for every mark you award. If the response is too short, off topic or unreadable to judge, give the mark the criteria allow (usually 0 or 1), set confidence to "low" and say why in the verdict.
+
 Return JSON only, no prose, in this exact shape:
-{"mark": <integer 0-${max}>, "band": "<the criteria row it fits, e.g. '${(unit.crit&&unit.crit[0]&&unit.crit[0].m)||max}'>", "verdict": "<one sentence saying why it got that mark>", "strengths": ["<up to 3 short points>"], "improvements": ["<up to 3 concrete things to add or change to reach the next row, each under 25 words>"], "model": "<${long?'a 6 to 8 line plan of what a full-mark response would cover, one line per paragraph, not a full essay':craft?'a 4 to 6 line plan of what a full-mark response would do':mth?(sci?'a full-mark answer set out the way the official sample answer is: for a calculation the formula, substitution and the answer with units; for a written response the scientific terms, mechanism and examples the criteria rows ask for, in about '+(max*30)+' words':'a full worked solution, one step per line, written the way a student would set it out in the exam'):eng?'a full-mark answer of about '+(max*45)+' words a student could realistically write in the exam':hist?'a full-mark answer of about '+(max*35)+' words a student could realistically write in the exam, with the specific evidence it would use':'a full-mark answer in 2 to 5 plain sentences a student could realistically write in the exam'}>"}`;
+{"mark": <integer 0-${max}>, "band": "<the criteria row it fits, e.g. '${(unit.crit&&unit.crit[0]&&unit.crit[0].m)||max}'>", "verdict": "<one sentence saying why it got that mark>", "evidence": ["<up to 3 short quotes, under 15 words each, taken word for word from the student's response, that earned marks; [] if none>"], "strengths": ["<up to 3 short points>"], "missing": ["<up to 3 elements the criteria row above this one needs and the response lacks>"], "improvements": ["<up to 3 concrete things to add or change to reach the next row, each under 25 words>"], "next": "<the single most useful next action for this student, under 20 words>", "confidence": "<high, medium or low>", "model": "<${long?'a 6 to 8 line plan of what a full-mark response would cover, one line per paragraph, not a full essay':craft?'a 4 to 6 line plan of what a full-mark response would do':mth?(sci?'a full-mark answer set out the way the official sample answer is: for a calculation the formula, substitution and the answer with units; for a written response the scientific terms, mechanism and examples the criteria rows ask for, in about '+(max*30)+' words':'a full worked solution, one step per line, written the way a student would set it out in the exam'):eng?'a full-mark answer of about '+(max*45)+' words a student could realistically write in the exam':hist?'a full-mark answer of about '+(max*35)+' words a student could realistically write in the exam, with the specific evidence it would use':'a full-mark answer in 2 to 5 plain sentences a student could realistically write in the exam'}>"}`;
 }
-function normalise(res,max){ let m=Number(res&&res.mark); if(!isFinite(m)) m=0; m=Math.max(0,Math.min(max,Math.round(m))); const arr=x=>Array.isArray(x)?x.map(String).slice(0,4):(x?[String(x)]:[]); return {m, band:String(res.band||''), verdict:String(res.verdict||''), strengths:arr(res.strengths), improvements:arr(res.improvements), model:String(res.model||'')}; }
-function awardXP(p,it,part,m,max,how){ const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
+function normalise(res,max){ let m=Number(res&&res.mark); if(!isFinite(m)) m=0; m=Math.max(0,Math.min(max,Math.round(m))); const arr=x=>Array.isArray(x)?x.map(String).slice(0,4):(x?[String(x)]:[]); const conf=/^(high|medium|low)$/.test(String(res.confidence||''))?String(res.confidence):''; return {m, band:String(res.band||''), verdict:String(res.verdict||''), strengths:arr(res.strengths), improvements:arr(res.improvements), model:String(res.model||''), evidence:arr(res.evidence), missing:arr(res.missing), next:String(res.next||''), conf}; }
+function aiRec(x,max){ return {m:x.m, x:max, how:'ai', r:{band:x.band,verdict:x.verdict,strengths:x.strengths,improvements:x.improvements,model:x.model,evidence:x.evidence||[],missing:x.missing||[],next:x.next||'',conf:x.conf||''}}; }
+function awardXP(p,it,part,m,max,how){ const ok=m/max>=0.5; const xp=how==='ai'?Math.max(4,m*4):how==='mc'?5:Math.max(2,m*2); if(!ok&&isBiz()){ const row=itemRow(p.id,it.id); const t=(part&&part.topic&&coarseTopic(part.topic,part.text))||(row&&row.topic); if(t&&t!=='Other'){ if(!S.boost||typeof S.boost!=='object') S.boost={}; S.boost[t]=today(); } } recordReview(null, ok, xp); if(m===max&&max>=4){ confetti(); toast('Full marks. That is Band 6 work.','gold'); } }
 document.addEventListener('click',e=>{ const im=e.target&&e.target.closest&&e.target.closest('img.stimimg,img.photothumb'); if(!im||im.closest('.imgzoom')) return; const prev=document.activeElement; const close=()=>{ ov.remove(); if(prev&&prev.focus) prev.focus(); }; const ov=el('div',{class:'imgzoom',role:'dialog','aria-modal':'true','aria-label':'Picture, zoomed in',tabindex:'-1',onkeydown:ev=>{ if(ev.key==='Escape') close(); },onclick:ev=>{ if(ev.target===ov) close(); }}, el('button',{class:'primary zclose',onclick:close},'Close ✕'), el('img',{src:im.src,alt:im.alt||''})); document.body.append(ov); ov.querySelector('.zclose').focus(); });
 function isMathsP(p){ return /^maths/.test((p&&p.subj)||''); }
 function isSciP(p){ return /^(biology|chemistry|physics)$/.test((p&&p.subj)||''); }
@@ -5374,7 +5385,7 @@ async function markTyped(p,it,part,ta,btn){
   btn.disabled=true; btn.textContent='Marking…'; announce('Marking your answer');
   try{
     const res=await s.json(buildPrompt(p,it,part,withPartA(p,it,part,text)), {modelTier:'default', cache:false, images:apiKey()?await markImages(p,it,part):undefined});
-    const r=normalise(res,max); setRec(p,it,part,{m:r.m, x:max, how:'ai', r:{band:r.band,verdict:r.verdict,strengths:r.strengths,improvements:r.improvements,model:r.model}}); awardXP(p,it,part,r.m,max,'ai'); prender();
+    const r=normalise(res,max); setRec(p,it,part,aiRec(r,max)); awardXP(p,it,part,r.m,max,'ai'); prender();
     setTimeout(()=>{ const b=document.querySelector('.markbox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50);
   }catch(e){
     const code=e&&e.code;
@@ -5396,7 +5407,7 @@ async function markOnServer(p,it,part,text,max,btn){
   }catch(e){ toast('No connection to the marking service. Check your internet, or self-mark.'); openSelfMark(p,it,part); return; }
   if(data.limit) MARKQ.limit=data.limit;
   if(r&&r.ok&&data.result){
-    const x=normalise(data.result,max); setRec(p,it,part,{m:x.m, x:max, how:'ai', r:{band:x.band,verdict:x.verdict,strengths:x.strengths,improvements:x.improvements,model:x.model}}); awardXP(p,it,part,x.m,max,'ai');
+    const x=normalise(data.result,max); setRec(p,it,part,aiRec(x,max)); awardXP(p,it,part,x.m,max,'ai');
     MARKQ.left=data.left; toast(data.left===0?'That was your last free AI mark for today. They reset tomorrow.':data.left+' free AI mark'+(data.left===1?'':'s')+' left today.');
     prender(); setTimeout(()=>{ const b=document.querySelector('.markbox'); if(b) b.scrollIntoView({behavior:REDUCED?'auto':'smooth',block:'start'}); },50); return;
   }
@@ -5429,12 +5440,16 @@ function selfMarkBox(p,it,part){
 function resultBox(p,it,part){
   const unit=part||it; const max=part?part.marks:it.marks; const r=rec(p,it,part); if(!r||typeof r.m!=='number') return null;
   const pct=r.m/max; const box=el('div',{class:'markbox'+(pct>=0.8?' top':pct>=0.5?' mid':' low')});
-  box.append(el('div',{class:'row between'}, el('span',{class:'mk'}, `${r.m} / ${max}`), el('span',{class:'small'}, r.how==='ai'?'AI estimate against the official criteria (not an official result)':r.how==='self'?'Self-marked':'Auto-marked'), el('button',{class:r.m<max?'primary':'ghost',onclick:()=>startRewrite(p,it,part)}, r.m<max?'Rewrite it for more marks':'Try again')));
+  box.append(el('div',{class:'row between'}, el('span',{class:'mk'}, `${r.m} / ${max}`), el('span',{class:'small'}, r.how==='ai'?'Estimated mark from AI against the official criteria. Not a NESA result.':r.how==='self'?'Self-marked':'Auto-marked'), el('button',{class:r.m<max?'primary':'ghost',onclick:()=>startRewrite(p,it,part)}, r.m<max?'Rewrite it for more marks':'Try again')));
+  if(r.how==='ai'&&r.r&&r.r.conf==='low') box.append(el('div',{class:'lowconf'}, el('b',{},'Low confidence. '), 'The marker could not judge this properly (too short, off topic or unreadable), so treat the mark as a rough guide and rewrite it.'));
   if(r.prev&&r.prev.length){ const first=r.prev[0].m, gain=r.m-(typeof first==='number'?first:r.m); box.append(el('div',{class:'attempts'}, 'Your attempts: '+r.prev.map(x=>typeof x.m==='number'?x.m:'?').concat([r.m]).join(' → ')+' out of '+max+(gain>0?`  (+${gain} from rewriting)`:''))); }
   if(r.r){ if(r.r.band) box.append(el('div',{class:'small'},'Criteria row: ', el('b',{},r.r.band))); if(r.r.verdict) box.append(el('p',{class:'verdict'}, r.r.verdict));
+    if(r.r.evidence&&r.r.evidence.length) box.append(el('div',{}, el('b',{},'Where you earned marks (your words)'), ...r.r.evidence.map(s=>el('p',{class:'evid'},'“'+s+'”'))));
     if(r.r.strengths&&r.r.strengths.length) box.append(el('div',{}, el('b',{},'What worked'), ...r.r.strengths.map(s=>el('p',{class:'bul good'},'✓ '+s))));
+    if(r.r.missing&&r.r.missing.length) box.append(el('div',{}, el('b',{},'Missing for the next criteria row'), ...r.r.missing.map(s=>el('p',{class:'bul warn'},'• '+s))));
     if(r.r.improvements&&r.r.improvements.length) box.append(el('div',{}, el('b',{},'To get more marks'), ...r.r.improvements.map(s=>el('p',{class:'bul warn'},'→ '+s))));
-    if(r.r.model) box.append(el('div',{class:'answer'}, el('div',{class:'lab'}, it.type==='long'?'Full-mark plan':'What a full-mark answer looks like'), paras(r.r.model))); }
+    if(r.r.next) box.append(el('div',{class:'nextact'}, el('b',{},'Next action: '), r.r.next));
+    if(r.r.model){ const ex=el('div',{class:'answer'}, el('div',{class:'lab'}, it.type==='long'?'Full-mark plan':'What a full-mark answer looks like'), paras(r.r.model)); if(r.m<max){ const d=el('details',{}, el('summary',{},'Show a full-mark example (try your rewrite first)')); d.append(ex); box.append(d); } else box.append(ex); } }
   const d=el('details',{}, el('summary',{},'Official marking criteria, sample answer and marker comments'));
   d.append(hasMG(unit)?el('div',{},...mgImgs(unit)):critList(unit.crit));
   if(unit.sample&&!hasMG(unit)) d.append(el('div',{class:'answer'}, el('div',{class:'lab'},'Sample answer'), paras(unit.sample)));
@@ -5453,9 +5468,15 @@ function typedUnit(p,it,part){
   const long=it.type==='long';
   if(r.prev&&r.prev.length){ const last=r.prev[r.prev.length-1]; box.append(el('div',{class:'rewritebox'}, el('b',{},`Rewrite · last time ${typeof last.m==='number'?last.m:'?'} / ${max}`), last.imp&&last.imp.length? el('div',{}, el('p',{class:'small'},'Fix these, then mark it again:'), ...last.imp.map(s=>el('p',{class:'bul warn'},'→ '+s))) : el('p',{class:'small'},'Check the criteria and the sample answer, improve your answer below, then mark it again.'))); }
   const craft=it.kind==='craft', big=long||craft&&part&&part.marks>=8;
-  const ta=el('textarea',{class:big?'long':'', placeholder: isHistP(p)?(it.type==='long'?'Write your response here: a judgement that answers the question in the first sentence, paragraphs each built on specific evidence (dates, names, cases, legislation, sources), and a conclusion that returns to the judgement.':'Type your answer here. Answer the question directly in the first sentence, then support it with specific evidence. If the question names a source, use it.'):isMathsP(p)?'Type your working, one step per line. Use ^ for powers (x^2), sqrt( ) for roots and / for fractions. Or do it on paper and add a photo below.':isSciP(p)?'Type your answer here. For a calculation show the formula, the substitution and the answer with units (use ^ for powers, e.g. 3.0 x 10^8). Write equations like 2H2 + O2 -> 2H2O. Or do it on paper and add a photo below.':!isBiz()?(craft?(part&&part.p==='a'?'Write your piece here. Make the stimulus central, focus on one moment or idea, and craft every sentence.':'Explain the choices you made in part (a): name each technique, quote your own writing and say how it shapes meaning.'):long?'Write your essay here: a thesis that answers the question, body paragraphs with close references to the text, and a conclusion. Aim for 800 to 1,000 words.':'Type your answer here. Answer the question in your first sentence, then give technique, quote and effect.'):long?(it.kind==='report'?'Write your business report here: executive summary, headings for each dot point, recommendation. Aim for 600 to 800 words.':'Write your essay here: introduction with a judgement, PEEL paragraphs with case study evidence, conclusion. Aim for 600 to 800 words.'):'Type your answer here. Use the directive verb, the business in the stimulus and the key terms.', 'aria-label':'Your answer', oninput:e=>{ clearTimeout(ta._t); ta._t=setTimeout(()=>{ S.papers[key]=Object.assign(S.papers[key]||{},{a:e.target.value.slice(0,12000),t:Date.now()}); save(); },700); const w=box.querySelector('.wc'); if(w&&!isPicP(p)) w.textContent=wc(e.target.value)+' words'; }, onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); box.querySelector('.markbtn').click(); } }});
+  const ta=el('textarea',{class:big?'long':'', placeholder: isHistP(p)?(it.type==='long'?'Write your response here: a judgement that answers the question in the first sentence, paragraphs each built on specific evidence (dates, names, cases, legislation, sources), and a conclusion that returns to the judgement.':'Type your answer here. Answer the question directly in the first sentence, then support it with specific evidence. If the question names a source, use it.'):isMathsP(p)?'Type your working, one step per line. Use ^ for powers (x^2), sqrt( ) for roots and / for fractions. Or do it on paper and add a photo below.':isSciP(p)?'Type your answer here. For a calculation show the formula, the substitution and the answer with units (use ^ for powers, e.g. 3.0 x 10^8). Write equations like 2H2 + O2 -> 2H2O. Or do it on paper and add a photo below.':!isBiz()?(craft?(part&&part.p==='a'?'Write your piece here. Make the stimulus central, focus on one moment or idea, and craft every sentence.':'Explain the choices you made in part (a): name each technique, quote your own writing and say how it shapes meaning.'):long?'Write your essay here: a thesis that answers the question, body paragraphs with close references to the text, and a conclusion. Aim for 800 to 1,000 words.':'Type your answer here. Answer the question in your first sentence, then give technique, quote and effect.'):long?(it.kind==='report'?'Write your business report here: executive summary, headings for each dot point, recommendation. Aim for 600 to 800 words.':'Write your essay here: introduction with a judgement, PEEL paragraphs with case study evidence, conclusion. Aim for 600 to 800 words.'):'Type your answer here. Use the directive verb, the business in the stimulus and the key terms.', 'aria-label':'Your answer', onkeydown:e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){ e.preventDefault(); box.querySelector('.markbtn').click(); } }});
   ta.value=r.a||'';
-  box.append(ta, el('div',{class:'wc'}, isMathsP(p)?'Show every step, the way the sample answers do.':isSciP(p)?'Use the scientific terms the criteria ask for; show working and units in calculations.':wc(ta.value)+' words'+(craft&&part&&part.p==='a'?' · aim for 600 to 800':craft?' · about 300 to 400':long&&!isBiz()?' · aim for 800 to 1,000':!isBiz()?' · about '+(max*45)+' words':long?' · aim for 600 to 800':max>=5?' · a solid paragraph':max>=3?' · 3 to 5 sentences':' · 1 to 2 sentences')));
+  const wcSuffix=(craft&&part&&part.p==='a'?' · aim for 600 to 800':craft?' · about 300 to 400':long&&!isBiz()?' · aim for 800 to 1,000':!isBiz()?' · about '+(max*45)+' words':long?' · aim for 600 to 800':max>=5?' · a solid paragraph':max>=3?' · 3 to 5 sentences':' · 1 to 2 sentences');
+  const wcText=()=>isMathsP(p)?'Show every step, the way the sample answers do.':isSciP(p)?'Use the scientific terms the criteria ask for; show working and units in calculations.':wc(ta.value)+' words'+wcSuffix;
+  const wcEl=el('div',{class:'wc'}, wcText()+(r.a&&!marked?' · draft kept':''));
+  box.append(ta, wcEl);
+  // Drafts: whatever you type is kept on this device (and synced) 800 ms after you pause, before any marking.
+  let draftT=null; ta.addEventListener('input',()=>{ if(!isPicP(p)) wcEl.textContent=wcText(); clearTimeout(draftT); draftT=setTimeout(()=>{ const cur=(rec(p,it,part)||{}).a||''; const val=ta.value.slice(0,12000); if(val!==cur){ setRec(p,it,part,{a:val}); if(!isPicP(p)) wcEl.textContent=wcText()+' · draft saved'; } },800); });
+  ta.addEventListener('blur',()=>{ clearTimeout(draftT); const cur=(rec(p,it,part)||{}).a||''; const val=ta.value.slice(0,12000); if(val!==cur) setRec(p,it,part,{a:val}); });
   if(!isBiz()) box.append(photoRow(p,it,part));
   const btn=el('button',{class:'primary markbtn',onclick:()=>markTyped(p,it,part,ta,btn)}, (r.prev&&r.prev.length)?'Mark my rewrite':part&&part.p?`Mark part (${part.p})`:'Mark my response');
   box.append(el('div',{class:'row'}, btn, el('button',{class:'ghost',onclick:()=>{ setRec(p,it,part,{a:ta.value.slice(0,12000)}); openSelfMark(p,it,part); }},'Self-mark instead')));
@@ -6184,8 +6205,13 @@ function renderEditSet(){
 
 // ---------- account sync (claude.ai sign-in via the db + user capabilities) ----------
 let DBH=null, UID=null, USERH=null, ME=null;
-const sync={state:'local', timer:null, chain:Promise.resolve(), lastHash:'', lastScore:''};
-function progressDoc(){ if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg; return {v:5, idv:2, subj:S.subj||'business', cfgBy:S.cfgBy||{}, diag:S.diag||{}, rv:S.rv||{}, cfg:(S.cfgBy&&S.cfgBy.business)||S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
+const sync={state:'local', timer:null, chain:Promise.resolve(), lastHash:'', lastScore:'', busy:false, err:null, retry:0, retryT:null, lastOk:0, remoteAt:''};
+function fmtClockShort(t){ const d=new Date(t); let h=d.getHours(); const m=d.getMinutes(); const ap=h>=12?'pm':'am'; h=h%12||12; return h+':'+String(m).padStart(2,'0')+' '+ap; }
+function saveStatusText(){ if(SAVE_ERR) return {cls:'bad', text:'Not saving in this browser'}; if(sync.state==='expired') return {cls:'bad', text:'Signed out: saved on this device only'}; if(sync.state!=='synced') return {cls:'', text:'Saved on this device'}; if(!navigator.onLine) return {cls:'warn', text:'Offline: saved here, syncs when you are back online'}; if(sync.busy) return {cls:'', text:'Syncing…'}; if(sync.err) return {cls:'warn', text:'Sync failed, retrying'+(sync.retry?' (attempt '+sync.retry+')':'')+'. Saved on this device.'}; return {cls:'ok', text:sync.lastOk?'Synced '+fmtClockShort(sync.lastOk):'Synced'}; }
+function renderSaveStatus(){ const e=$('#savestat'); if(!e){ renderAccount(); return; } const st=saveStatusText(); e.className='savestat '+st.cls; e.textContent=st.text; }
+window.addEventListener('online',()=>{ sync.lastHash=''; renderSaveStatus(); pushProgress(); });
+window.addEventListener('offline',renderSaveStatus);
+function progressDoc(){ if(S.cfgBy&&S.subj) S.cfgBy[S.subj]=S.cfg; return {v:5, idv:2, subj:S.subj||'business', cfgBy:S.cfgBy||{}, diag:S.diag||{}, boost:S.boost||{}, rv:S.rv||{}, cfg:(S.cfgBy&&S.cfgBy.business)||S.cfg||null, sets:S.sets||{}, setsDel:S.setsDel||{}, folders:S.folders||{}, foldersDel:S.foldersDel||{}, star:S.star||{}, unstar:S.unstar||{}, hist:S.hist||{}, sess:S.sess||[], recent:S.recent||[], p:S.p, m:S.m, xp:S.xp, days:S.days, streak:S.streak, lastDay:S.lastDay, goal:S.goal, best:S.best, badges:S.badges, total:S.total, ratioRight:S.ratioRight, perfectTest:!!S.perfectTest, nick:S.nick||'', papers:S.papers||{}, updated:Date.now()}; }
 function mergeRemote(r){
   if(!r||typeof r!=='object') return;
   migrateIds(r);
@@ -6206,6 +6232,7 @@ function mergeRemote(r){
   const [sets,setsDel]=mergeColl(S.sets, r.sets, S.setsDel, r.setsDel); const [folders,foldersDel]=mergeColl(S.folders, r.folders, S.foldersDel, r.foldersDel);
   const maxMap=(a,b)=>{ const o=Object.assign({}, a||{}); for(const [k,t] of Object.entries(b||{})) o[k]=Math.max(t||0, o[k]||0); return o; };
   const star=maxMap(S.star, r.star), unstar=maxMap(S.unstar, r.unstar);
+  { const b=Object.assign({}, S.boost||{}); for(const [t,d] of Object.entries(r.boost||{})) if(!b[t]||String(d)>String(b[t])) b[t]=d; S.boost=b; }
   const hist=Object.assign({}, r.hist||{}); for(const [d,h] of Object.entries(S.hist||{})){ if(!hist[d]||(h.n||0)>=(hist[d].n||0)) hist[d]=h; }
   const seen=new Set(); const sess=(S.sess||[]).concat(r.sess||[]).filter(x=>x&&x.a&&!seen.has(x.a)&&seen.add(x.a)).sort((a,b)=>a.a-b.a).slice(-100);
   const rseen=new Set(); const recent=(S.recent||[]).concat(r.recent||[]).filter(x=>x&&x.d).sort((a,b)=>(b.t||0)-(a.t||0)).filter(x=>!rseen.has(x.d)&&rseen.add(x.d)).slice(0,10);
@@ -6218,9 +6245,17 @@ function mergeRemote(r){
 function schedulePush(){ if(!DBH||!UID||sync.state!=='synced') return; clearTimeout(sync.timer); sync.timer=setTimeout(pushProgress, 1500); }
 function pushProgress(){
   if(!DBH||!UID||sync.state!=='synced') return;
-  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.cfgBy,doc.diag,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent]);
+  const doc=progressDoc(); const h=JSON.stringify([doc.p,doc.m,doc.xp,doc.days,doc.streak,doc.goal,doc.best,doc.badges,doc.total,doc.ratioRight,doc.nick,doc.papers,doc.rv,doc.cfg,doc.cfgBy,doc.diag,doc.sets,doc.setsDel,doc.folders,doc.foldersDel,doc.star,doc.unstar,doc.hist,doc.sess,doc.recent,doc.boost]);
   if(h===sync.lastHash) return; sync.lastHash=h;
-  sync.chain=sync.chain.then(()=>DBH.doc('data/users/'+UID+'/progress').set(doc)).then(()=>{ pushScore(false); }).catch(e=>{ if(e&&e.code==='invalid_argument'){ sync.state='readonly'; renderAccount(); } });
+  clearTimeout(sync.retryT); sync.busy=true; renderSaveStatus();
+  sync.chain=sync.chain.then(()=>DBH.doc('data/users/'+UID+'/progress').set(doc)).then(()=>{ sync.busy=false; sync.err=null; sync.retry=0; sync.lastOk=Date.now(); renderSaveStatus(); pushScore(false); }).catch(e=>{
+    sync.busy=false; sync.lastHash='';
+    if(e&&e.code==='invalid_argument'){ sync.state='readonly'; renderAccount(); return; }
+    if(e&&e.code==='expired'){ sync.state='expired'; renderAccount(); return; }
+    // Keep the work on this device and try again with a growing wait (3 s, 10 s, 30 s, 1 min, 2 min).
+    sync.err=e; sync.retry=Math.min(sync.retry+1,5); renderSaveStatus();
+    sync.retryT=setTimeout(pushProgress, [3,10,30,60,120][sync.retry-1]*1000);
+  });
 }
 function pushScore(force){
   if(!DBH||!UID||sync.state!=='synced') return;
@@ -6240,7 +6275,9 @@ async function loadLeaderboard(box){
 }
 function renderAccount(){
   const a=$('#account'); if(!a) return; a.innerHTML='';
+  { const st=saveStatusText(); a.append(el('span',{class:'savestat '+st.cls,id:'savestat',role:'status'}, st.text)); }
   if(SAVE_ERR){ a.append(el('span',{class:'pill'},'⚠ Not saving'), el('span',{},'This browser is refusing to store progress (private window or storage full), so nothing you do here will be kept.')); return; }
+  if(sync.state==='expired'){ a.append(el('span',{class:'pill'},'Signed out'), el('span',{},'Your sign-in expired. Everything is kept on this device; sign in again to keep syncing. '), el('button',{class:'ghost',onclick:()=>{ AUTH.open=!AUTH.open; renderAccount(); }}, AUTH.open?'Close':'Sign in again')); if(AUTH.open) a.append(authForm()); return; }
   if(sync.state==='synced'){
     const pill=el('span',{class:'pill on'}); if(ME&&ME.avatarUrl){ pill.append(el('img',{src:ME.avatarUrl,alt:''})); } pill.append(document.createTextNode('Signed in'+(ME&&ME.name?' as '+ME.name:'')));
     a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'), el('button',{class:'ghost',onclick:signOut},'Sign out'));
@@ -6256,21 +6293,25 @@ const SUPA={"url": "https://vfrrzrkiamsnyesqevwl.supabase.co", "key": "sb_publis
 let SB=null; const AUTH={open:false, busy:false, err:'', mode:'in', email:'', code:''};
 function supaReady(){ return !!(SUPA.url&&SUPA.key&&!/^__/.test(SUPA.url)); }
 function waitSupabase(){ return new Promise(res=>{ if(window.supabase&&window.supabase.createClient) return res(true); const sc=document.getElementById('supabasejs'); if(!sc) return res(false); sc.addEventListener('load',()=>res(!!(window.supabase&&window.supabase.createClient))); sc.addEventListener('error',()=>res(false)); setTimeout(()=>res(!!(window.supabase&&window.supabase.createClient)),10000); }); }
-function supaErr(e){ const c=(e&&e.code)||''; const err=new Error((e&&e.message)||'Request failed'); err.code=(c==='42501'||c==='PGRST301')?'invalid_argument':c; return err; }
+function supaErr(e){ const c=(e&&e.code)||''; const err=new Error((e&&e.message)||'Request failed'); err.code=c==='42501'?'invalid_argument':(c==='PGRST301'||c==='401'||/JWT|expired|not authenticated/i.test(err.message))?'expired':c; return err; }
 // The same doc()/collection() calls the Claude version makes, backed by the two Supabase tables.
 function supaShim(client, uid){
   return {
     doc(path){
       if(path.startsWith('scores/')) return { async set(){ /* the leaderboard row is computed on the server from the progress row */ } };
       return {
-        async get(){ const {data,error}=await client.from('progress').select('doc').eq('user_id',uid).maybeSingle(); if(error) throw supaErr(error); return {exists:!!data, data:()=>data?data.doc:null}; },
-        async set(d){ const {error}=await client.from('progress').upsert({user_id:uid, doc:d, updated_at:new Date().toISOString()}); if(error) throw supaErr(error); }
+        async get(){ const {data,error}=await client.from('progress').select('doc,updated_at').eq('user_id',uid).maybeSingle(); if(error) throw supaErr(error); sync.remoteAt=(data&&data.updated_at)||''; return {exists:!!data, data:()=>data?data.doc:null}; },
+        // Never overwrite progress another device saved after we last read it: merge it in first, then write.
+        async set(d){ const {data:cur,error:e1}=await client.from('progress').select('updated_at').eq('user_id',uid).maybeSingle(); if(e1) throw supaErr(e1);
+          if(cur&&cur.updated_at&&sync.remoteAt&&cur.updated_at>sync.remoteAt){ const {data:full,error:e2}=await client.from('progress').select('doc').eq('user_id',uid).maybeSingle(); if(e2) throw supaErr(e2); if(full&&full.doc){ mergeRemote(full.doc); d=progressDoc(); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} try{ render(); }catch(e){} toast('Merged newer progress from another device.'); } }
+          const {data:w,error}=await client.from('progress').upsert({user_id:uid, doc:d, updated_at:new Date().toISOString()}).select('updated_at').single(); if(error) throw supaErr(error); sync.remoteAt=(w&&w.updated_at)||sync.remoteAt; }
       };
     },
     collection(name){ let lim=20; const q={ orderBy(){ return q; }, limit(n){ lim=n; return q; }, async get(){ const {data,error}=await client.from('scores').select('*').order('xp',{ascending:false}).limit(lim); if(error) throw supaErr(error); return {docs:(data||[]).map(r=>({id:r.user_id, data:()=>r}))}; } }; return q; }
   };
 }
 async function startSync(session){
+  sync.err=null; sync.retry=0; clearTimeout(sync.retryT);
   UID=session.user.id; DBH=supaShim(SB,UID); ME={name:session.user.email||''}; USERH={profiles:async()=>({}), me:async()=>ME};
   sync.state='loading'; renderAccount();
   const snap=await DBH.doc('data/users/'+UID+'/progress').get();
@@ -6315,6 +6356,19 @@ function authForm(){
   box.append(el('div',{class:'inrow'}, em, pw, ...(code?[code]:[]), btn));
   if(AUTH.err) box.append(el('p',{class:'small err',role:'alert'}, AUTH.err));
   box.append(el('p',{class:'small'}, AUTH.mode==='up'?'You need the class code from whoever shared the site. Only your email and your study progress are stored (Supabase, Sydney). No confirmation email is needed.':'Forgot your password? Message the site owner for now; a reset link is on the list.'));
+  return box;
+}
+const FB={text:'', busy:false, done:false, err:''};
+function feedbackBox(){
+  const box=el('div',{class:'fbbox'}, el('h3',{},'Something wrong, or an idea?'));
+  if(FB.done){ box.append(el('p',{class:'small'},'Thanks, sent. It goes straight to the person who runs the site.'), el('button',{class:'ghost',onclick:()=>{ FB.done=false; FB.text=''; renderStats(); }},'Send another')); return box; }
+  const ta=el('textarea',{class:'fbta',maxlength:'2000',placeholder:'What happened, on which page, and what you expected. Two or three sentences is plenty.','aria-label':'Feedback'}); ta.value=FB.text; ta.addEventListener('input',()=>{ FB.text=ta.value; });
+  const btn=el('button',{class:'primary',disabled:FB.busy?'':null,onclick:async()=>{ const text=ta.value.trim(); if(text.length<3){ toast('Write a sentence first.'); return; } FB.busy=true; FB.err=''; btn.disabled=true; btn.textContent='Sending…';
+    try{ if(!SB||!UID) throw new Error('Sign in first.'); const {error}=await SB.from('feedback').insert({user_id:UID, text:text.slice(0,2000), page:(location.hash||'#home').slice(0,80), subject:SUBJ.id, agent:navigator.userAgent.slice(0,200)}); if(error) throw new Error(/relation .* does not exist|schema cache/i.test(error.message||'')?'Feedback is not switched on yet; tell your teacher instead.':(error.message||'Could not send.')); FB.done=true; FB.text=''; }
+    catch(e){ FB.err=(e&&e.message)||'Could not send.'; }
+    FB.busy=false; renderStats(); }}, 'Send feedback');
+  box.append(ta, el('div',{class:'row'}, btn, el('span',{class:'small'},'Sent with your account email so I can reply. Nothing else is attached.')));
+  if(FB.err) box.append(el('p',{class:'small err',role:'alert'}, FB.err));
   return box;
 }
 function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e){} } }

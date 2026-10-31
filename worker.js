@@ -11,9 +11,13 @@ const RESULT_SCHEMA = {
     verdict: { type: 'string' },
     strengths: { type: 'array', items: { type: 'string' } },
     improvements: { type: 'array', items: { type: 'string' } },
+    evidence: { type: 'array', items: { type: 'string' } },
+    missing: { type: 'array', items: { type: 'string' } },
+    next: { type: 'string' },
+    confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
     model: { type: 'string' },
   },
-  required: ['mark', 'band', 'verdict', 'strengths', 'improvements', 'model'],
+  required: ['mark', 'band', 'verdict', 'strengths', 'improvements', 'evidence', 'missing', 'next', 'confidence', 'model'],
   additionalProperties: false,
 };
 
@@ -58,11 +62,13 @@ function normalise(res, max) {
   let m = Number(res && res.mark); if (!isFinite(m)) m = 0;
   m = Math.max(0, Math.min(max, Math.round(m)));
   const arr = x => Array.isArray(x) ? x.map(String).slice(0, 4) : (x ? [String(x)] : []);
-  return { mark: m, band: String(res.band || ''), verdict: String(res.verdict || ''), strengths: arr(res.strengths), improvements: arr(res.improvements), model: String(res.model || '') };
+  const conf = /^(high|medium|low)$/.test(String(res.confidence || '')) ? String(res.confidence) : '';
+  return { mark: m, band: String(res.band || ''), verdict: String(res.verdict || ''), strengths: arr(res.strengths), improvements: arr(res.improvements), evidence: arr(res.evidence), missing: arr(res.missing), next: String(res.next || '').slice(0, 300), confidence: conf, model: String(res.model || '') };
 }
 
+// One marking call: 90 s timeout, one automatic retry on a network error or 5xx (the SDK never retries a 4xx).
 async function askClaude(env, content) {
-  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) });
+  const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY, timeout: 90000, maxRetries: 1, ...(env.ANTHROPIC_BASE_URL ? { baseURL: env.ANTHROPIC_BASE_URL } : {}) });
   const model = env.MODEL || 'claude-opus-5-5';
   const textOf = r => r.content.filter(b => b.type === 'text').map(b => b.text).join('\n');
   let response;
@@ -85,7 +91,22 @@ async function askClaude(env, content) {
   if (response.stop_reason === 'refusal') throw { code: 'refusal' };
   const parsed = parseResult(textOf(response));
   if (!parsed) throw { code: 'invalid_json' };
-  return parsed;
+  const u = response.usage || {};
+  return { parsed, usage: { in: Number(u.input_tokens || 0), out: Number(u.output_tokens || 0) }, model: response.model || model };
+}
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+// Usage ledger (blueprint 14): one KV record per mark for 35 days, plus a running daily total.
+// Read them with: npx wrangler kv key list --namespace-id c669400708c643d0b421cb6ec5ffb401 --prefix l:2026-10-31
+async function ledger(env, day, rec) {
+  const ttl = { expirationTtl: 60 * 60 * 24 * 35 };
+  const key = 'l:' + day + ':' + String(rec.t).padStart(13, '0') + ':' + rec.u.slice(0, 8);
+  const tot = JSON.parse((await env.MARKS.get('t:' + day)) || '{"n":0,"in":0,"out":0,"ms":0}');
+  tot.n += 1; tot.in += rec.in; tot.out += rec.out; tot.ms += rec.ms;
+  await Promise.all([env.MARKS.put(key, JSON.stringify(rec), ttl), env.MARKS.put('t:' + day, JSON.stringify(tot), ttl)]);
 }
 
 // Maths entries list the question and marking-guideline pictures (served from the site) to send with the prompt.
@@ -129,23 +150,35 @@ async function mark(request, env) {
   const day = sydneyDay();
   const limit = Number(env.DAILY_LIMIT || 5), cap = Number(env.GLOBAL_DAILY_CAP || 300);
   const ukey = 'u:' + user.id + ':' + day, gkey = 'g:' + day;
-  const [used, total] = await Promise.all([env.MARKS.get(ukey), env.MARKS.get(gkey)]).then(v => v.map(x => Number(x || 0)));
+  // The same answer sent again within 10 minutes (a double tap, a retry after a dropped connection) gets the
+  // same result and is not counted twice (blueprint 14).
+  const rkey = 'r:' + (await sha256(user.id + '|' + key + '|' + answer + '|' + (photo ? photo.source.data.length : 0)));
+  const [used, total, repeat] = await Promise.all([env.MARKS.get(ukey), env.MARKS.get(gkey), env.MARKS.get(rkey)]).then(v => [Number(v[0] || 0), Number(v[1] || 0), v[2]]);
+  if (repeat) { try { return json(200, { result: JSON.parse(repeat), limit, left: Math.max(0, limit - used), repeated: true }); } catch (e) { /* fall through and mark again */ } }
   if (used >= limit) return json(429, { code: 'daily_limit', limit, left: 0 });
   if (total >= cap) return json(503, { code: 'busy_today' });
 
-  let result;
+  let result, usage = { in: 0, out: 0 }, modelUsed = '';
+  const t0 = Date.now();
   try {
     const text = entry.pre + answer.slice(0, 12000) + entry.post;
     const imgs = (await Promise.all((entry.imgs || []).map(p => imageBlock(env, request.url, p)))).filter(Boolean);
     if (photo) imgs.push(photo);
-    result = normalise(await askClaude(env, imgs.length ? [...imgs, { type: 'text', text }] : text), entry.max);
+    const out = await askClaude(env, imgs.length ? [...imgs, { type: 'text', text }] : text);
+    result = normalise(out.parsed, entry.max); usage = out.usage; modelUsed = out.model;
   } catch (error) {
+    // A failed job never consumes the student's allowance.
     if (error instanceof Anthropic.RateLimitError) return json(503, { code: 'rate_limited' });
+    if (Anthropic.APIConnectionTimeoutError && error instanceof Anthropic.APIConnectionTimeoutError) return json(504, { code: 'timeout' });
     if (error instanceof Anthropic.APIError) return json(502, { code: 'upstream', status: error.status });
     return json(502, { code: (error && error.code) || 'upstream' });
   }
   const ttl = { expirationTtl: 60 * 60 * 48 };
-  await Promise.all([env.MARKS.put(ukey, String(used + 1), ttl), env.MARKS.put(gkey, String(total + 1), ttl)]);
+  await Promise.all([
+    env.MARKS.put(ukey, String(used + 1), ttl), env.MARKS.put(gkey, String(total + 1), ttl),
+    env.MARKS.put(rkey, JSON.stringify(result), { expirationTtl: 600 }),
+    ledger(env, day, { t: Date.now(), u: user.id, k: key, mark: result.mark, max: entry.max, conf: result.confidence, in: usage.in, out: usage.out, ms: Date.now() - t0, model: modelUsed, photo: !!photo }).catch(() => {}),
+  ]);
   return json(200, { result, limit, left: Math.max(0, limit - used - 1) });
 }
 
