@@ -25,8 +25,8 @@ case "$cmd" in
 esac
 
 command -v xcodebuild >/dev/null || die "Xcode is not installed, or has not been opened once. Install it from the Mac App Store, open it, accept the licence, then run this again."
-[ -f "$TEAM_FILE" ] || die "No Team ID yet. Run:  ./ship.sh team AB12CD34EF   (find it at developer.apple.com/account under Membership details)"
-TEAM=$(tr -d '[:space:]' < "$TEAM_FILE")
+TEAM=Y89NN5A4T6   # Mr Teague's Apple Team ID (public); ./ship.sh team X overrides it through mobile/.team
+[ -f "$TEAM_FILE" ] && TEAM=$(tr -d '[:space:]' < "$TEAM_FILE")
 [ -d node_modules/@capacitor/ios ] || { say "Installing packages"; npm install; }
 say "Syncing the iOS project"; npx cap sync ios
 BUILD_NO=$(date +%Y%m%d%H%M)   # every upload needs a higher build number; the minute of the build does that
