@@ -75,6 +75,8 @@ npx wrangler kv key list --namespace-id c669400708c643d0b421cb6ec5ffb401 --prefi
 
 Rough cost per mark: input tokens x $5 per million plus output tokens x $25 per million for Opus. The daily total gives the day's spend; compare it with the global cap (`GLOBAL_DAILY_CAP`).
 
+**If every AI mark fails** ("Marking did not come back cleanly (…)"): the bracket names the cause. `upstream 401` or `auth`: the Anthropic key was rejected (set it again with `npx wrangler secret put ANTHROPIC_API_KEY --name bandsix`). `upstream 400: … credit balance …`: top up at console.anthropic.com > Billing. `HTTP 500` or `HTTP 1102`: the Worker ran out of CPU (Workers Free gives 10 ms a request; the marking prompts are one small file per question in data/mark so this should not happen, but the Workers Paid plan at US$5 a month lifts the limit to 30 s). Live detail: `npx wrangler tail bandsix --format pretty` on the PC, then mark one answer; the line `mark failed <question> <status> <message>` says what Anthropic answered. After changing a mark bank, run `python3 tools/split_bank.py` (the Worker falls back to the big bank only when a small file is missing).
+
 ## Marking benchmark (phase B)
 
 `tools/bench/business.json` holds 46 cases built from the sample answers in the Business question bank (`node tools/make_bench.mjs` regenerates it) plus two handwritten partial answers in `handwritten.json`. `node tools/marking_bench.mjs` runs them through the same prompt the site uses and writes `tools/bench/last-run.json` with the agreement rate. It needs `ANTHROPIC_API_KEY` in the terminal environment (never in a file). Release rule: agreement at or above 0.85 before changing the prompt on `main`; run it on the PC when the prompt or the model changes.
@@ -108,6 +110,8 @@ Run `supabase-feedback.sql` once in Supabase > SQL Editor. Students can only ins
 **Before charging anyone**, decide and write down: the refund rule (the app says "cancel any time, keep Plus to the end of the paid period"; refunds beyond that are at your discretion, and Australian Consumer Law still applies), and GST (under A$75,000 a year turnover there is no GST registration; the price is shown as the total either way). Put the answer in BETA-CHECKLIST.md.
 
 **Kill switch.** Set `STRIPE_PRICE_ID = ""` and push: Upgrade disappears, existing subscribers keep their Plus allowance and the webhook keeps running. Removing the webhook secret stops plan updates (Stripe retries for 3 days), so only do that to stop everything.
+
+**Cancellations.** The customer portal cancels with Stripe's `cancel_at` timestamp (its 2025 API deprecated `cancel_at_period_end`); the webhook reads both. Coming back from the portal the app calls `/api/plan?refresh=1`, which re-reads the subscription from Stripe and stores it, so "ends <date>" shows at once even if the webhook is slow.
 
 **Support.** "Where is my Plus?" means the webhook has not landed: check Developers > Webhooks > the endpoint > recent deliveries (a 2xx means applied; a 502 means Stripe could not be reached from the Worker and it will retry). To fix a record by hand: `npx wrangler kv key put plan:<user id> '{"plan":"plus","status":"active","customer":"cus_…","sub":"sub_…","periodStart":<unix>,"periodEnd":<unix>,"cancelAtPeriodEnd":false,"updated":<unix>}' --namespace-id c669400708c643d0b421cb6ec5ffb401`.
 

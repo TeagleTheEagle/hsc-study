@@ -212,3 +212,8 @@ App, after phase E3 and before `tools/sw_version.py`:
 
 After phase C and before `tools/sw_version.py`: `python3 tools/open_signup_patch.py app.html` makes the class code optional at sign-up (placeholder "Class code (optional)", new wording, softer error). One-off in Supabase: `supabase-open-signups.sql` adds the `'*'` row to `private.class_codes` so the trigger accepts sign-ups without a code (no-op if the hardening SQL was never run). A code typed at sign-up still puts the student in that class.
 
+## Marking fixes after the browser test (31 Oct 2026)
+
+- `python3 tools/split_bank.py` writes one file per question to `data/mark/` (`<key>.json`, `|` as `__`) from the per-subject banks; run it again after any script that rewrites a `data/mark-bank*.json`. The Worker reads the small file (a whole bank parsed per request blew the Workers Free 10 ms CPU limit, so no mark ever came back).
+- `python3 tools/mark_errors_patch.py` (after open_signup_patch.py, before sw_version.py): the failure toast carries the Worker's code, status and message; `?billing=portal` re-reads the plan from Stripe; Subjects topic bars say "Not started" instead of 0%.
+- worker.js: pictures go to Anthropic by URL (base64 only on the retry), the photo check reads just the header, cancel_at from Stripe's 2025 API counts as cancelling, `/api/plan?refresh=1`. Tests: `bash tools/worker-test/run.sh` (marking 19, billing 35), `node tools/check_phase_c.mjs`.
