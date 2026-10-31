@@ -18,6 +18,23 @@ What is different inside the app (all handled by `app.html` when `NATIVE` is tru
   app-bound domains (`WKAppBoundDomains` in Info.plist).
 - Camera and photo permission texts are in `mobile/ios/App/App/Info.plist` (for "Add a photo of your working").
 
+## The short route: one command
+
+`mobile/ship.sh` does the Xcode work from Terminal so you never have to click around in Xcode. One-off setup:
+Xcode installed and opened once; your Apple ID signed in under **Xcode > Settings > Accounts** (click +);
+`npm install` done in `mobile/`; and your Team ID from https://developer.apple.com/account (Membership details).
+
+```
+cd ~/hsc-study/mobile
+./ship.sh team AB12CD34EF     # once; your real Team ID
+./ship.sh phone               # builds and puts the app on the iPhone plugged in (Developer Mode on the phone must be on)
+./ship.sh testflight          # release build, signed, uploaded to App Store Connect
+```
+
+Before the first `testflight` the app record has to exist in App Store Connect (step 3 under "Put it on TestFlight"
+below). After an upload, the listing steps under "Submit to the App Store" are still done on the website. If a
+command fails it prints the last lines of its log; send them to Claude.
+
 ## Before you start (one-off, about a week of waiting for Apple)
 
 1. **Apple Developer Program**: https://developer.apple.com/programs/enroll/ with your Apple ID, A$149 a year.
