@@ -1,8 +1,8 @@
 // Builds data/mark-bank.json for the /api/mark endpoint from the PAPERS data and the
 // buildPrompt() function inside app.html, so the server sends exactly the prompt the app used to.
-// Usage: node build_bank.mjs /home/claude/hsc-study
+// Usage: node tools/build_bank.mjs [repo root, default: current folder]
 import fs from 'fs'; import path from 'path';
-const site=process.argv[2]||'/home/claude/hsc-study';
+const site=process.argv[2]||process.cwd();
 const html=fs.readFileSync(path.join(site,'app.html'),'utf8');
 const PFX=html.includes('\nconst BIZ_PAPERS = ')?'const BIZ_PAPERS = ':'const PAPERS = ';
 const line=html.split('\n').find(l=>l.startsWith(PFX));

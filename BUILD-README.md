@@ -117,6 +117,42 @@ Order: build_subjects -> parse_english/parse_maths -> (fresh app: ... papers_sub
 - Known gaps: ch-2024 Q6, Q28, Q29 have no topic (mapping grid layout). bi-2019 Q14 key is "AB" (both accepted), which the app already supports.
 Order: build_subjects -> parse_* -> (fresh app: ... papers_subj_patch -> maths_patch -> sci_patch) -> register -> build_exams -> build_bank.
 
+## Legal Studies, Modern History and Ancient History typed papers (31 Oct 2026)
+
+- Parser: `python3 exams-src/parse_hist.py <pdf dir> subjects/<sid>-papers.json papers/img/<sid> <legal|modern-history|ancient-history> [years]`
+  (Legal 2015 to 2025, histories 2019 to 2025; PDFs from R2 nesa/<sid>/, copied via the connected folder's _bandsix_tmp).
+  Text-based: pdftotext -layout for the exam (MC with options for Legal; "Question N — Option X: title (25 marks)";
+  parts (a)-(d) with the mark at the right; (a)/(b) alternatives each worth the whole question become separate
+  `long` items "N (a)" / "N (b)" titled "Option … · choose (a) or (b)"); pdftotext -bbox-layout for the guideline
+  (rows merged by y; criteria tables banded by the ruled lines found in the rendered page, nearest-mark fallback;
+  tables split over a page are joined; shared headings "Questions 4–11", "Questions 23 (b), 24 (b)…",
+  "Criteria for 23 (a)–(b)…", "Questions 19–24 part (a)" all handled; sample answers / answers could include per
+  question and per "Option X:" segment; a part whose criteria are missing or whose top mark differs borrows the
+  same-section table with the same top mark). Sources: every "Source X" / "Source X: caption" heading in the exam
+  (source booklet pages and sources printed beside Section IV questions) is cropped to papers/img/<sid>/<year>-srcX.png
+  and attached to the units whose text names that letter (it.imgs / part.pimg). Legal topics from the Mapping Grid;
+  history topics are the option titles. Validator used during the build: scratchpad hist/validate.py (structure) plus an
+  independent agent check of every paper against the PDF text.
+- `exams-src/hist_patch.py` (after sci_patch.py): isHistP(p); option titles shown on items; every source picture shown
+  (tap to zoom); the marker is sent the source pictures (own-key path via unitImgs for every non-Business paper;
+  server path via bank `imgs`, now set for any non-Business entry with pictures); history/legal prompt sentence and
+  placeholders; model answer about 35 words per mark.
+- Second pass after the agent check (same day): words split by kerning gaps are rejoined ("enf orcement"); section cover
+  pages, "Turn over for…", "End of Question" and booklet instructions stop the current question (Legal Part A last question
+  no longer carries Part B booklet text); two-column table questions in Legal MC ("Which row of the table…") join each row's
+  cells with " · " and add a "Columns: …" line to the stem; "Use the following information to answer Questions 4 and 5"
+  becomes the MC `shared` stimulus; trailing "OR" stripped from option (a) texts; right-aligned attribution lines under a
+  quote become their own paragraph; guideline "Part (b)" lines start a new block with that letter; "Question 19 (a)" headings
+  inside a shared sample block (Modern Section III) map the text to that part; singular "Answer could include"; BOSTES/NESA
+  footers and page numbers dropped; the mapping grid keeps the Content cell when it wraps and never uses outcome codes as the
+  topic; a "Source X: caption" printed under a picture or quote on a question page is cropped from the end of the question
+  text to the attribution line.
+- Banks data/mark-bank-lg/mh/ah.json. Known: Legal 2018 Q9 key ABCD and Q19 key BD (NESA accepted several answers); Legal 2020
+  Section II and the Legal options have criteria only (no sample answers in the NESA guidelines); the histories only have
+  sample answers for the option NESA chose each year.
+Order: build_subjects -> parse_* -> (fresh app: ... papers_subj_patch -> maths_patch -> sci_patch -> hist_patch) -> register -> build_exams -> build_bank.
+Since phase A, build_exams.py writes the old-brand template, so after it run `python3 tools/brand.py` and `python3 tools/counts.py` (or skip build_exams when the PDF list is unchanged); counts.py counts the Business papers too.
+
 ## Bands for Days, phase A (31 Oct 2026)
 
 Blueprint: /mnt/project-files/hsc-study/BLUEPRINT-V2.md (plan in PHASE-A-B-PLAN.md there). These scripts live in the repo under `tools/` and run last, after everything above has written app.html:
