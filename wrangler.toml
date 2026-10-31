@@ -32,7 +32,7 @@ GLOBAL_DAILY_CAP = "300"
 MODEL = "claude-opus-5-5"
 PLUS_MONTHLY = "100"
 PLUS_PRICE_TEXT = "A$9.99 a month"
-STRIPE_PRICE_ID = ""
+STRIPE_PRICE_ID = "price_1UWTtwQS6LNTxwec97sJZFh0"
 
 # Preview URLs (<version>-bandsix.<account>.workers.dev) so every PR build gets a link in the PR comment.
 preview_urls = true
