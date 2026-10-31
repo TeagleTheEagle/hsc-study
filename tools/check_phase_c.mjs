@@ -13,23 +13,24 @@ const SESSION = { user: { id: 'u-test', email: 'b1@example.com', user_metadata: 
 await ctx.addInitScript(() => { window.__db = { progress: null, feedback: [], writes: 0, fail: null, session: null, scores: [] }; });
 // the fake Worker
 const resets = new Date(Date.now() + 20 * 864e5).toISOString();
-const state = { billing: false, plan: 'free', left: 5, limit: 5, period: 'day', status: 'none', hasCustomer: false, cancelAtPeriodEnd: false, markCode: null };
+const state = { billing: false, plan: 'free', left: 5, limit: 5, period: 'day', status: 'none', hasCustomer: false, cancelAtPeriodEnd: false, markCode: null, markFail: null };
 const planBody = () => ({ billing: state.billing, price: 'A$9.99 a month', plusMonthly: 100, dailyFree: 5, signedIn: true, plan: state.plan, status: state.status, limit: state.limit, used: state.limit - state.left, left: state.left, period: state.period, resets: state.period === 'month' ? resets : new Date(Date.now() + 36e5).toISOString(), cancelAtPeriodEnd: state.cancelAtPeriodEnd, hasCustomer: state.hasCustomer, periodEnd: state.period === 'month' ? resets : null });
 const calls = [];
 await ctx.route(/\/api\//, r => {
-  const u = new URL(r.request().url()); calls.push(u.pathname + ' ' + r.request().method());
+  const u = new URL(r.request().url()); calls.push(u.pathname + u.search + ' ' + r.request().method());
   const J = (status, body) => r.fulfill({ status, contentType: 'application/json', body: JSON.stringify(body) });
   if (u.pathname === '/api/plan') return J(200, planBody());
   if (u.pathname === '/api/quota') return J(200, { on: true, ...planBody() });
   if (u.pathname === '/api/billing/checkout') return state.billing ? J(200, { url: BASE + '/app.html?billing=success#home' }) : J(503, { code: 'billing_off' });
   if (u.pathname === '/api/billing/portal') return J(200, { url: BASE + '/app.html?portal=1#home' });
+  if (u.pathname === '/api/mark' && state.markFail) return J(state.markFail.status, state.markFail.body);
   if (u.pathname === '/api/mark') return state.markCode ? J(429, { code: state.markCode, ...planBody(), left: 0 }) : J(200, { result: { mark: 2, band: '2', verdict: 'v', strengths: [], improvements: [], evidence: [], missing: [], next: 'n', confidence: 'high' }, ...planBody(), left: state.left - 1, used: state.limit - state.left + 1 });
   return J(404, { code: 'not_found' });
 });
 const page = await ctx.newPage(); const errors = []; const toasts = [];
 page.on('pageerror', e => errors.push(String(e)));
 page.on('console', m => { const t = m.text(); if (t.startsWith('TOAST:')) toasts.push(t.slice(6)); });
-const spyToast = () => page.evaluate(() => { const o = toast; window.toast = (m, k) => { console.log('TOAST:' + m); return o(m, k); }; });
+const spyToast = () => page.evaluate(() => { const o = toast; window.toast = (m, k, ms) => { console.log('TOAST:' + m); return o(m, k, ms); }; });
 const signIn = async () => { await page.evaluate(async (S) => { window.__db.session = S; SB = window.supabase.createClient(); await startSync(window.__db.session); }, SESSION); await page.waitForFunction(() => sync.state === 'synced'); };
 const strip = async () => (await page.$eval('#account', e => e.textContent)).replace(/\s+/g, ' ');
 
@@ -75,9 +76,19 @@ await page.evaluate(() => { const it = pItems(PBY.nesa2025).find(x => x.it.type 
 await page.waitForFunction(() => document.querySelector('.selfmark'));
 ok(toasts.some(x => /used this period’s 100 Plus AI marks|used this period's 100 Plus AI marks/.test(x) && /reset on/.test(x)), 'plan_limit: message names the period allowance and the reset date, then self-marking opens');
 
-// ---- cancelled but paid, past due, Manage billing ----
-state.markCode = null; state.cancelAtPeriodEnd = true; await page.evaluate(() => loadPlan(true)); await page.waitForFunction(() => /ends/.test(document.querySelector('#account').textContent));
+// ---- a failed mark says why ----
+state.markCode = null; state.markFail = { status: 502, body: { code: 'upstream', status: 400, message: 'Your credit balance is too low to access the Anthropic API.' } }; toasts.length = 0;
+await page.evaluate(() => { const it = pItems(PBY.nesa2025).find(x => x.it.type === 'sa'); const p = PBY.nesa2025; const part = it.it.parts[1] || it.it.parts[0]; return markOnServer(p, it.it, part, 'A third long enough answer about outsourcing and quality control for the marker.', part.marks, document.querySelector('.markbtn')); });
+await page.waitForFunction(() => document.querySelector('.selfmark'));
+ok(toasts.some(x => /did not come back cleanly \(upstream 400: Your credit balance is too low/.test(x)), 'a failed mark names the Worker code, status and message, then self-marking opens: ' + (toasts.find(x => /cleanly/.test(x)) || '').slice(0, 120));
+state.markFail = null;
+
+// ---- cancelled but paid, back from the portal, past due, Manage billing ----
+state.cancelAtPeriodEnd = true; await page.evaluate(() => loadPlan(true)); await page.waitForFunction(() => /ends/.test(document.querySelector('#account').textContent));
 ok(true, 'cancel at period end shows "ends <date>"');
+toasts.length = 0; await page.evaluate(() => { history.replaceState(null, '', '/app.html?billing=portal#home'); billingReturn(); });
+await page.waitForFunction(() => document.querySelector('.toast') && /Plus ends on/.test(document.querySelector('.toast').textContent));
+ok(calls.some(c => c === '/api/plan?refresh=1 GET') && !/billing=/.test(await page.evaluate(() => location.href)), 'back from the portal: the plan is re-read from Stripe (refresh=1), the toast says when Plus ends, the marker is removed');
 state.status = 'past_due'; await page.evaluate(() => loadPlan(true)); await page.waitForFunction(() => /payment failed/.test(document.querySelector('#account').textContent));
 ok(true, 'past due: asks for a card update');
 await Promise.all([page.waitForNavigation(), page.click('#account button:has-text("Manage billing")')]);

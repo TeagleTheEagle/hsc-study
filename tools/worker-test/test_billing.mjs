@@ -76,6 +76,19 @@ let old = event('customer.subscription.updated', { ...sub, status: 'canceled' },
 let later = event('customer.subscription.updated', { ...sub, cancel_at_period_end: true }, rec1.updated + 60);
 [s, d] = await J(await hook(later)); [s, d] = await J(await req('/api/plan'));
 ok(d.plan === 'plus' && d.cancelAtPeriodEnd === true, 'cancel at period end: still Plus, flagged');
+// Stripe's 2025 API versions: the customer portal cancels with cancel_at and leaves cancel_at_period_end false
+let viaCancelAt = event('customer.subscription.updated', { ...sub, cancel_at_period_end: false, cancel_at: sub.current_period_end }, rec1.updated + 90);
+[s, d] = await J(await hook(viaCancelAt)); [s, d] = await J(await req('/api/plan'));
+ok(d.plan === 'plus' && d.cancelAtPeriodEnd === true && d.resets === new Date(sub.current_period_end * 1000).toISOString(), 'cancel_at at the period end (2025 Stripe API): flagged as ending on that date');
+let farCancel = event('customer.subscription.updated', { ...sub, cancel_at_period_end: false, cancel_at: sub.current_period_end + 40 * DAY }, rec1.updated + 100);
+[s, d] = await J(await hook(farCancel)); [s, d] = await J(await req('/api/plan'));
+ok(d.plan === 'plus' && d.cancelAtPeriodEnd === false, 'cancel_at after the next renewal: still shown as renewing');
+// back from the portal: /api/plan?refresh=1 reads the subscription from Stripe now, ahead of any webhook
+sub = { ...sub, cancel_at_period_end: false, cancel_at: sub.current_period_end };
+const before = stripeCalls.length;
+[s, d] = await J(await req('/api/plan?refresh=1'));
+ok(s === 200 && stripeCalls.length === before + 1 && stripeCalls[before].path === '/subscriptions/sub_1' && d.plan === 'plus' && d.cancelAtPeriodEnd === true, 'plan?refresh=1 re-reads the subscription from Stripe and shows the cancellation');
+[s, d] = await J(await req('/api/plan')); ok(stripeCalls.length === before + 1, 'a plain plan read does not call Stripe');
 let del = event('customer.subscription.deleted', { ...sub, status: 'canceled', cancel_at_period_end: false }, rec1.updated + 120);
 [s, d] = await J(await hook(del)); [s, d] = await J(await req('/api/plan'));
 ok(d.plan === 'plus' && d.status === 'canceled', 'cancelled but paid: Plus until the period ends');
@@ -95,7 +108,7 @@ sub = { id: 'sub_1', status: 'active', customer: 'cus_1', cancel_at_period_end: 
 [s, d] = await J(await hook(event('invoice.paid', { id: 'in_3', parent: { subscription_details: { subscription: 'sub_1' } } }, rec1.updated + 360)));
 [s, d] = await J(await req('/api/plan')); ok(d.plan === 'plus' && d.left === 3 && d.resets === new Date((now + 30 * DAY) * 1000).toISOString(), 'renewal paid (item-level period, uid from the customer map): fresh allowance');
 [s, d] = await J(await req('/api/billing/portal', { method: 'POST' }));
-ok(s === 200 && /billing\.stripe\.com/.test(d.url) && stripeCalls.some(c => c.path === '/billing_portal/sessions' && /customer=cus_1/.test(c.body)), 'portal session for the customer');
+ok(s === 200 && /billing\.stripe\.com/.test(d.url) && stripeCalls.some(c => c.path === '/billing_portal/sessions' && /customer=cus_1/.test(c.body) && /return_url=.*billing%3Dportal/.test(c.body)), 'portal session for the customer, returning with billing=portal');
 [s, d] = await J(await hook('{not json', sign('{not json'))); ok(s === 400, 'unparseable body rejected');
 
 // account deletion (the app calls this before Supabase's delete_my_account): cancel at Stripe, forget the billing record
