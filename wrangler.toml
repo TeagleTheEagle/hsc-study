@@ -28,5 +28,8 @@ DAILY_LIMIT = "5"
 GLOBAL_DAILY_CAP = "300"
 MODEL = "claude-opus-5-5"
 
+# Preview URLs (<version>-bandsix.<account>.workers.dev) so every PR build gets a link in the PR comment.
+preview_urls = true
+
 # PR branches deploy with `wrangler preview`, which requires this block (it can stay empty).
 [previews]
