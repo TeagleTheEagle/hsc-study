@@ -65,3 +65,11 @@ Blueprint section 20, narrowed to what exists after phase B (no billing yet). Ti
 ## Measure during the beta
 
 Activation (signed up and finished one session), seven-day return, marks per student per week, marking disagreements reported through the feedback box, page errors (browser console), and the daily token spend from the ledger. Decide prices and limits for Plus from these numbers before phase C.
+
+## Plus (phase C, only once Stripe exists; see OPERATIONS.md "Billing")
+
+- [ ] Decided and written here: refund rule: ______ ; GST: ______ .
+- [ ] In Stripe test mode: Upgrade to Plus with card 4242 4242 4242 4242; the account strip says Plus within a minute; a mark drops the count; Manage billing opens; cancel shows "ends <date>".
+- [ ] Billing off (STRIPE_PRICE_ID empty): no Upgrade button anywhere, Free still 5 a day.
+- [ ] Live mode: one real purchase, refunded from the dashboard; the receipt email names Bands for Days.
+
