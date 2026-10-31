@@ -7,3 +7,5 @@ A free HSC study site (Business Studies first, nine more subjects): flashcards, 
 - `papers/` the exam papers, marking guidelines, exemplars and case studies as PDFs
 
 Hosted on Cloudflare Workers (auto-deploys from `main`); see OPERATIONS.md. GitHub Pages still serves a copy.
+
+The iPhone and iPad app is a Capacitor shell in `mobile/`; how to build and submit it is in MOBILE.md.

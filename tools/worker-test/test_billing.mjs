@@ -2,7 +2,7 @@
 import worker from './worker.js';
 import { createHmac } from 'node:crypto';
 let fails = 0; const ok = (c, m) => { console.log((c ? 'ok   ' : 'FAIL ') + m); if (!c) fails++; };
-const kv = new Map(); const MARKS = { async get(k) { return kv.has(k) ? kv.get(k) : null; }, async put(k, v) { kv.set(k, v); } };
+const kv = new Map(); const MARKS = { async get(k) { return kv.has(k) ? kv.get(k) : null; }, async put(k, v) { kv.set(k, v); }, async delete(k) { kv.delete(k); } };
 const bank = { 'nesa2025|21': { max: 4, pre: 'PRE ', post: ' POST' } };
 const ASSETS = { async fetch(u) { return new Response(JSON.stringify(bank), { status: String(u).includes('mark-bank.json') ? 200 : 404 }); } };
 const base = { ANTHROPIC_API_KEY: 'x', SUPA_URL: 'https://supa.test', SUPA_KEY: 'k', DAILY_LIMIT: '5', GLOBAL_DAILY_CAP: '300', PLUS_MONTHLY: '3', MARKS, ASSETS };
@@ -97,4 +97,14 @@ sub = { id: 'sub_1', status: 'active', customer: 'cus_1', cancel_at_period_end: 
 [s, d] = await J(await req('/api/billing/portal', { method: 'POST' }));
 ok(s === 200 && /billing\.stripe\.com/.test(d.url) && stripeCalls.some(c => c.path === '/billing_portal/sessions' && /customer=cus_1/.test(c.body)), 'portal session for the customer');
 [s, d] = await J(await hook('{not json', sign('{not json'))); ok(s === 400, 'unparseable body rejected');
+
+// account deletion (the app calls this before Supabase's delete_my_account): cancel at Stripe, forget the billing record
+[s, d] = await J(await req('/api/account/delete', { method: 'GET' })); ok(s === 405, 'account delete: GET refused');
+[s, d] = await J(await req('/api/account/delete', { method: 'POST' }, '')); ok(s === 401 && d.code === 'sign_in', 'account delete: needs a signed-in student');
+[s, d] = await J(await req('/api/account/delete', { method: 'POST' }));
+ok(s === 200 && d.ok === true && d.cancelled === true && stripeCalls.some(c => c.method === 'DELETE' && c.path === '/subscriptions/sub_1'), 'account delete: Plus subscription cancelled at Stripe');
+ok(!kv.has('plan:user-1') && !kv.has('cust:cus_1'), 'account delete: billing record and customer map removed');
+[s, d] = await J(await req('/api/plan')); ok(d.plan === 'free' && d.hasCustomer === false, 'after deletion the id is plain Free again');
+[s, d] = await J(await req('/api/account/delete', { method: 'POST' })); ok(s === 200 && d.cancelled === false, 'account delete again: nothing to cancel, still ok');
+[s, d] = await J(await req('/api/account/delete', { method: 'POST' }, 'tok', off)); ok(s === 200 && d.ok === true, 'account delete with billing off: ok');
 console.log(fails ? `${fails} check(s) failed` : 'billing checks passed'); process.exit(fails ? 1 : 0);

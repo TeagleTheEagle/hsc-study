@@ -12,6 +12,7 @@ What runs where, how to back it up, and how to roll back. Blueprint section 1 an
 | Accounts and progress | Supabase project "HSC Business Hub" (Sydney): `auth.users`, `public.progress` (one JSON doc per student), `public.scores` (leaderboard, computed by a trigger) | the app, through the publishable key and row-level security |
 | Anthropic key | Worker secret `ANTHROPIC_API_KEY` | `npx wrangler secret put ANTHROPIC_API_KEY --name bandsix` on the PC |
 | Old address | GitHub Pages at teagletheeagle.github.io/hsc-study (serves `main` too) | same pushes |
+| iPhone/iPad app | `mobile/` (Capacitor shell that shows the live site; App Store listing in App Store Connect) | Xcode on the Mac, see MOBILE.md |
 
 Names like `bandsix` are infrastructure identifiers and stay as they are; only what students see says Bands for Days.
 
@@ -49,6 +50,7 @@ The progress doc has a version (`v`, now 5). The app upgrades older docs on load
 - `node tools/check_phase_e1.mjs` (Playwright): the Marks report with seeded attempts (topics weakest first, Not assessed, rewrites attempt by attempt, four-week trend, text export, routing).
 - `node tools/check_phase_e2.mjs` (Playwright, fake Supabase): class leaderboard, class view, invite link, sign-up pre-fill, no-class-code case.
 - `node tools/check_phase_e3.mjs` (Playwright): the exam-style test and Find a question for every subject (Biology modules mapped onto card topics, an MC test with pictures, Legal sections, Modern History written only, English search, Business unchanged).
+- `node tools/check_native.mjs` (Playwright, `window.Capacitor` faked): inside the App Store shell nothing sells Plus, no install card, Delete account runs the Worker then the Supabase function, PDFs open outside the app.
 - `python3 tools/counts.py --check` confirms the landing numbers match the data files.
 - `python3 tools/sw_version.py` has been run (git diff should show sw.js when app.html changed).
 - Open the PR preview build on a phone and a desktop.
@@ -61,6 +63,15 @@ The progress doc has a version (`v`, now 5). The app upgrades older docs on load
 - Rollback: a Cloudflare rollback serves the old sw.js again, and because its VERSION differs the browser installs it as a new worker; nothing special to do.
 - Kill switch: if the worker ever misbehaves, deploy an sw.js whose install handler calls `self.registration.unregister()` and whose activate handler deletes every `bfd-*` cache; students drop back to plain online use on their next visit.
 - Storage: per student roughly 3 MB for the shell, 0.2 to 1 MB per saved subject, plus paper pictures seen (capped at 400 files).
+
+## Account deletion
+
+Delete account (account panel) first calls `POST /api/account/delete` with the student's token: the Worker cancels a live
+Plus subscription at Stripe and deletes the `plan:` and `cust:` records in `MARKS`, so nobody is charged after leaving.
+The app then calls the Supabase function `delete_my_account()` (`supabase-delete-account.sql`, run once in the SQL editor),
+which removes the progress, scores and feedback rows and the auth user. Marking ledger lines keep only the first 8
+characters of the user id and expire by themselves. A student who emails support@bandsfordays.com instead can be deleted
+under Supabase > Authentication > Users (cascade handles the rows) after cancelling them in the Stripe dashboard.
 
 ## Marking usage ledger (phase B)
 

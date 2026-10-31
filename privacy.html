@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Privacy and terms · Bands for Days</title>
+<meta name="description" content="What Bands for Days stores, who sees it, and the terms for using the site and the app.">
+<link rel="icon" href="favicon.svg">
+<style>
+:root{--bg:#F6F2EA;--ink:#1D2A24;--green:#1F6B45;--border:#D9D2C4;--muted:#5C665F}
+html{background:var(--bg);color:var(--ink);font:17px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{margin:0;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) max(32px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+main{max-width:720px;margin:0 auto}
+a{color:var(--green)} h1{font-size:1.9rem;line-height:1.2;margin:.6rem 0} h2{font-size:1.25rem;margin:1.8rem 0 .4rem}
+.brand{display:inline-flex;align-items:center;gap:.5rem;font-weight:700;color:var(--green);text-decoration:none}
+.brand svg{width:28px;height:28px}
+table{border-collapse:collapse;width:100%;font-size:.95rem} td,th{text-align:left;vertical-align:top;padding:.45rem .5rem;border-bottom:1px solid var(--border)} th{color:var(--muted);font-weight:600}
+.small{color:var(--muted);font-size:.9rem}
+</style>
+</head>
+<body><main>
+<a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6B45"/><rect x="7.5" y="18" width="5" height="7" rx="1.5" fill="#F6F2EA"/><rect x="13.5" y="13" width="5" height="12" rx="1.5" fill="#F6F2EA"/><rect x="19.5" y="7" width="5" height="18" rx="1.5" fill="#F2C14E"/></svg>Bands for Days</a>
+<h1>Privacy and terms</h1>
+<p class="small">Last updated 31 October 2026. This covers the website bandsfordays.com and the Bands for Days app for iPhone and iPad.</p>
+
+<h2>What Bands for Days is</h2>
+<p>Bands for Days is a free HSC study site made by a student in Sydney: flashcards, spaced reviews, past papers and AI marking that estimates a mark against the published marking guidelines. The AI marks are estimates to help you improve. They are not official NESA marks and are not connected to NESA or your school.</p>
+
+<h2>What is stored, and where</h2>
+<table>
+<tr><th>What</th><th>Where</th><th>Why</th></tr>
+<tr><td>Your study progress: cards answered, streaks, XP, saved sets, typed answers and the feedback on them</td><td>On your device (browser storage). If you sign in, also in your account so it syncs between devices.</td><td>So your work is there next time</td></tr>
+<tr><td>Email address, password and the nickname you choose, plus an optional class code</td><td>In the account database (Supabase, hosted in Sydney). Passwords are stored hashed; nobody can read them.</td><td>Sign-in, sync, and the class leaderboard</td></tr>
+<tr><td>The text of an answer you ask to be AI-marked, and a photo of handwritten working if you add one</td><td>Sent once to the marking service (Cloudflare and Anthropic's Claude API). The photo is not stored anywhere. The marked answer and feedback are kept in your progress.</td><td>To produce the mark and feedback</td></tr>
+<tr><td>A count of how many AI marks you used today or this month</td><td>In the marking service, for a few weeks, keyed to your account id</td><td>The free daily allowance and the Plus allowance</td></tr>
+<tr><td>Feedback you type into the feedback box</td><td>In the account database, read only by the site owner</td><td>To fix problems</td></tr>
+<tr><td>Payment details, if you buy Plus on the website</td><td>With Stripe only. Bands for Days never sees your card number; it only learns that a subscription is active.</td><td>Billing</td></tr>
+</table>
+<p>There is no advertising, no analytics tracker and no selling of data. Nothing is shared with your school. The class leaderboard shows your nickname, XP, level and streak to signed-in students in the same class code, and the general leaderboard shows the same to any signed-in student. Pick a nickname you are happy with.</p>
+
+<h2>Who processes the data</h2>
+<p>Cloudflare (serves the site and the marking service), Supabase (accounts and progress, Sydney region), Anthropic (the AI model that marks answers; answers are sent under Anthropic's API terms, which do not use API data to train models), and Stripe (payments on the website only). Each only receives what it needs for its job.</p>
+
+<h2>Your choices</h2>
+<ul>
+<li><strong>Use it without an account.</strong> Everything except sync, the leaderboard and AI marking works signed out, and progress stays on your device.</li>
+<li><strong>Delete your account</strong> at any time: sign in, open the account panel at the top of the app, and choose Delete account. That removes your account, synced progress, answers, feedback and leaderboard row straight away, and cancels any Plus subscription. Progress saved on the device itself is cleared by clearing the site's data in your browser or deleting the app.</li>
+<li><strong>Export</strong> your marks report from Progress as text at any time.</li>
+<li>Questions or a deletion request by email: <a href="mailto:support@bandsfordays.com">support@bandsfordays.com</a>.</li>
+</ul>
+
+<h2>Age</h2>
+<p>Bands for Days is for senior high school students. If you are under 16, check with a parent or carer before creating an account. Buying Plus on the website needs a cardholder who is allowed to pay for it.</p>
+
+<h2>Plus</h2>
+<p>Plus is an optional subscription bought on the website. It gives more AI marks a month and nothing else is locked behind it. Plus bought on the website also works in the app. The app itself sells nothing. Cancel at any time under Manage billing on the website; Plus stays on until the end of the period already paid for. Refunds for the current period are given on request if you have used fewer than 10 marks in it.</p>
+
+<h2>Terms of use</h2>
+<ul>
+<li>Bands for Days is a study aid provided as is. AI marks and feedback are estimates and may be wrong; always check against the official marking guidelines and your teacher's advice.</li>
+<li>Exam papers and marking guidelines are © NSW Education Standards Authority, and Task materials are © Saint Ignatius' College Riverview. They are here for personal study only.</li>
+<li>Do not use the site to harass other students, to post anything you have no right to post, or to try to get around the marking allowance.</li>
+<li>Accounts that break these terms can be closed. The service can change or stop; your synced progress can be exported from Progress before that happens, and a notice is given where possible.</li>
+<li>These terms are governed by the law of New South Wales, Australia.</li>
+</ul>
+<p class="small"><a href="app.html">Back to the app</a> · <a href="index.html">About Bands for Days</a></p>
+</main></body></html>

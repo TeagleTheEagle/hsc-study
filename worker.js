@@ -302,6 +302,24 @@ async function portal(request, env) {
   } catch (e) { return json(502, { code: 'stripe', message: String(e.message || '').slice(0, 200) }); }
 }
 
+// POST /api/account/delete: called by the app just before the Supabase function delete_my_account removes the user.
+// Cancels a live Plus subscription at Stripe (no refund logic here; see OPERATIONS.md "Billing") and forgets the billing record,
+// so a deleted account can never keep being charged. Safe when billing is off or the student never paid.
+async function accountDelete(request, env) {
+  if (request.method !== 'POST') return json(405, { code: 'method' });
+  const token = (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '');
+  const user = token ? await userFromToken(env, token) : null;
+  if (!user) return json(401, { code: 'sign_in' });
+  const rec = await planRecord(env, user.id);
+  let cancelled = false;
+  if (rec && rec.sub && billingOn(env) && rec.status !== 'canceled') {
+    try { await stripe(env, 'DELETE', '/subscriptions/' + encodeURIComponent(rec.sub)); cancelled = true; }
+    catch (e) { if (!/No such subscription/i.test(String(e.message || ''))) return json(502, { code: 'stripe', message: String(e.message || '').slice(0, 200) }); }
+  }
+  await Promise.all([env.MARKS.delete('plan:' + user.id), rec && rec.customer ? env.MARKS.delete('cust:' + rec.customer) : null]);
+  return json(200, { ok: true, cancelled });
+}
+
 // Stripe-Signature: t=<unix>,v1=<hmac sha256 of "<t>.<body>">; reject anything older than 5 minutes.
 async function verifyStripe(secret, header, body) {
   const parts = Object.fromEntries(String(header || '').split(',').map(x => x.split('=')).filter(x => x.length === 2));
@@ -366,6 +384,7 @@ export default {
       if (pathname === '/api/billing/checkout') return await checkout(request, env);
       if (pathname === '/api/billing/portal') return await portal(request, env);
       if (pathname === '/api/billing/webhook') return await webhook(request, env);
+      if (pathname === '/api/account/delete') return await accountDelete(request, env);
     } catch (e) {
       return json(500, { code: 'server_error' });
     }

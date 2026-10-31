@@ -1,0 +1,22 @@
+{
+  "appId": "com.bandsfordays.app",
+  "appName": "Bands for Days",
+  "webDir": "www",
+  "server": {
+    "url": "https://bandsfordays.com/app.html",
+    "allowNavigation": ["bandsfordays.com", "*.bandsfordays.com"]
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "limitsNavigationsToAppBoundDomains": true,
+    "backgroundColor": "#F6F2EA",
+    "scheme": "Bands for Days"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 0,
+      "backgroundColor": "#F6F2EA"
+    }
+  }
+}

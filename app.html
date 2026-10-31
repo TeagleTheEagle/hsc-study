@@ -443,7 +443,7 @@ body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{vis
   <button data-section="practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3l7 7-10 10H4v-7z"/><path d="M11 6l7 7"/></svg><span>Practice</span></button>
   <button data-section="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Library</span></button>
   <button data-section="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span>Progress</span></button>
-  <div class="navfoot"><a href="exams.html">HSC exams</a><a href="resources.html">Resources</a><a href="index.html">About</a></div>
+  <div class="navfoot"><a href="exams.html">HSC exams</a><a href="resources.html">Resources</a><a href="index.html">About</a><a href="privacy.html">Privacy</a></div>
 </nav>
 
 <main><div class="wrap">
@@ -457,6 +457,12 @@ body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{vis
 <canvas id="confetti" hidden></canvas>
 
 <script>
+// The App Store build (mobile/ in the repo) shows this same page inside a Capacitor WebView. In that app Plus is never sold
+// (Apple's rule 3.1.1: digital subscriptions in an app must go through Apple), so the upgrade and billing buttons stay hidden,
+// and PDFs and other sites open in Safari instead of trapping the student in the WebView.
+const NATIVE=(()=>{ try{ return !!(window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()); }catch(e){ return false; } })();
+function openOutside(url){ try{ const B=window.Capacitor&&window.Capacitor.Plugins&&window.Capacitor.Plugins.Browser; if(B&&B.open){ B.open({url}).catch(()=>{ window.open(url,'_blank'); }); return; } }catch(e){} window.open(url,'_blank'); }
+if(NATIVE){ document.documentElement.classList.add('native'); document.addEventListener('click',e=>{ const a=e.target&&e.target.closest&&e.target.closest('a[href]'); if(!a) return; const h=a.getAttribute('href')||''; if(!h||h.startsWith('#')||h.startsWith('javascript:')) return; let u; try{ u=new URL(h,location.href); }catch(_){ return; } if(u.origin===location.origin&&!/\.pdf(\?|$)/i.test(u.pathname)&&a.target!=='_blank') return; e.preventDefault(); openOutside(u.href); },true); }
 const CARDS = [
  {
   "t": "Operations",
@@ -5563,7 +5569,7 @@ async function markTyped(p,it,part,ta,btn){
 // ---------- phase C: plans ----------
 const MARKQ={limit:5, left:null, plan:'free', period:'day', resets:null, billing:false};
 const PLAN={loaded:false, loading:false, data:null, offer:false, busy:false};
-function takeQuota(q){ if(!q) return; if(q.limit) MARKQ.limit=q.limit; if(q.plan) MARKQ.plan=q.plan; if(q.period) MARKQ.period=q.period; if(q.resets) MARKQ.resets=q.resets; if(typeof q.billing==='boolean') MARKQ.billing=q.billing; if(typeof q.left==='number') MARKQ.left=q.left; }
+function takeQuota(q){ if(!q) return; if(q.limit) MARKQ.limit=q.limit; if(q.plan) MARKQ.plan=q.plan; if(q.period) MARKQ.period=q.period; if(q.resets) MARKQ.resets=q.resets; if(typeof q.billing==='boolean') MARKQ.billing=q.billing&&!NATIVE; if(typeof q.left==='number') MARKQ.left=q.left; }
 function planDay(iso){ const d=iso?new Date(iso):null; if(!d||isNaN(d)) return ''; return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',timeZone:'Australia/Sydney'}); }
 function resetsText(){ if(MARKQ.period==='month') return MARKQ.resets?'They reset on '+planDay(MARKQ.resets)+'.':'They reset each month.'; return 'They reset tomorrow.'; }
 function marksLeftText(n){ if(MARKQ.plan==='plus') return n===0?'That was your last Plus AI mark for this period. '+resetsText():n+' of '+MARKQ.limit+' Plus AI marks left this period.'; return n===0?'That was your last free AI mark for today. They reset tomorrow.':n+' free AI mark'+(n===1?'':'s')+' left today.'; }
@@ -5577,11 +5583,11 @@ function planLine(){
   if(d.plan==='plus'){
     const when=planDay(d.resets);
     box.append(el('span',{class:'pill on'},'Plus'), el('span',{}, d.status==='past_due'?'Your last payment failed. Update your card to keep Plus.':`${d.left} of ${d.limit} AI marks left this period${when?(d.cancelAtPeriodEnd?' · ends ':' · renews ')+when:''}.`));
-    if(d.billing&&d.hasCustomer) box.append(el('button',{class:'ghost',disabled:PLAN.busy?'':null,onclick:()=>billingGo('portal')}, PLAN.busy?'Opening…':'Manage billing'));
+    if(d.billing&&d.hasCustomer&&!NATIVE) box.append(el('button',{class:'ghost',disabled:PLAN.busy?'':null,onclick:()=>billingGo('portal')}, PLAN.busy?'Opening…':'Manage billing'));
     return box;
   }
   box.append(el('span',{class:'pill'},'Free'), el('span',{}, `${d.dailyFree} AI marks a day.`));
-  if(d.billing){
+  if(d.billing&&!NATIVE){
     if(d.hasCustomer&&d.status==='past_due') box.append(el('span',{},' Your Plus payment failed and the grace week has ended. '), el('button',{class:'ghost',disabled:PLAN.busy?'':null,onclick:()=>billingGo('portal')}, PLAN.busy?'Opening…':'Update card'));
     else if(!PLAN.offer) box.append(el('button',{class:'ghost',onclick:()=>{ PLAN.offer=true; renderAccount(); }},'Upgrade to Plus'));
     else box.append(el('span',{class:'offer'},
@@ -6479,7 +6485,7 @@ function renderAccount(){
   if(sync.state==='expired'){ a.append(el('span',{class:'pill'},'Signed out'), el('span',{},'Your sign-in expired. Everything is kept on this device; sign in again to keep syncing. '), el('button',{class:'ghost',onclick:()=>{ AUTH.open=!AUTH.open; renderAccount(); }}, AUTH.open?'Close':'Sign in again')); if(AUTH.open) a.append(authForm()); return; }
   if(sync.state==='synced'){
     const pill=el('span',{class:'pill on'}); if(ME&&ME.avatarUrl){ pill.append(el('img',{src:ME.avatarUrl,alt:''})); } pill.append(document.createTextNode('Signed in'+(ME&&ME.name?' as '+ME.name:'')));
-    a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'), el('button',{class:'ghost',onclick:signOut},'Sign out'), planLine());
+    a.append(pill, el('span',{},'Progress saves to your account and syncs across your devices.'), el('button',{class:'ghost',onclick:signOut},'Sign out'), planLine(), el('button',{class:'ghost',onclick:deleteAccount,title:'Remove your account and everything synced to it'},'Delete account'));
   } else if(sync.state==='readonly'){
     a.append(el('span',{class:'pill'},'Signed in · device only'), el('span',{},'This share level cannot save to an account. Progress stays on this device.'));
   } else if(sync.state==='loading'){
@@ -6545,6 +6551,21 @@ async function signIn(email,pw,create,code){
   if(!r.data||!r.data.session) throw new Error(create?'Account created. Check your email for a confirmation link, then sign in.':'Could not sign in.');
   await startSync(r.data.session);
 }
+// Delete account: the Worker cancels any Plus subscription and forgets the billing record, then the Supabase function
+// delete_my_account (supabase-delete-account.sql) removes the user and every row that references them.
+async function deleteAccount(){
+  if(!SB||!UID) return;
+  if(!confirm('Delete your Bands for Days account?\n\nYour synced progress, answers, feedback and leaderboard row are removed for good, and any Plus subscription is cancelled. Progress saved in this browser stays until you clear it.')) return;
+  if(!confirm('Last check: this cannot be undone. Delete the account now?')) return;
+  try{
+    clearTimeout(sync.timer);
+    const tok=await authToken(); if(!tok) throw new Error('sign in again first');
+    const r=await fetch('/api/account/delete',{method:'POST',headers:{authorization:'Bearer '+tok}}); if(!r.ok) throw new Error('billing could not be closed (code '+r.status+')');
+    const {error}=await SB.rpc('delete_my_account'); if(error) throw error;
+    try{ await SB.auth.signOut(); }catch(e){}
+    DBH=null; UID=null; USERH=null; ME=null; sync.state='local'; sync.lastHash=''; sync.lastScore=''; AUTH.open=false; PLAN.loaded=false; PLAN.data=null; renderAccount(); render(); toast('Your account has been deleted.');
+  }catch(e){ toast('The account could not be deleted ('+((e&&e.message)||'no connection')+'). Email support@bandsfordays.com and it will be done for you.'); }
+}
 async function signOut(){ try{ clearTimeout(sync.timer); pushProgress(); await sync.chain; if(SB) await SB.auth.signOut(); }catch(e){} DBH=null; UID=null; USERH=null; ME=null; sync.state='local'; sync.lastHash=''; sync.lastScore=''; AUTH.open=false; renderAccount(); render(); toast('Signed out. Your progress stays in this browser too.'); }
 function authForm(){
   const box=el('form',{class:'authbox'});
@@ -6591,7 +6612,7 @@ if('serviceWorker' in navigator){
 let installEvt=null;
 window.addEventListener('beforeinstallprompt',e=>{ e.preventDefault(); installEvt=e; if(S.mode==='home') render(); });
 window.addEventListener('appinstalled',()=>{ installEvt=null; toast('Installed. Open Bands for Days from your home screen.'); if(S.mode==='home') render(); });
-function isStandalone(){ return (window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }
+function isStandalone(){ return NATIVE||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true; }
 function installCard(){
   if(isStandalone()) return null;
   const dis=+localStorage.getItem('bfd_install_dismiss')||0; if(Date.now()-dis<14*864e5) return null;
