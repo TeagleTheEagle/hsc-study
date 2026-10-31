@@ -1,4 +1,4 @@
-// Band Six Worker: serves the static site, plus /api/mark, which marks a typed past-paper
+// Bands for Days Worker (Cloudflare Worker "bandsix"): serves the static site, plus /api/mark, which marks a typed past-paper
 // answer with Claude for signed-in students (DAILY_LIMIT a day each, GLOBAL_DAILY_CAP site-wide).
 // The Anthropic key is the ANTHROPIC_API_KEY secret (wrangler secret put); it never reaches the browser.
 import Anthropic from '@anthropic-ai/sdk';

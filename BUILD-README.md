@@ -116,3 +116,12 @@ Order: build_subjects -> parse_english/parse_maths -> (fresh app: ... papers_sub
 - build_bank.mjs now uses `p.pic || /^maths/` for min:1 + imgs. Banks: mark-bank-bi/ch/ph.json.
 - Known gaps: ch-2024 Q6, Q28, Q29 have no topic (mapping grid layout). bi-2019 Q14 key is "AB" (both accepted), which the app already supports.
 Order: build_subjects -> parse_* -> (fresh app: ... papers_subj_patch -> maths_patch -> sci_patch) -> register -> build_exams -> build_bank.
+
+## Bands for Days, phase A (31 Oct 2026)
+
+Blueprint: /mnt/project-files/hsc-study/BLUEPRINT-V2.md (plan in PHASE-A-B-PLAN.md there). These scripts live in the repo under `tools/` and run last, after everything above has written app.html:
+1. `python3 tools/brand.py` renames Band Six to Bands for Days on all four pages, applies the warm-neutral / deep-green palette (light and dark), the new mark, favicon.svg, the manifest and icon links. Idempotent.
+2. `python3 tools/nav_patch.py app.html` adds the five sections (Today, Subjects, Practice, Library, Progress; sidebar from 960 px, bottom bar below), hash addresses for every mode with Back-button support (`HASH_OF`, `pushMode`, `applyHash`), the subject kept in `?s=`, the Subjects and Practice hub pages (`renderSubjects`, `renderPractice`), and "Not assessed" instead of 0% for untried topics. Refuses to run twice.
+3. `python3 tools/counts.py` writes every number quoted on index.html, exams.html and resources.html (elements marked `data-count`) from the data; `--check` fails if a page number differs from the data. Run it after register.py / build_exams.py.
+4. Checks: serve the repo root (`python3 -m http.server 8766`), symlink Playwright (`ln -s /opt/node-tools/node_modules node_modules` in the cloud container) and run `node tools/check_phase_a.mjs`.
+Operations (backups, restore test, rollback): OPERATIONS.md and tools/backup_supabase.mjs.

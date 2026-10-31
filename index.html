@@ -3,23 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Band Six · Free HSC study sets</title>
+<title>Bands for Days · Free HSC study sets</title>
 <meta name="description" content="Free HSC study sets for Business Studies, Biology, Maths and more: flashcards, learn, test and match modes, spaced reviews, and for Business Studies every HSC paper from 2015 to 2025 marked against the official criteria.">
-<meta name="theme-color" content="#1F6F8B">
+<meta name="theme-color" content="#1F6B45">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
 :root{
-  --bg:#EDF0F2; --surface:#FFFFFF; --surface-2:#E3E8EC; --ink:#15202B; --muted:#56646F; --border:#CFD7DD;
-  --accent:#1F6F8B; --accent-ink:#FFFFFF; --accent-soft:#D9E9F0; --good:#2E7D4F; --good-soft:#DCEFE3; --gold:#D4A017;
+  --bg:#F6F2EA; --surface:#FFFDF9; --surface-2:#ECE6DA; --ink:#1F1B16; --muted:#5C564C; --border:#D6CEC0; --accent:#1F6B45; --accent-ink:#FFFFFF; --accent-soft:#DCEFE2; --good:#2E7D4F; --good-soft:#DCEFE3; --gold:#C8921A;
   --font:"Atkinson Hyperlegible","Segoe UI",Verdana,Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#141A20; --surface:#1E262E; --surface-2:#273039; --ink:#ECEFF2; --muted:#9AA7B3; --border:#344350;
-  --accent:#5FB3D1; --accent-ink:#0E1A22; --accent-soft:#1E3642; --good:#5DC98A; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark } }
+  --bg:#17150F; --surface:#211E17; --surface-2:#2C281F; --ink:#F1ECE2; --muted:#B3AB9A; --border:#3E382C; --accent:#6FCB95; --accent-ink:#0B1A12; --accent-soft:#1E3A2B; --good:#6FCB95; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#141A20; --surface:#1E262E; --surface-2:#273039; --ink:#ECEFF2; --muted:#9AA7B3; --border:#344350;
-  --accent:#5FB3D1; --accent-ink:#0E1A22; --accent-soft:#1E3642; --good:#5DC98A; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark }
+  --bg:#17150F; --surface:#211E17; --surface-2:#2C281F; --ink:#F1ECE2; --muted:#B3AB9A; --border:#3E382C; --accent:#6FCB95; --accent-ink:#0B1A12; --accent-soft:#1E3A2B; --good:#6FCB95; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:18px;line-height:1.55}
 a{color:var(--accent);text-underline-offset:3px}
@@ -39,6 +38,7 @@ nav a:hover{background:var(--surface-2);color:var(--ink)}
 .hero{padding:3.5rem 0 2.5rem;display:grid;gap:1.1rem}
 .hero h1{font-size:clamp(2rem,5vw,3rem)}
 .hero .lead{font-size:1.2rem;color:var(--muted);max-width:52ch}
+.hero .totals{color:var(--muted);font-size:1rem;font-variant-numeric:tabular-nums}
 .hero .cta{display:flex;gap:.6rem;flex-wrap:wrap}
 .hero .exam{display:inline-flex;gap:.5rem;align-items:center;background:var(--accent-soft);border-radius:999px;padding:.3rem .9rem;font-weight:700;width:fit-content}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.6rem;padding-bottom:2rem}
@@ -72,14 +72,15 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
 </head>
 <body>
 <header><div class="wrap">
-  <a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6F8B"/><path d="M9 21l5-6 4 4 5-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Band Six</a>
+  <a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6B45"/><rect x="7.5" y="18" width="5" height="7" rx="1.5" fill="#F6F2EA"/><rect x="13.5" y="13" width="5" height="12" rx="1.5" fill="#F6F2EA"/><rect x="19.5" y="7" width="5" height="18" rx="1.5" fill="#F2C14E"/></svg>Bands for Days</a>
   <nav aria-label="Site">
-    <a href="app.html">Study</a>
-    <a href="#subjects">Subjects</a>
-    <a href="app.html?s=business#papers">Past papers</a>
+    <a href="app.html">Today</a>
+    <a href="app.html#subjects">Subjects</a>
+    <a href="app.html#practice">Practice</a>
+    <a href="app.html#library">Library</a>
+    <a href="app.html#stats">Progress</a>
     <a href="exams.html">HSC exams</a>
     <a href="resources.html">Resources</a>
-    <a href="app.html#stats">Progress</a>
   </nav>
 </div></header>
 
@@ -87,8 +88,9 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
 <div class="wrap">
   <div class="hero">
     <span class="exam">Free HSC study sets</span>
+    <p class="totals" data-count="summary">10 subjects · 2,278 cards · 87 past papers you can answer and have marked · 197 NESA exam PDFs · 611 Business resources</p>
     <h1>Know what to study. Learn how to earn the next mark.</h1>
-    <p class="lead">Pick your subject and Band Six gives you a short session each day: the cards you are about to forget, your weakest topic next, and exam questions where we have them.</p>
+    <p class="lead">Pick your subject and Bands for Days gives you a short session each day: the cards you are about to forget, your weakest topic next, and exam questions where we have them.</p>
     <div class="cta">
       <a class="btn primary" href="app.html">Start studying</a>
       <a class="btn" href="#subjects">Choose a subject</a>
@@ -104,10 +106,10 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
   <section id="business">
   <h2>Business Studies: the full toolkit</h2>
   <div class="facts">
-    <div class="fact"><b>644</b><span>flashcards across Operations, Marketing, Finance, HR and the NESA key words</span></div>
-    <div class="fact"><b>11</b><span>HSC exams 2015 to 2025 with marking guidelines</span></div>
-    <div class="fact"><b>14</b><span>Riverview Task 1 papers with criteria and sample answers</span></div>
-    <div class="fact"><b>395</b><span>exam questions you can answer and get marked</span></div>
+    <div class="fact"><b data-count="biz_cards">644</b><span>flashcards across Operations, Marketing, Finance, HR and the NESA key words</span></div>
+    <div class="fact"><b data-count="biz_nesa">11</b><span>HSC exams <span data-count="biz_nesa_years">2015 to 2025</span> with marking guidelines</span></div>
+    <div class="fact"><b data-count="biz_riv">14</b><span>Riverview Task 1 papers with criteria and sample answers</span></div>
+    <div class="fact"><b data-count="biz_questions">395</b><span>exam questions you can answer and get marked</span></div>
   </div>
 
   <section id="modes">
@@ -115,7 +117,7 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
       <a class="card" href="app.html?s=business"><h3>Cards</h3><p>Flashcards, Learn (multiple choice or typed), Test and Match. Type your answer and see which key ideas you hit.</p><span class="go">Open cards →</span></a>
       <a class="card" href="app.html?s=business#ratio"><h3>Ratio drill</h3><p>All seven ratios with fresh figures every time, the formula shown as the exam gives it, and a typed interpretation check.</p><span class="go">Drill ratios →</span></a>
       <a class="card" href="app.html?s=business#papers"><h3>Past papers</h3><p>Pick a year, answer the real questions, get a mark out of the total with what worked and what to add. Timed runs use your provisions.</p><span class="go">Choose a paper →</span></a>
-      <a class="card" href="resources.html"><h3>Resources</h3><p>611 documents from the Business Studies drive: trial papers from 21 schools, every Riverview exam with its marking criteria, exemplar answers, question banks, case studies and writing guides.</p><span class="go">Browse resources →</span></a>
+      <a class="card" href="resources.html"><h3>Resources</h3><p><span data-count="resources">611</span> documents from the Business Studies drive: trial papers from 21 schools, every Riverview exam with its marking criteria, exemplar answers, question banks, case studies and writing guides.</p><span class="go">Browse resources →</span></a>
     </div>
     <p class="note" style="margin-top:1rem">Also: the <a href="app.html?s=business#guide">Exam guide</a> has the exam structure and timing, what each band looks like, the 35 NESA key words, and real 2012 answers sorted by band.</p>
   </section>

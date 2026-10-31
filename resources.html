@@ -3,23 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Resources · Band Six</title>
+<title>Resources · Bands for Days</title>
 <meta name="description" content="Resources for HSC Business Studies: 644 flashcards, learn and test modes, a ratio drill, and every HSC past paper from 2015 to 2025 with marking against the official criteria.">
-<meta name="theme-color" content="#1F6F8B">
+<meta name="theme-color" content="#1F6B45">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
 :root{
-  --bg:#EDF0F2; --surface:#FFFFFF; --surface-2:#E3E8EC; --ink:#15202B; --muted:#56646F; --border:#CFD7DD;
-  --accent:#1F6F8B; --accent-ink:#FFFFFF; --accent-soft:#D9E9F0; --good:#2E7D4F; --good-soft:#DCEFE3; --gold:#D4A017;
+  --bg:#F6F2EA; --surface:#FFFDF9; --surface-2:#ECE6DA; --ink:#1F1B16; --muted:#5C564C; --border:#D6CEC0; --accent:#1F6B45; --accent-ink:#FFFFFF; --accent-soft:#DCEFE2; --good:#2E7D4F; --good-soft:#DCEFE3; --gold:#C8921A;
   --font:"Atkinson Hyperlegible","Segoe UI",Verdana,Arial,sans-serif;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#141A20; --surface:#1E262E; --surface-2:#273039; --ink:#ECEFF2; --muted:#9AA7B3; --border:#344350;
-  --accent:#5FB3D1; --accent-ink:#0E1A22; --accent-soft:#1E3642; --good:#5DC98A; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark } }
+  --bg:#17150F; --surface:#211E17; --surface-2:#2C281F; --ink:#F1ECE2; --muted:#B3AB9A; --border:#3E382C; --accent:#6FCB95; --accent-ink:#0B1A12; --accent-soft:#1E3A2B; --good:#6FCB95; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#141A20; --surface:#1E262E; --surface-2:#273039; --ink:#ECEFF2; --muted:#9AA7B3; --border:#344350;
-  --accent:#5FB3D1; --accent-ink:#0E1A22; --accent-soft:#1E3642; --good:#5DC98A; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark }
+  --bg:#17150F; --surface:#211E17; --surface-2:#2C281F; --ink:#F1ECE2; --muted:#B3AB9A; --border:#3E382C; --accent:#6FCB95; --accent-ink:#0B1A12; --accent-soft:#1E3A2B; --good:#6FCB95; --good-soft:#1C3A2A; --gold:#F2C14E; color-scheme:dark }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:18px;line-height:1.55}
 a{color:var(--accent);text-underline-offset:3px}
@@ -98,21 +97,23 @@ mark{background:var(--gold);color:#15202B;border-radius:3px;padding:0 .1em}
 </head>
 <body>
 <header><div class="wrap">
-  <a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6F8B"/><path d="M9 21l5-6 4 4 5-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>Band Six</a>
+  <a class="brand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6B45"/><rect x="7.5" y="18" width="5" height="7" rx="1.5" fill="#F6F2EA"/><rect x="13.5" y="13" width="5" height="12" rx="1.5" fill="#F6F2EA"/><rect x="19.5" y="7" width="5" height="18" rx="1.5" fill="#F2C14E"/></svg>Bands for Days</a>
   <nav aria-label="Site">
-    <a href="app.html">Study cards</a>
-    <a href="app.html#ratio">Ratio drill</a>
-    <a href="app.html#papers">Past papers</a>
-    <a href="resources.html" aria-current="page" style="color:var(--ink);background:var(--surface-2)">Resources</a>
+    <a href="app.html">Today</a>
+    <a href="app.html#subjects">Subjects</a>
+    <a href="app.html#practice">Practice</a>
+    <a href="app.html#library">Library</a>
     <a href="app.html#stats">Progress</a>
+    <a href="exams.html">HSC exams</a>
+    <a href="resources.html" aria-current="page" style="color:var(--ink);background:var(--surface-2)">Resources</a>
   </nav>
 </div></header>
 <main><div class="wrap">
   <div class="hero">
     <h1>Resources</h1>
-    <p class="lead">611 documents from the Business Studies drive: trial papers from 21 schools, every Riverview exam and task since 2010 with its marking criteria, 107 exemplar answers, question banks by topic, case studies, writing guides and syllabus summaries. Everything is a PDF, so it opens straight away on your phone.</p>
+    <p class="lead"><span data-count="resources">611</span> documents from the Business Studies drive: trial papers from 21 schools, every Riverview exam and task since 2010 with its marking criteria, 107 exemplar answers, question banks by topic, case studies, writing guides and syllabus summaries. Everything is a PDF, so it opens straight away on your phone.</p>
   </div>
-  <p class="note" id="moving" hidden style="border:1px solid var(--line);border-radius:12px;padding:.7rem .9rem;background:var(--surface)"><strong>Files are moving to Band Six's new home.</strong> The list is live, but the PDFs come online once the move finishes. Check back soon.</p>
+  <p class="note" id="moving" hidden style="border:1px solid var(--line);border-radius:12px;padding:.7rem .9rem;background:var(--surface)"><strong>Files are moving to Bands for Days' new home.</strong> The list is live, but the PDFs come online once the move finishes. Check back soon.</p>
   <h2 style="font-size:1.2rem">Start here</h2>
   <div class="picks" id="picks"></div>
   <div class="tools">
