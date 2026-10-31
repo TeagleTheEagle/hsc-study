@@ -44,8 +44,19 @@ The progress doc has a version (`v`, now 5). The app upgrades older docs on load
 - `node tools/check_phase_a.mjs` (Playwright) against a local server: navigation, hashes, subject links, counts.
 - `node tools/check_phase_b.mjs` (Playwright, uses `tools/supabase_stub.js` instead of the real Supabase): drafts, the save-status chip, retries, offline, expired sessions, merge of newer progress from another device, the marking feedback layout, missed-question boost, feedback box.
 - `bash tools/worker-test/run.sh`: the Worker with a stub Anthropic SDK: first mark, repeat not counted, ledger, failed job not counted, too-short answer, limits.
+- `node tools/check_phase_d.mjs` (Playwright, starts its own server on 8767 and stops it mid-run): worker installs, app and a saved subject load with the server down, marking refused offline with the draft kept, install card, new-version reload.
 - `python3 tools/counts.py --check` confirms the landing numbers match the data files.
+- `python3 tools/sw_version.py` has been run (git diff should show sw.js when app.html changed).
 - Open the PR preview build on a phone and a desktop.
+
+## Offline and the service worker (phase D)
+
+`sw.js` at the site root keeps the app shell (app.html, index.html, manifest, icons) and the subject files a student has opened or saved under Subjects > Offline, so cards, Learn, Test, Match and typed papers work without internet. `/api/*`, Supabase and Anthropic are never cached. `tools/sw_version.py` stamps `VERSION` in sw.js from a hash of app.html, index.html and the manifest; run it after any build step (the build chain in BUILD-README.md ends with it). A browser only installs a new worker when the file's bytes change, so a release that forgets the stamp still updates app.html for online students (network-first) but leaves the offline shell on the old version.
+
+- Update flow: a student with the old version open sees "A new version is ready. Reload" and reloads when they choose; a fresh visit gets the new shell on the next load.
+- Rollback: a Cloudflare rollback serves the old sw.js again, and because its VERSION differs the browser installs it as a new worker; nothing special to do.
+- Kill switch: if the worker ever misbehaves, deploy an sw.js whose install handler calls `self.registration.unregister()` and whose activate handler deletes every `bfd-*` cache; students drop back to plain online use on their next visit.
+- Storage: per student roughly 3 MB for the shell, 0.2 to 1 MB per saved subject, plus paper pictures seen (capped at 400 files).
 
 ## Marking usage ledger (phase B)
 

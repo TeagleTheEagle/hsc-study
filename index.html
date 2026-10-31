@@ -9,6 +9,10 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bands for Days">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
 :root{
@@ -140,5 +144,6 @@ footer{border-top:2px solid var(--border);padding:1.5rem 0 3rem;color:var(--mute
   <p>Built in Sydney for HSC students. Exam papers and marking guidelines © NSW Education Standards Authority; Task 1 materials © Saint Ignatius' College Riverview. Used here for study.</p>
   <p>Progress is saved in your browser, and in your account if you sign in. Answers are only sent for marking when you use AI marking.</p>
 </div></footer>
+<script>if('serviceWorker' in navigator) addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));</script>
 </body>
 </html>

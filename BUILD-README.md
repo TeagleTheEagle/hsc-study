@@ -172,3 +172,11 @@ Runs after the phase A scripts above:
 5. Checks: `node tools/check_phase_b.mjs` (needs the local server and the Playwright symlink as in phase A) and `node tools/check_phase_a.mjs` again.
 6. One-off in Supabase: `supabase-feedback.sql`.
 Acceptance list for the beta: BETA-CHECKLIST.md.
+
+## Bands for Days, phase D (31 Oct 2026)
+
+Runs after the phase B script:
+1. `python3 tools/phase_d_patch.py app.html` (also edits index.html next to it): service-worker registration with the "new version" reload toast, install card on Today (`installCard`, `beforeinstallprompt`, iOS instructions), Subjects > Offline panel (`offlinePanel`, `saveOffline`, cache `bfd-data-v1`), offline guards in `markTyped` and `switchSubject`, home-screen meta tags and tap polish. Refuses to run twice.
+2. `python3 tools/sw_version.py` stamps `sw.js` from the shell files. Always last.
+3. Checks: `node tools/check_phase_d.mjs` (needs the Playwright symlink; runs its own server on 8767).
+`sw.js` itself is hand-written (caching rules at the top of the file).
