@@ -208,3 +208,7 @@ App, after phase E3 and before `tools/sw_version.py`:
 1. `python3 tools/phase_c_patch.py app.html`: `MARKQ` carries plan, period, resets and billing; `PLAN` holds `/api/plan`; `planLine()` in the account strip (Free line; Upgrade to Plus with the terms and "Continue to secure checkout" when billing is on; Plus line with marks left, renews/ends date, Manage billing; past-due wording); `billingGo('checkout'|'portal')`; `billingReturn()` handles `?billing=success` (polls the plan for up to 40 s) and `?billing=cancel`; marking toasts and the papers note use `marksLeftText`, `resetsText`, `moreMarksText`; the `plan_limit` code. Refuses to run twice.
 2. Checks: `node tools/check_phase_c.mjs` against the local server on 8766.
 
+## Open sign-up (31 Oct 2026)
+
+After phase C and before `tools/sw_version.py`: `python3 tools/open_signup_patch.py app.html` makes the class code optional at sign-up (placeholder "Class code (optional)", new wording, softer error). One-off in Supabase: `supabase-open-signups.sql` adds the `'*'` row to `private.class_codes` so the trigger accepts sign-ups without a code (no-op if the hardening SQL was never run). A code typed at sign-up still puts the student in that class.
+

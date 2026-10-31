@@ -6532,7 +6532,7 @@ async function initSync(){
 }
 function friendlyAuthError(e, create){
   const m=(e&&e.message)||'';
-  if(/Database error saving new user/i.test(m)) return 'That class code is wrong. Ask whoever gave you the site link.';
+  if(/Database error saving new user/i.test(m)) return 'Sign-up was refused. If you typed a class code, check it with whoever gave it to you; otherwise leave it blank and try again.';
   if(/already registered|already been registered/i.test(m)) return 'That email already has an account. Switch to Sign in.';
   if(/Invalid login credentials/i.test(m)) return 'Wrong email or password.';
   if(/rate limit/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
@@ -6550,12 +6550,12 @@ function authForm(){
   const box=el('form',{class:'authbox'});
   box.append(el('div',{class:'row'}, seg([['in','Sign in'],['up','Create account']], AUTH.mode, v=>{ AUTH.mode=v; AUTH.err=''; renderAccount(); renderAuthPanels(); })));
   const em=el('input',{type:'email',name:'email',placeholder:'Email',autocomplete:'email',required:'','aria-label':'Email',value:AUTH.email||''}); const pw=el('input',{type:'password',name:'password',placeholder:AUTH.mode==='up'?'Choose a password (6+ characters)':'Password',autocomplete:AUTH.mode==='up'?'new-password':'current-password',minlength:'6',required:'','aria-label':'Password'});
-  const code=AUTH.mode==='up'? el('input',{type:'text',name:'code',placeholder:'Class code',autocomplete:'off',autocapitalize:'characters',spellcheck:'false',required:'','aria-label':'Class code',value:AUTH.code||''}) : null;
+  const code=AUTH.mode==='up'? el('input',{type:'text',name:'code',placeholder:'Class code (optional)',autocomplete:'off',autocapitalize:'characters',spellcheck:'false','aria-label':'Class code (optional)',value:AUTH.code||''}) : null;
   const btn=el('button',{class:'primary',type:'submit',disabled:AUTH.busy?'':null}, AUTH.busy?'One moment…':(AUTH.mode==='up'?'Create account':'Sign in'));
   box.addEventListener('submit',async e=>{ e.preventDefault(); if(AUTH.busy) return; AUTH.busy=true; AUTH.err=''; AUTH.email=em.value.trim(); if(code) AUTH.code=code.value.trim().toUpperCase(); btn.disabled=true; btn.textContent='One moment…'; const create=AUTH.mode==='up'; try{ await signIn(AUTH.email, pw.value, create, AUTH.code); AUTH.busy=false; toast(create?'Account created. Your progress now saves to it.':'Signed in. Progress merged.','gold'); renderAuthPanels(); }catch(err){ AUTH.err=(err&&err.message)||'Something went wrong.'; AUTH.busy=false; btn.disabled=false; btn.textContent=create?'Create account':'Sign in'; let ep=box.querySelector('.err'); if(!ep){ ep=el('p',{class:'small err',role:'alert'}); box.insertBefore(ep, box.lastElementChild); } ep.textContent=AUTH.err; } });
   box.append(el('div',{class:'inrow'}, em, pw, ...(code?[code]:[]), btn));
   if(AUTH.err) box.append(el('p',{class:'small err',role:'alert'}, AUTH.err));
-  box.append(el('p',{class:'small'}, AUTH.mode==='up'?'You need the class code from whoever shared the site. Only your email and your study progress are stored (Supabase, Sydney). No confirmation email is needed.':'Forgot your password? Message the site owner for now; a reset link is on the list.'));
+  box.append(el('p',{class:'small'}, AUTH.mode==='up'?'A class code is optional: it puts you on your class leaderboard. Only your email and your study progress are stored (Supabase, Sydney). No confirmation email is needed.':'Forgot your password? Message the site owner for now; a reset link is on the list.'));
   return box;
 }
 const FB={text:'', busy:false, done:false, err:''};

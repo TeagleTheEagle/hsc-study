@@ -81,7 +81,7 @@ Rough cost per mark: input tokens x $5 per million plus output tokens x $25 per 
 
 ## Classes (phase E2)
 
-Run `supabase-classes.sql` once. It adds `class_code` to `public.scores`, filled by a trigger from the code each student typed at sign-up (`auth.users.raw_user_meta_data`), and back-fills existing rows. To see the classes: `select class_code, count(*) from public.scores group by 1;`. A new class is just a new code: add it to `private.class_codes` (see supabase-hardening.sql) and give classmates the invite link from the class view, which pre-fills the code at sign-up. Students only ever see nicknames and scores, never emails.
+Run `supabase-classes.sql` once. It adds `class_code` to `public.scores`, filled by a trigger from the code each student typed at sign-up (`auth.users.raw_user_meta_data`), and back-fills existing rows. To see the classes: `select class_code, count(*) from public.scores group by 1;`. A new class is just a new code: add it to `private.class_codes` (see supabase-hardening.sql) and give classmates the invite link from the class view, which pre-fills the code at sign-up. Since 31 Oct sign-ups no longer need a code (`supabase-open-signups.sql` adds the `'*'` row); delete that row to require one again. Students only ever see nicknames and scores, never emails.
 
 ## Feedback table (phase B)
 

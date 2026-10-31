@@ -3,7 +3,7 @@
 // opened so the cards and typed papers work offline. AI marking, sign-in and sync always need the network and are
 // never cached. VERSION is written by tools/sw_version.py on every build; a new version replaces the old shell on
 // the next visit and the page offers a reload.
-const VERSION = '39d6b417c5';
+const VERSION = 'db200cedfd';
 const SHELL = 'bfd-shell-' + VERSION;
 const DATA = 'bfd-data-v1';     // subjects/*.json, data/*.json (versioned by ?v=, so cache-first is safe)
 const MEDIA = 'bfd-media-v1';   // papers/img/*, icons, fonts, vendor scripts (stale-while-revalidate)
