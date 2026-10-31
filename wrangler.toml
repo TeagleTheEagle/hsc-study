@@ -1,4 +1,4 @@
-# Band Six on Cloudflare: the site is served as Workers static assets.
+# Bands for Days on Cloudflare (Worker name "bandsix" is kept; renaming it would break the deploy): the site is served as Workers static assets.
 # The 611 resource PDFs live in the R2 bucket "bandsix-files", served at files.bandsfordays.com.
 # worker.js answers /api/* (free AI marking); everything else is a static file.
 name = "bandsix"

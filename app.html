@@ -3,11 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Band Six: free HSC study sets with flashcards, learn, test and match modes and spaced reviews, for Business Studies, Biology, Maths and more. Business Studies also has every HSC paper 2015 to 2025 marked against the official criteria.">
-<meta name="theme-color" content="#1F6F8B">
+<meta name="description" content="Bands for Days: free HSC study sets with flashcards, learn, test and match modes and spaced reviews, for Business Studies, Biology, Maths and more. Business Studies also has every HSC paper 2015 to 2025 marked against the official criteria.">
+<meta name="theme-color" content="#1F6B45">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <script id="supabasejs" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" crossorigin="anonymous" defer></script>
-<title>Study set · Band Six</title>
+<title>Study set · Bands for Days</title>
 </head>
 <body>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -15,22 +17,13 @@
 <style>
 /* Layout: one sticky toolbar (deck + mode), a stats strip (streak, daily goal, XP), then a single wide study column. Calm paper, big legible type, two strong semantic colours (got it / still learning). */
 :root{
-  --bg:#EDF0F2; --surface:#FFFFFF; --surface-2:#E3E8EC; --ink:#15202B; --muted:#56646F; --border:#CFD7DD;
-  --accent:#1F6F8B; --accent-ink:#FFFFFF; --accent-soft:#D9E9F0;
-  --good:#2E7D4F; --good-soft:#DCEFE3; --good-deep:#1B5E37; --warn:#C2410C; --warn-soft:#FBE3D6; --mid:#B7791F; --mid-soft:#FBEFD2;
-  --focus:#F59E0B; --gold:#D4A017;
+  --bg:#F6F2EA; --surface:#FFFDF9; --surface-2:#ECE6DA; --ink:#1F1B16; --muted:#5C564C; --border:#D6CEC0; --accent:#1F6B45; --accent-ink:#FFFFFF; --accent-soft:#DCEFE2; --good:#2E7D4F; --good-soft:#DCEFE3; --good-deep:#1B5E37; --warn:#B5431A; --warn-soft:#F9E3D8; --mid:#9A6214; --mid-soft:#F7EAD0; --focus:#D97706; --gold:#C8921A;
   --font:"Atkinson Hyperlegible", "Segoe UI", Verdana, Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
-  --bg:#141A20; --surface:#1E262E; --surface-2:#273039; --ink:#ECEFF2; --muted:#9AA7B3; --border:#344350;
-  --accent:#5FB3D1; --accent-ink:#0E1A22; --accent-soft:#1E3642;
-  --good:#5DC98A; --good-soft:#1C3A2A; --good-deep:#8FE0B0; --warn:#F0924A; --warn-soft:#45291A; --mid:#E0B050; --mid-soft:#3E3216;
-  --focus:#FBBF24; --gold:#F2C14E; color-scheme:dark } }
+  --bg:#17150F; --surface:#211E17; --surface-2:#2C281F; --ink:#F1ECE2; --muted:#B3AB9A; --border:#3E382C; --accent:#6FCB95; --accent-ink:#0B1A12; --accent-soft:#1E3A2B; --good:#6FCB95; --good-soft:#1C3A2A; --good-deep:#9FE3BB; --warn:#F2A06B; --warn-soft:#45291A; --mid:#E0B050; --mid-soft:#3E3216; --focus:#FBBF24; --gold:#F2C14E; color-scheme:dark } }
 :root[data-theme="dark"]{
-  --bg:#141A20; --surface:#1E262E; --surface-2:#273039; --ink:#ECEFF2; --muted:#9AA7B3; --border:#344350;
-  --accent:#5FB3D1; --accent-ink:#0E1A22; --accent-soft:#1E3642;
-  --good:#5DC98A; --good-soft:#1C3A2A; --good-deep:#8FE0B0; --warn:#F0924A; --warn-soft:#45291A; --mid:#E0B050; --mid-soft:#3E3216;
-  --focus:#FBBF24; --gold:#F2C14E; color-scheme:dark }
+  --bg:#17150F; --surface:#211E17; --surface-2:#2C281F; --ink:#F1ECE2; --muted:#B3AB9A; --border:#3E382C; --accent:#6FCB95; --accent-ink:#0B1A12; --accent-soft:#1E3A2B; --good:#6FCB95; --good-soft:#1C3A2A; --good-deep:#9FE3BB; --warn:#F2A06B; --warn-soft:#45291A; --mid:#E0B050; --mid-soft:#3E3216; --focus:#FBBF24; --gold:#F2C14E; color-scheme:dark }
 
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:18px;line-height:1.55;-webkit-text-size-adjust:100%}
@@ -59,11 +52,33 @@ header.top .wrap{padding-block:.6rem .5rem;display:grid;gap:.45rem}
 .tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 @media (max-width:480px){ .tab{padding:.3rem .45rem;font-size:.92rem} }
 
-.mainnav{display:flex;gap:.15rem;overflow-x:auto;scrollbar-width:none}
-.mainnav::-webkit-scrollbar{display:none}
-.mainnav a.navlink{display:inline-flex;align-items:center;border-radius:10px;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto;text-decoration:none}
-.mainnav button{border:0;border-radius:10px;background:none;min-height:44px;padding:.35rem .85rem;font-weight:700;color:var(--muted);white-space:nowrap;flex:0 0 auto}
-.mainnav button[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+/* Five sections (Today, Subjects, Practice, Library, Progress): a bottom bar on phones, a sidebar from 960px. */
+.mainnav{position:fixed;left:0;right:0;bottom:0;z-index:6;display:flex;justify-content:space-around;gap:0;background:var(--surface);border-top:2px solid var(--border);padding:.25rem .25rem calc(.25rem + env(safe-area-inset-bottom,0px))}
+.mainnav .navbrand{display:none}
+.mainnav button{border:0;border-radius:12px;background:none;min-height:52px;padding:.3rem .2rem;font-weight:700;font-size:.78rem;color:var(--muted);white-space:nowrap;flex:1 1 0;display:grid;justify-items:center;gap:.1rem;line-height:1.1;min-width:0}
+.mainnav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mainnav button[aria-current="page"]{color:var(--accent);background:var(--accent-soft)}
+body{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+.toast{bottom:calc(5.2rem + env(safe-area-inset-bottom,0px))}
+@media (min-width:960px){
+  body{padding-bottom:0;padding-left:232px}
+  .mainnav{right:auto;top:0;bottom:0;width:232px;flex-direction:column;justify-content:flex-start;gap:.2rem;border-top:0;border-right:2px solid var(--border);padding:1rem .8rem}
+  .mainnav .navbrand{display:flex;align-items:center;gap:.55rem;font-weight:700;font-size:1.15rem;color:inherit;text-decoration:none;padding:.3rem .5rem 1rem}
+  .mainnav .navbrand svg{width:30px;height:30px;flex:0 0 auto}
+  .mainnav button{flex:0 0 auto;display:flex;justify-content:flex-start;align-items:center;gap:.7rem;font-size:1rem;padding:.55rem .8rem;min-height:48px;width:100%}
+  .mainnav button svg{width:22px;height:22px}
+  .mainnav .navfoot{margin-top:auto;font-size:.85rem;color:var(--muted);padding:.5rem;display:grid;gap:.3rem}
+  .mainnav .navfoot a{color:var(--accent)}
+  .titlebar h1{display:none}
+  .toast{bottom:calc(1.2rem + env(safe-area-inset-bottom,0px));left:calc(50% + 116px)}
+}
+@media (max-width:959px){ .mainnav .navfoot{display:none} }
+.hub{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.6rem}
+.hub .act b{display:flex;align-items:center;gap:.4rem}
+.subjgrid button .dot{display:inline-block;width:.6em;height:.6em;border-radius:50%;background:var(--subj,var(--accent));margin-right:.35em}
+body[data-subj] .hero{border-top:6px solid var(--subj,var(--accent))}
+body[data-subj="business"]{--subj:#1F6B45} body[data-subj="english"]{--subj:#8B3A62} body[data-subj="maths-std2"]{--subj:#2F5FA8} body[data-subj="maths-adv"]{--subj:#1F4E8C}
+body[data-subj="biology"]{--subj:#3B7D3A} body[data-subj="chemistry"]{--subj:#B05A1A} body[data-subj="physics"]{--subj:#4B5BB0} body[data-subj="modern-history"]{--subj:#8A5A1F} body[data-subj="ancient-history"]{--subj:#9A4A2A} body[data-subj="legal"]{--subj:#5E4B8B}
 .subbar{display:grid;gap:.4rem;padding-bottom:.4rem}
 .subbar[hidden]{display:none}
 .hero{background:linear-gradient(135deg,var(--accent-soft),var(--surface));border-color:var(--accent)}
@@ -174,7 +189,7 @@ table.mastery td.tp{text-align:left;background:none;padding:0}
 table.mastery td.tp button{all:unset;cursor:pointer;font-weight:600;overflow-wrap:anywhere;display:block;padding:.3rem .2rem}
 table.mastery td.tp button:hover{text-decoration:underline}
 table.mastery td.lo{background:var(--warn-soft)} table.mastery td.mid{background:var(--surface-2)} table.mastery td.hi{background:var(--good-soft)}
-table.mastery td.none{color:var(--muted);font-weight:400}
+table.mastery td.none{color:var(--muted);font-weight:400} table.mastery .na{font-size:.78rem}
 .mlegend{font-size:.85rem;color:var(--muted);margin:.5rem 0 .2rem}
 .rewritebox{border:2px dashed var(--border);border-radius:12px;padding:.7rem 1rem;margin:.6rem 0}
 .attempts{font-weight:700;margin:.2rem 0 .4rem}
@@ -374,7 +389,7 @@ button.danger{border-color:var(--warn);color:var(--warn)}
 @media (max-width:640px){.sesslist .rowx{grid-template-columns:1fr auto auto} .sesslist .sub{display:none} .readytable .deckrow{grid-template-columns:1fr auto} .readytable .deckrow .small{grid-column:1/-1}}
 .small.err{color:#B42318}
 .subjbtn{min-height:40px;padding:.3rem .8rem;border-radius:999px;font-weight:700;background:var(--accent-soft);border:2px solid var(--accent);color:var(--ink);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
-dialog#subjdlg{border:2px solid var(--border);border-radius:18px;background:var(--surface);color:var(--ink);padding:1.1rem 1.2rem;width:min(40rem,calc(100vw - 2rem));max-height:calc(100dvh - 2rem)}
+dialog#subjdlg-unused{border:2px solid var(--border);border-radius:18px;background:var(--surface);color:var(--ink);padding:1.1rem 1.2rem;width:min(40rem,calc(100vw - 2rem));max-height:calc(100dvh - 2rem)}
 dialog#subjdlg::backdrop{background:rgba(0,0,0,.45)}
 .dlghead{display:flex;justify-content:space-between;align-items:center;gap:1rem}
 .subjgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(10.5rem,1fr));gap:.55rem;margin-top:.6rem}
@@ -389,19 +404,9 @@ body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{vis
 <header class="top">
   <div class="wrap">
     <div class="titlebar">
-      <h1><a href="index.html" class="homelink">Band Six</a> <span class="sub">Study set</span></h1>
-      <button class="subjbtn" id="subjbtn" aria-haspopup="dialog" aria-label="Change subject"><span id="subjname">Business Studies</span> <span aria-hidden="true">▾</span></button>
+      <h1><a href="index.html" class="homelink">Bands for Days</a> <span class="sub">Study set</span></h1>
+      <button class="subjbtn" id="subjbtn" aria-label="Change subject"><span id="subjname">Business Studies</span> <span aria-hidden="true">▾</span></button>
     </div>
-    <nav class="mainnav" id="mainnav" aria-label="Sections">
-      <button data-section="home">Home</button>
-      <button data-section="study">Cards</button>
-      <button data-section="practice">Ratios</button>
-      <button data-section="papers">Past papers</button>
-      <button data-section="guide">Exam guide</button>
-      <button data-section="progress">Progress</button>
-      <button data-section="library">Library</button>
-      <a class="navlink" id="reslink" href="resources.html">Resources</a>
-    </nav>
     <div class="subbar" id="subbar">
       <div class="tabs" role="tablist" aria-label="Study mode">
         <button class="tab" role="tab" data-mode="flash" aria-selected="true">Flashcards</button>
@@ -413,6 +418,15 @@ body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{vis
     </div>
   </div>
 </header>
+<nav class="mainnav" id="mainnav" aria-label="Sections">
+  <a class="navbrand" href="index.html"><svg viewBox="0 0 32 32" aria-hidden="true"><rect x="2" y="2" width="28" height="28" rx="7" fill="#1F6B45"/><rect x="7.5" y="18" width="5" height="7" rx="1.5" fill="#F6F2EA"/><rect x="13.5" y="13" width="5" height="12" rx="1.5" fill="#F6F2EA"/><rect x="19.5" y="7" width="5" height="18" rx="1.5" fill="#F2C14E"/></svg>Bands for Days</a>
+  <button data-section="today"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg><span>Today</span></button>
+  <button data-section="subjects"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5V5.5M8 7h8"/></svg><span>Subjects</span></button>
+  <button data-section="practice"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3l7 7-10 10H4v-7z"/><path d="M11 6l7 7"/></svg><span>Practice</span></button>
+  <button data-section="library"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg><span>Library</span></button>
+  <button data-section="progress"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg><span>Progress</span></button>
+  <div class="navfoot"><a href="exams.html">HSC exams</a><a href="resources.html">Resources</a><a href="index.html">About</a></div>
+</nav>
 
 <main><div class="wrap">
   <div class="strip" id="strip"></div>
@@ -423,7 +437,6 @@ body.subj-loading #view,body.subj-loading #progress,body.subj-loading #strip{vis
   <footer id="foot">Keyboard: <kbd>Space</kbd> flip · <kbd>←</kbd> still learning · <kbd>→</kbd> got it · <kbd>1</kbd>–<kbd>4</kbd> pick an answer · <kbd>Enter</kbd> next · <kbd>Ctrl</kbd>+<kbd>Enter</kbd> check or mark a typed answer · <kbd>S</kbd> star a card.</footer>
 </div></main>
 <canvas id="confetti" hidden></canvas>
-<dialog id="subjdlg" aria-labelledby="subjdlgh"><div class="dlghead"><h2 id="subjdlgh">Choose a subject</h2><button class="ghost" id="subjclose" aria-label="Close">✕</button></div><p class="small">Your progress, streak and XP are kept for every subject. Switch whenever you like.</p><div class="subjgrid" id="subjgrid"></div></dialog>
 
 <script>
 const CARDS = [
@@ -4429,30 +4442,38 @@ function toast(msg, kind){ let t=$('.toast'); if(t)t.remove(); t=el('div',{class
 function confetti(){
   if(REDUCED) return;
   const cv=$('#confetti'); cv.hidden=false; cv.width=innerWidth; cv.height=innerHeight; const ctx=cv.getContext('2d');
-  const cols=['#1F6F8B','#2E7D4F','#D4A017','#C2410C','#5FB3D1'];
+  const cols=['#1F6B45','#2E7D4F','#D4A017','#C2410C','#5FB3D1'];
   const ps=Array.from({length:90},()=>({x:innerWidth/2+(Math.random()-.5)*200,y:innerHeight*0.45,vx:(Math.random()-.5)*14,vy:-Math.random()*14-4,r:4+Math.random()*5,c:pickRandom(cols),a:Math.random()*6}));
   let t0=null; function frame(ts){ if(!t0)t0=ts; const dt=(ts-t0)/1000; ctx.clearRect(0,0,cv.width,cv.height); for(const p of ps){ p.x+=p.vx; p.y+=p.vy; p.vy+=0.5; p.a+=0.1; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.a); ctx.fillStyle=p.c; ctx.fillRect(-p.r,-p.r/2,p.r*2,p.r); ctx.restore(); } if(dt<1.6) requestAnimationFrame(frame); else { ctx.clearRect(0,0,cv.width,cv.height); cv.hidden=true; } }
   requestAnimationFrame(frame);
 }
 
 // ---------- header ----------
-const SECTION_OF={home:'home',flash:'study',learn:'study',test:'study',match:'study',ratio:'practice',papers:'papers',guide:'guide',stats:'progress',today:'home',diag:'home',mistakes:'progress',library:'library',editset:'library'};
-const SECTION_DEFAULT={home:'home',study:'flash',practice:'ratio',papers:'papers',guide:'guide',progress:'stats',library:'library'};
-function goMode(m){ S.mode=m; if(SECTION_OF[m]==='study') S.lastStudy=m; save(); render(); window.scrollTo({top:0}); }
+// Five sections. A mode belongs to one section; 'test' belongs to Practice when it is the exam-style test.
+const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress'};
+function sectionOf(m){ if(m==='test'&&isBiz()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
+const SECTION_DEFAULT={today:'home',subjects:'subjects',practice:'practice',library:'library',progress:'stats'};
+// Every mode has an address, so links can be shared and the Back button works.
+const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes'};
+function hashFor(m){ if(m==='test') return (isBiz()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
+function modeOfHash(h){ h=String(h||'').replace(/^#/,''); if(!h||h.startsWith('import=')) return null; const [head,...rest]=h.split('/'); if(head==='test-cards') return {mode:'test',kind:'cards'}; if(head==='test') return {mode:'test',kind:'exam'}; if(head==='papers') return {mode:'papers',paper:rest[0]||null,item:rest[1]||null}; const m=Object.keys(HASH_OF).find(k=>HASH_OF[k]==='#'+head); return m?{mode:m}:null; }
+function applyHash(h){ const x=modeOfHash(h); if(!x) return false; S.mode=x.mode; if(x.kind) S.testKind=x.kind; if(x.mode==='papers'){ S.pp.paper=x.paper&&PBY[x.paper]?x.paper:null; S.pp.item=S.pp.paper&&x.item?x.item:null; } return true; }
+let NAV_POP=false;
+function pushMode(){ if(NAV_POP) return; const h=hashFor(S.mode); if(location.hash!==h) history.pushState({mode:S.mode,paper:S.pp.paper,item:S.pp.item}, '', location.pathname+location.search+h); }
+window.addEventListener('popstate',()=>{ NAV_POP=true; try{ if(applyHash(location.hash)){ save(); render(); window.scrollTo({top:0}); } } finally{ NAV_POP=false; } });
+function goMode(m){ S.mode=m; if(['flash','learn','match'].includes(m)||(m==='test'&&sectionOf(m)==='subjects')) S.lastStudy=m; save(); pushMode(); render(); window.scrollTo({top:0}); }
 function renderDecks(){
-  const sec=SECTION_OF[S.mode]||'home';
-  document.querySelectorAll('#mainnav button').forEach(b=>{ b.setAttribute('aria-current', b.dataset.section===sec?'page':'false'); b.onclick=()=>goMode(b.dataset.section==='study'?(S.lastStudy||'flash'):SECTION_DEFAULT[b.dataset.section]); });
-  for(const b of document.querySelectorAll('#mainnav button')){ if(['practice','guide'].includes(b.dataset.section)) b.hidden=!isBiz(); if(b.dataset.section==='papers') b.hidden=!hasExams(); }
-  { const rl=$('#reslink'); if(rl) rl.style.display=isBiz()?'':'none'; }
+  const sec=sectionOf(S.mode);
+  document.querySelectorAll('#mainnav button').forEach(b=>{ b.setAttribute('aria-current', b.dataset.section===sec?'page':'false'); b.onclick=()=>goMode(SECTION_DEFAULT[b.dataset.section]); });
   $('#subjbtn').onclick=openSubjects;
-  $('#subbar').hidden=(sec!=='study');
+  $('#subbar').hidden=!(['flash','learn','match'].includes(S.mode)||(S.mode==='test'&&sec==='subjects'));
   const box=$('#decks'); box.innerHTML='';
   for(const d of decks()){
     const n=(d.pool?d.pool():CARDS).filter(d.test).length;
     box.append(el('button',{class:'chip'+(d.focus?' focus':'')+(d.user?' user':''),'aria-pressed':String(S.deck===d.id),onclick:()=>{S.deck=d.id; save(); render();}}, d.name, el('span',{class:'n'}, String(n))));
   }
   box.append(el('button',{class:'chip lib',onclick:()=>goMode('library')}, '＋ Your sets'));
-  document.querySelectorAll('.tab').forEach(t=>{ t.setAttribute('aria-selected', String(t.dataset.mode===S.mode)); t.onclick=()=>goMode(t.dataset.mode); });
+  document.querySelectorAll('.tab').forEach(t=>{ t.setAttribute('aria-selected', String(t.dataset.mode===S.mode)); t.onclick=()=>{ if(t.dataset.mode==='test'){ S.testKind='cards'; T=null; } goMode(t.dataset.mode); }; });
 }
 function renderStrip(){
   const s=$('#strip'); s.innerHTML='';
@@ -4468,7 +4489,7 @@ function renderStrip(){
 const confirmReset={pending:false};
 function renderProgress(){
   const cards=deckCards(); const p=$('#progress'); p.innerHTML='';
-  if(S.mode==='stats'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='diag'||S.mode==='mistakes'||S.mode==='library'||S.mode==='editset'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
+  if(S.mode==='stats'||S.mode==='subjects'||S.mode==='practice'||S.mode==='ratio'||S.mode==='papers'||S.mode==='home'||S.mode==='guide'||S.mode==='today'||S.mode==='diag'||S.mode==='mistakes'||S.mode==='library'||S.mode==='editset'||(S.mode==='test'&&(S.testKind||'exam')!=='cards')){ return; }
   const m=cards.filter(mastered).length, k=cards.filter(c=>status(c)==='k').length-m, l=cards.filter(c=>status(c)==='l').length, u=cards.length-k-l-m;
   const bar=el('div',{class:'bar',role:'img','aria-label':`${m} mastered, ${k} got it, ${l} still learning, ${u} not seen`});
   bar.append(el('span',{class:'m',style:`width:${100*m/cards.length}%`}), el('span',{class:'k',style:`width:${100*k/cards.length}%`}), el('span',{class:'l',style:`width:${100*l/cards.length}%`}));
@@ -4805,11 +4826,12 @@ function applySubject(id){
   S.cfg=S.cfgBy[s.id]||(S.cfgBy[s.id]=defaultCfg(s)); setPapers();
   if(!decks().some(d=>d.id===S.deck)) S.deck='all';
   if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home';
+  document.body.dataset.subj=s.id;
   if(MF) MF.topic='all';
   F={list:[], i:0, flipped:false, key:'', typed:''}; L=null; T=null; M=null; TS=null; XT=null;
   invalidateCards();
   const n=$('#subjname'); if(n) n.textContent=s.name;
-  document.title=(isBiz()?'Business Studies':s.name)+' · Band Six';
+  document.title=(isBiz()?'Business Studies':s.name)+' · Bands for Days';
   return true;
 }
 async function loadSubject(id){
@@ -4820,16 +4842,55 @@ async function loadSubject(id){
 async function switchSubject(id){
   if(id===SUBJ.id){ closeSubjects(); return; }
   document.body.classList.add('subj-loading');
-  try{ await loadSubject(id); applySubject(id); save(); closeSubjects(); render(); window.scrollTo({top:0}); announce(SUBJ.name+' loaded'); }
+  try{ await loadSubject(id); applySubject(id); save(); history.replaceState(history.state,'',location.pathname+'?s='+id+location.hash); render(); window.scrollTo({top:0}); announce(SUBJ.name+' loaded'); }
   catch(e){ toast('Could not load '+(SUBJ_BY[id]?SUBJ_BY[id].name:'that subject')+'. Check your connection and try again.'); }
   finally{ document.body.classList.remove('subj-loading'); }
 }
-function openSubjects(){
-  const g=$('#subjgrid'); g.innerHTML='';
-  for(const s of SUBJECTS){ g.append(el('button',{'aria-current':String(s.id===SUBJ.id),disabled:s.soon?'':null,onclick:()=>switchSubject(s.id)}, el('b',{},s.icon+' '+s.name), el('span',{}, s.soon?'Coming soon':`${s.n} cards`+(s.id==='business'?' · past papers · ratios':s.papers?' · past papers marked by AI':'')))); }
-  const d=$('#subjdlg'); if(d.showModal) d.showModal(); else d.setAttribute('open','');
+function openSubjects(){ goMode('subjects'); }
+function closeSubjects(){}
+function subjLine(s){ return s.soon?'Coming soon':`${s.n} cards`+(s.id==='business'?` · ${BIZ_PAPERS.length} past papers · ratio drill`:s.papers?` · ${s.np||''} past papers marked by AI`:' · HSC exams to download'); }
+function renderSubjects(){
+  const v=$('#view'); v.innerHTML='';
+  const cards=CARDS.length, learning=CARDS.filter(c=>status(c)==='l').length, unseen=CARDS.filter(c=>status(c)==='u').length, dueN=dueCards().length;
+  const hero=el('div',{class:'panel hero'}, el('div',{class:'lab'},'Current subject'), el('h2',{}, SUBJ.icon+' '+SUBJ.name), el('p',{class:'small'}, subjLine(SUBJ)+'. Your progress, streak and XP are kept for every subject.'));
+  v.append(hero);
+  const acts=el('div',{class:'actions'});
+  acts.append(action('Flashcards', dueN?`${dueN} due for review`:learning?`${learning} cards still learning`:unseen?`${unseen} cards not seen yet`:`All ${cards} cards seen`, ()=>{ S.filter=dueN?'due':learning?'l':'all'; S.deck='all'; goMode('flash'); }, 'primary'));
+  acts.append(action('Learn', 'Multiple choice or typed, 20 at a time, weakest first', ()=>goMode('learn')));
+  acts.append(action('Test', 'Questions one at a time, then mark yourself', ()=>{ S.testKind='cards'; T=null; goMode('test'); }));
+  acts.append(action('Match', '5 pairs against the clock', ()=>goMode('match')));
+  v.append(el('div',{class:'panel'}, el('h2',{},'Study '+SUBJ.short), acts));
+  const tp=el('div',{class:'panel'}, el('h2',{},'Topics'));
+  for(const r of topicRows()) tp.append(deckBar(r));
+  v.append(tp);
+  const g=el('div',{class:'subjgrid'});
+  for(const x of SUBJECTS){ g.append(el('button',{'aria-current':String(x.id===SUBJ.id),disabled:x.soon?'':null,onclick:()=>switchSubject(x.id)}, el('b',{}, el('span',{class:'dot',style:`--subj:${SUBJ_COLOUR[x.id]||'var(--accent)'}`}), x.icon+' '+x.name), el('span',{}, subjLine(x)))); }
+  v.append(el('div',{class:'panel'}, el('h2',{},'All subjects'), g, el('p',{class:'small'},'Links keep the subject: share app.html?s='+SUBJ.id+' and it opens here.')));
 }
-function closeSubjects(){ const d=$('#subjdlg'); if(d&&d.open){ if(d.close) d.close(); else d.removeAttribute('open'); } }
+const SUBJ_COLOUR={business:'#1F6B45',english:'#8B3A62','maths-std2':'#2F5FA8','maths-adv':'#1F4E8C',biology:'#3B7D3A',chemistry:'#B05A1A',physics:'#4B5BB0','modern-history':'#8A5A1F','ancient-history':'#9A4A2A',legal:'#5E4B8B'};
+function renderPractice(){
+  const v=$('#view'); v.innerHTML='';
+  const acts=el('div',{class:'actions'});
+  if(isBiz()){
+    let pq=0,pn=0; for(const p of PAPERS){ pq+=pItems(p).filter(x=>itemStatus(p,x.it).done).length; pn+=pItems(p).length; }
+    const lastPaper=S.pp&&S.pp.paper&&PBY[S.pp.paper];
+    acts.append(action('Past papers', lastPaper?`Continue ${lastPaper.title}`:`${PAPERS.length} papers · ${pn} questions · ${pq} answered`, ()=>{ if(!lastPaper){ S.pp.paper=null; S.pp.item=null; } goMode('papers'); }, 'primary'));
+    acts.append(action('Exam-style test', 'Real HSC questions by topic, marked like the exam', ()=>{ S.testKind='exam'; XT=null; goMode('test'); }));
+    acts.append(action('Ratio drill', 'All 7 ratios with exam-style figures and interpretation', ()=>goMode('ratio')));
+    acts.append(action('Exam guide', 'Exam structure, what each band looks like, the 35 NESA key words', ()=>goMode('guide')));
+    acts.append(action('Find a question', 'Search every HSC and Riverview question by words, topic, year or verb', ()=>{ S.pp.paper=null; S.pp.item=null; goMode('papers'); }));
+  } else if(hasExams()){
+    const lastPaper=S.pp&&S.pp.paper&&PBY[S.pp.paper];
+    acts.append(action('Past papers', lastPaper?`Continue ${lastPaper.title}`:(SUBJ.np?`${SUBJ.np} HSC papers, typed answers marked by AI`:'HSC exams and marking guidelines to download'), ()=>goMode('papers'), 'primary'));
+  }
+  acts.append(action('Test on cards', 'Questions one at a time, typed or on paper, then mark yourself', ()=>{ S.testKind='cards'; T=null; goMode('test'); }));
+  acts.append(action('Today’s session', sessLine(), ()=>{ TS=null; goMode('today'); }));
+  { const n=mistakeQs().length+mistakeCards().length; acts.append(action('Mistake notebook', n?`${n} to fix`:'Empty so far. Anything you miss lands here.', ()=>goMode('mistakes'))); }
+  v.append(el('div',{class:'panel'}, el('h2',{},'Practice '+SUBJ.short), acts));
+  const links=el('div',{class:'row'}, el('a',{class:'btn',href:'exams.html'+(isBiz()?'':'#'+SUBJ.id)},'HSC exams and marking guidelines (PDF)'));
+  if(isBiz()) links.append(el('a',{class:'btn',href:'resources.html'},'Resources: Business trial papers, exemplars and notes'));
+  v.append(el('div',{class:'panel'}, el('h2',{},'Downloads'), links));
+}
 function topicStrength(t){
   const cs=CARDS.filter(c=>c.t===t); let seen=0, ok=0;
   for(const c of cs){ const r=rvOf(c); for(const h of ((r&&r.h)||[]).slice(-3)){ seen++; ok+=h[1]?1:0; } }
@@ -4895,17 +4956,17 @@ function renderDiagDone(v){
   box.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>{ DG=null; TS={topic:weak, started:false}; goMode('today'); }}, `Start today’s session: ${TOPIC_NAME[weak]||weak}`), el('button',{class:'ghost',onclick:()=>{ DG=null; goMode('home'); }},'Back to Home')));
   v.append(box);
 }
-function mCell(v, tip){ return el('td',{class:v==null?'none':v<50?'lo':v<80?'mid':'hi', title:tip}, v==null?'–':v+'%'); }
+function mCell(v, tip){ return el('td',{class:v==null?'none':v<50?'lo':v<80?'mid':'hi', title:tip}, v==null?el('span',{class:'na'},'Not assessed'):v+'%'); }
 function masteryMap(){
   const biz=isBiz(); const t=el('table',{class:'mastery'});
   t.append(el('tr',{}, el('th',{class:'tp'},'Topic'), el('th',{},'Recall'), el('th',{},'Long-term'), el('th',{},'Applying'), el('th',{},'Exam writing')));
   for(const d of DECKS.filter(d=>d.topic)){
     const cs=CARDS.filter(d.test); if(!cs.length) continue; const tk=cs[0].t;
-    const recall=Math.round(100*cs.filter(c=>status(c)==='k').length/cs.length), lt=Math.round(100*cs.filter(mastered).length/cs.length);
+    const seen=cs.filter(c=>status(c)!=='u').length, kn=cs.filter(c=>status(c)==='k').length, ms=cs.filter(mastered).length; const recall=seen?Math.round(100*kn/cs.length):null, lt=seen?Math.round(100*ms/cs.length):null;
     let mo=0,mn=0,wo=0,wn=0;
     if(biz) for(const r of qIndex()){ if(r.topic!==tk) continue; const x=rec(r.p,r.it,r.part); if(!x||typeof x.m!=='number') continue; if(r.type==='mc'){ mn++; mo+=x.m>0?1:0; } else { wn+=r.max; wo+=x.m; } }
     t.append(el('tr',{}, el('td',{class:'tp'}, el('button',{onclick:()=>{ S.deck=d.id; goMode('learn'); },title:'Learn this topic'}, d.name)),
-      mCell(recall,'Cards you got right last time'), mCell(lt,'Cards right on 3 or more separate days'),
+      mCell(recall,seen?`${kn} of ${cs.length} cards right last time (${seen} seen)`:'No cards from this topic seen yet'), mCell(lt,seen?`${ms} of ${cs.length} cards right on 3 or more separate days`:'No cards from this topic seen yet'),
       mCell(mn?Math.round(100*mo/mn):null, biz?(mn?`${mo} of ${mn} real HSC multiple-choice questions right`:'No HSC multiple choice answered yet'):'Past papers for this subject are coming'),
       mCell(wn?Math.round(100*wo/wn):null, biz?(wn?`${wo} of ${wn} marks on written answers`:'No written answers marked yet'):'Past papers for this subject are coming')));
   }
@@ -5154,7 +5215,8 @@ function renderStats(){
   v.append(retentionPanel());
   const dk=el('div',{class:'panel'}, el('h2',{},'Progress by topic'));
   for(const d of DECKS.slice(1)){ const cs=CARDS.filter(d.test); const k=cs.filter(c=>status(c)==='k').length, m=cs.filter(mastered).length, l=cs.filter(c=>status(c)==='l').length; const pct=Math.round(100*k/cs.length);
-    dk.append(el('div',{class:'deckrow'}, el('span',{},d.name), el('div',{class:'bar'}, el('span',{class:'m',style:`width:${100*m/cs.length}%`}), el('span',{class:'k',style:`width:${100*(k-m)/cs.length}%`}), el('span',{class:'l',style:`width:${100*l/cs.length}%`})), el('span',{class:'pct'},pct+'%'))); }
+    dk.append(el('div',{class:'deckrow'}, el('span',{},d.name), el('div',{class:'bar'}, el('span',{class:'m',style:`width:${100*m/cs.length}%`}), el('span',{class:'k',style:`width:${100*(k-m)/cs.length}%`}), el('span',{class:'l',style:`width:${100*l/cs.length}%`})), el('span',{class:'pct',title:`${k} of ${cs.length} cards got it`}, k+l?pct+'%':'Not assessed'))); }
+  dk.append(el('p',{class:'small'},'A percentage is the share of a topic’s cards you got right last time. Nothing is counted until you have seen a card.'));
   v.append(dk);
   const sp=el('div',{class:'panel'}, el('h2',{},'Focus sprint'), el('p',{class:'small'},'Ten minutes on, then a short break. Good for keeping attention fresh.'));
   const srow=el('div',{class:'sprint'});
@@ -5435,8 +5497,8 @@ function renderPapers(){
   const list=pItems(p); const idx=list.findIndex(x=>x.it.id===S.pp.item); if(idx<0){ S.pp.item=null; return renderPaper(v,p); }
   renderItem(v,p,list,idx);
 }
-function openPaper(id){ S.pp.paper=id; S.pp.item=null; save(); prender(); window.scrollTo({top:0}); }
-function openItem(id){ S.pp.item=id; save(); prender(); window.scrollTo({top:0}); }
+function openPaper(id){ S.pp.paper=id; S.pp.item=null; save(); pushMode(); prender(); window.scrollTo({top:0}); }
+function openItem(id){ S.pp.item=id; save(); pushMode(); prender(); window.scrollTo({top:0}); }
 const QVERB=/^(outline|explain|describe|discuss|analyse|evaluate|assess|identify|define|compare|distinguish|justify|recommend|propose|account for|examine|calculate|predict|interpret|summarise|clarify|classify|construct|contrast|demonstrate|extract|list|state|to what extent|how|why|what|which)\b/i;
 const TOPIC_WORDS={Operations:/operation|production|quality|supply chain|inventory|outsourc|performance objective|transformation|input|output|lean|technolog|global sourcing/g, Marketing:/marketing|brand|pric|promot|customer|segment|product life|distribution|place|advertis|sponsor|niche|mass market|e-marketing|global market/g, Finance:/financ|ratio|cash flow|profit|budget|debt|equity|liquidity|solvency|gearing|working capital|balance sheet|income statement|expense|revenue|capital|hedging|derivative|exchange rate/g, HR:/human resource|employ|staff|training|recruit|workplace|industrial|union|dispute|separation|remuneration|award|enterprise agreement|outsourcing of hr|work\/life|motivation|redundanc/g};
 function coarseTopic(raw,text){ const r=String(raw||'').toLowerCase(); if(/^operations/.test(r)) return 'Operations'; if(/^marketing/.test(r)) return 'Marketing'; if(/^finance/.test(r)) return 'Finance'; if(/^(human resources?|hr)/.test(r)) return 'HR'; const t=(r+' '+String(text||'')).toLowerCase(); let best='Other', bn=0; for(const [k,re] of Object.entries(TOPIC_WORDS)){ const n=(t.match(re)||[]).length; if(n>bn){ bn=n; best=k; } } return best; }
@@ -5585,7 +5647,7 @@ function planPanel(days){
     if(days>=0&&left===0){ parts.push('Exam day. A light flick through ★ Exam answers and ★ Key words (15 min), then stop. In reading time, choose your Section IV question first.'); }
     else {
       let m=mins; const a=Math.max(10,Math.round(mins*0.4)); m-=a; const wk=rows[i%Math.min(2,rows.length)]||weak;
-      parts.push(`${a} min · Learn ${wk.d.name} (${wk.pct}% got it${i===0&&due?`, ${due} card${due===1?'':'s'} due`:''}).`);
+      parts.push(`${a} min · Learn ${wk.d.name} (${pctLabel(wk)}${i===0&&due?`, ${due} card${due===1?'':'s'} due`:''}).`);
       if(fin&&fin.pct<75&&m>=10){ const b=Math.min(15,m); m-=b; parts.push(`${b} min · Ratio drill until the 7 ratios are automatic.`); }
       const paper=undone.length?undone[i%undone.length]:null;
       if(m>=20){ if(left>=0&&left<=2&&m>=40&&paper) parts.push(`${m} min · Timed Section II from ${paper.title} (or the report), marked against the criteria.`); else if(paper) parts.push(`${m} min · ${paper.title} Q21 to Q24, marked. Rewrite any part under 60%.`); else parts.push(`${m} min · Test mode on ${weak2.d.name}, typed answers.`); }
@@ -5596,7 +5658,8 @@ function planPanel(days){
   }
   return panel;
 }
-function topicRows(){ const rows=[]; for(const d of DECKS.filter(d=>d.topic)){ const cs=CARDS.filter(d.test); const k=cs.filter(c=>status(c)==='k').length, m=cs.filter(mastered).length, l=cs.filter(c=>status(c)==='l').length; rows.push({d,cs,k,m,l,pct:Math.round(100*k/cs.length)}); } return rows; }
+function topicRows(){ const rows=[]; for(const d of DECKS.filter(d=>d.topic)){ const cs=CARDS.filter(d.test); const k=cs.filter(c=>status(c)==='k').length, m=cs.filter(mastered).length, l=cs.filter(c=>status(c)==='l').length; rows.push({d,cs,k,m,l,seen:k+l,pct:Math.round(100*k/cs.length)}); } return rows; }
+function pctLabel(r){ return r.seen?`${r.pct}% got it, ${r.seen} of ${r.cs.length} seen`:'not assessed yet'; }
 function deckBar(r){ return el('div',{class:'deckrow'}, el('span',{},r.d.name), el('div',{class:'bar'}, el('span',{class:'m',style:`width:${100*r.m/r.cs.length}%`}), el('span',{class:'k',style:`width:${100*(r.k-r.m)/r.cs.length}%`}), el('span',{class:'l',style:`width:${100*r.l/r.cs.length}%`})), el('span',{class:'pct'},r.pct+'%')); }
 function action(title, sub, on, cls){ return el('button',{class:'act'+(cls?' '+cls:''),onclick:on}, el('b',{},title), el('span',{},sub)); }
 function calDays(d){ const a=new Date(d.getFullYear(),d.getMonth(),d.getDate()), n=new Date(), b=new Date(n.getFullYear(),n.getMonth(),n.getDate()); return Math.round((a-b)/86400000); }
@@ -5616,7 +5679,7 @@ function renderHomeSubject(){
   acts.append(action('Due for review', dueN?`${dueN} card${dueN===1?'':'s'} due today`:'Nothing due yet. Cards come back 1, 3 then 7 days after you get them right.', ()=>{ S.filter=dueN?'due':'all'; S.deck='all'; goMode('flash'); }));
   acts.append(action('Flashcards', learning.length?`${learning.length} cards still learning`:unseen.length?`${unseen.length} cards not seen yet`:`All ${CARDS.length} cards seen`, ()=>{ S.filter=learning.length?'l':'all'; S.deck='all'; goMode('flash'); }));
   const rows=topicRows(); const weak=rows.slice().sort((a,b)=>a.pct-b.pct)[0];
-  if(weak) acts.append(action('Learn', `Weakest topic first: ${weak.d.full||weak.d.name} (${weak.pct}% got it)`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
+  if(weak) acts.append(action('Learn', `Weakest topic first: ${weak.d.full||weak.d.name} (${pctLabel(weak)})`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
   acts.append(action('Test', 'Questions one at a time, typed or on paper, then mark yourself', ()=>{ goMode('test'); }));
   acts.append(action('Match', '5 pairs against the clock', ()=>goMode('match')));
   const mcN=mistakeCards().length;
@@ -5631,7 +5694,7 @@ function renderHomeSubject(){
   v.append(prog);
   if(has&&days>=0&&rows.length){ const mins=Number(S.cfg.minsPerDay)||45; const sorted=rows.slice().sort((a,b)=>a.pct-b.pct); const panel=el('div',{class:'panel'}, el('h2',{},'Your plan'), el('p',{class:'small'},`${mins} minutes a day (change it in Settings), weakest topic first.`)); const names=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     for(let i=0;i<Math.min(4,days+1);i++){ const d=new Date(); d.setDate(d.getDate()+i); const label=i===0?'Today':i===1?'Tomorrow':names[d.getDay()]; const wk=sorted[i%Math.min(2,sorted.length)]; const a=Math.max(10,Math.round(mins*0.5)), b=mins-a;
-      panel.append(el('div',{class:'planrow'}, el('b',{},label), el('span',{}, days-i===0?'Exam day. A light flick through your starred cards and ★ Key words, then stop.':`${a} min · Learn ${wk.d.full||wk.d.name} (${wk.pct}% got it). ${b} min · Test mode on everything due, typed answers.`))); }
+      panel.append(el('div',{class:'planrow'}, el('b',{},label), el('span',{}, days-i===0?'Exam day. A light flick through your starred cards and ★ Key words, then stop.':`${a} min · Learn ${wk.d.full||wk.d.name} (${pctLabel(wk)}). ${b} min · Test mode on everything due, typed answers.`))); }
     v.append(panel); }
 }
 function renderHome(){
@@ -5656,7 +5719,7 @@ function renderHome(){
   acts.append(action('Due for review', dueN?`${dueN} card${dueN===1?'':'s'} due today`:'Nothing due yet. Cards come back 1, 3 then 7 days after you get them right.', ()=>{ S.filter=dueN?'due':'all'; S.deck='all'; goMode('flash'); }));
   acts.append(action('Flashcards', learning.length?`${learning.length} cards still learning`:unseen.length?`${unseen.length} cards not seen yet`:`All ${CARDS.length} cards seen`, ()=>{ S.filter=learning.length?'l':'all'; S.deck='all'; goMode('flash'); }));
   const weak=topicRows().sort((a,b)=>a.pct-b.pct)[0];
-  acts.append(action('Learn', `Weakest topic first: ${weak.d.name} (${weak.pct}% got it)`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
+  acts.append(action('Learn', `Weakest topic first: ${weak.d.name} (${pctLabel(weak)})`, ()=>{ S.deck=weak.d.id; goMode('learn'); }));
   acts.append(action('Ratio drill', 'All 7 ratios with exam-style figures and interpretation', ()=>goMode('ratio')));
   acts.append(action('Match', '5 pairs against the clock', ()=>goMode('match')));
   { const ns=Object.keys(S.sets).length, nst=starredCards().length; acts.append(action('Library', ns||nst?`${ns} set${ns===1?'':'s'} of your own · ${nst} starred card${nst===1?'':'s'}`:'Make your own sets, import from Quizlet, star hard cards', ()=>goMode('library'))); }
@@ -5747,7 +5810,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); }
+function render(){ if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag})[S.mode](); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
@@ -6256,13 +6319,12 @@ function authForm(){
 function renderAuthPanels(){ if(S.mode==='stats'){ try{ renderStats(); }catch(e){} } }
 
 if(location.hash==='#library'){ S.mode='library'; }
-if(location.hash==='#papers'){ S.mode='papers'; } else if(location.hash==='#ratio'){ S.mode='ratio'; } else if(location.hash==='#stats'){ S.mode='stats'; } else if(location.hash==='#guide'){ S.mode='guide'; } else if(location.hash==='#today'){ S.mode='today'; } else if(location.hash==='#mistakes'){ S.mode='mistakes'; } else if(location.hash==='#test'){ S.mode='test'; S.testKind='exam'; }
+if(!applyHash(location.hash)&&['subjects','practice'].includes(S.mode)) S.mode='home';
 bizSnapshot();
-$('#subjclose').onclick=closeSubjects;
-$('#subjdlg').addEventListener('click',e=>{ if(e.target.id==='subjdlg') closeSubjects(); });
 { if(S.subj) S.cfgBy[S.subj]=S.cfg; let want=S.subj; const qs=new URLSearchParams(location.search).get('s'); if(qs&&SUBJ_BY[qs]&&!SUBJ_BY[qs].soon) want=qs;
   S.subj='business'; S.cfg=S.cfgBy.business; applySubject('business');
   if(want&&want!=='business'){ document.body.classList.add('subj-loading'); loadSubject(want).then(()=>{ applySubject(want); save(); render(); }).catch(()=>{ toast('Could not load '+SUBJ_BY[want].name+', so Business Studies is open. Try again from the subject button.'); }).finally(()=>document.body.classList.remove('subj-loading')); } }
+if(!new URLSearchParams(location.search).get('s')&&S.subj&&S.subj!=='business') history.replaceState(history.state,'',location.pathname+'?s='+S.subj+location.hash);
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
 </script>
