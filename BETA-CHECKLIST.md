@@ -14,6 +14,14 @@ Blueprint section 20, narrowed to what exists after phase B (no billing yet). Ti
 - [ ] Private browsing or full storage shows "Not saving in this browser" instead of failing silently.
 - [ ] A second student cannot see the first student's progress (try the leaderboard and a shared link): access isolation holds.
 
+## Install and offline (phase D)
+
+- [ ] Android or desktop Chrome: the "Install Bands for Days" card appears on Today; Install opens the app from the home screen in its own window.
+- [ ] iPhone: the card explains Share > Add to Home Screen; after adding, the app opens full screen with the green status bar.
+- [ ] (auto) Subjects > Offline: Save a subject, turn on flight mode, open the app: cards, Learn, Test and typed papers work; an unsaved subject says it is not saved on this device.
+- [ ] (auto) Offline, the Mark button says marking needs internet and the draft is kept; back online, marking works.
+- [ ] After a deploy, an open tab shows "A new version is ready. Reload" and reloads to the new version.
+
 ## Marking
 
 - [ ] (auto) A marked answer shows: estimated mark with "Not a NESA result", the criteria row reached, quotes from the student's own words, what is missing for the next row, one next action, and a low-confidence notice when the model is unsure.
