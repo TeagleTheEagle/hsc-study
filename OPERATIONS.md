@@ -46,6 +46,7 @@ The progress doc has a version (`v`, now 5). The app upgrades older docs on load
 - `bash tools/worker-test/run.sh`: the Worker with a stub Anthropic SDK: first mark, repeat not counted, ledger, failed job not counted, too-short answer, limits.
 - `node tools/check_phase_d.mjs` (Playwright, starts its own server on 8767 and stops it mid-run): worker installs, app and a saved subject load with the server down, marking refused offline with the draft kept, install card, new-version reload.
 - `node tools/check_phase_e1.mjs` (Playwright): the Marks report with seeded attempts (topics weakest first, Not assessed, rewrites attempt by attempt, four-week trend, text export, routing).
+- `node tools/check_phase_e2.mjs` (Playwright, fake Supabase): class leaderboard, class view, invite link, sign-up pre-fill, no-class-code case.
 - `python3 tools/counts.py --check` confirms the landing numbers match the data files.
 - `python3 tools/sw_version.py` has been run (git diff should show sw.js when app.html changed).
 - Open the PR preview build on a phone and a desktop.
@@ -75,6 +76,10 @@ Rough cost per mark: input tokens x $5 per million plus output tokens x $25 per 
 ## Marking benchmark (phase B)
 
 `tools/bench/business.json` holds 46 cases built from the sample answers in the Business question bank (`node tools/make_bench.mjs` regenerates it) plus two handwritten partial answers in `handwritten.json`. `node tools/marking_bench.mjs` runs them through the same prompt the site uses and writes `tools/bench/last-run.json` with the agreement rate. It needs `ANTHROPIC_API_KEY` in the terminal environment (never in a file). Release rule: agreement at or above 0.85 before changing the prompt on `main`; run it on the PC when the prompt or the model changes.
+
+## Classes (phase E2)
+
+Run `supabase-classes.sql` once. It adds `class_code` to `public.scores`, filled by a trigger from the code each student typed at sign-up (`auth.users.raw_user_meta_data`), and back-fills existing rows. To see the classes: `select class_code, count(*) from public.scores group by 1;`. A new class is just a new code: add it to `private.class_codes` (see supabase-hardening.sql) and give classmates the invite link from the class view, which pre-fills the code at sign-up. Students only ever see nicknames and scores, never emails.
 
 ## Feedback table (phase B)
 

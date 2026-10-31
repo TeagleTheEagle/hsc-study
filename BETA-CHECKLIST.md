@@ -35,6 +35,11 @@ Blueprint section 20, narrowed to what exists after phase B (no billing yet). Ti
 
 - [ ] Progress > Marks report: topics weakest first, untried topics say Not assessed, a rewritten answer shows every attempt, Copy as text pastes a readable summary.
 
+## Classes (phase E2)
+
+- [ ] `supabase-classes.sql` has been run; Stats shows My class / Everyone and the class view lists classmates with the right count.
+- [ ] Copy invite link, open it in a private window: the sign-up form has the class code filled in.
+
 ## Business Studies flow
 
 - [ ] Today page: the plan for the day lists the weakest topic first and shows the days to the exam.

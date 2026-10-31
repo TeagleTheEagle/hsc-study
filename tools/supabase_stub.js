@@ -11,11 +11,12 @@ window.supabase = { createClient() {
         if (op === 'upsert') { db.progress = { user_id: payload.user_id, doc: payload.doc, updated_at: new Date().toISOString() }; db.writes++; return { data: single ? pick(db.progress) : [pick(db.progress)], error: null }; }
         return { data: db.progress ? pick(db.progress) : null, error: null };
       }
-      if (table === 'scores') return { data: db.scores, error: null };
+      if (table === 'scores') return { data: applyF(db.scores), error: null };
       if (table === 'feedback') { if (op === 'insert') db.feedback.push(payload); return { data: null, error: null }; }
       return { data: null, error: null };
     }
-    const b = { select(c) { cols = c || '*'; return b; }, eq() { return b; }, order() { return b; }, limit() { return b; }, maybeSingle() { single = 'maybe'; return b; }, single() { single = 'one'; return b; },
+    const filters = []; let ordering = null; const applyF = rows => { if (!Array.isArray(rows)) return rows; let out = rows.filter(r => filters.every(([k, v]) => r[k] === v)); if (ordering) { const [c, asc] = ordering; out = out.slice().sort((a, b) => (a[c] > b[c] ? 1 : a[c] < b[c] ? -1 : 0) * (asc ? 1 : -1)); } return out; };
+    const b = { select(c) { cols = c || '*'; return b; }, eq(k, v) { filters.push([k, v]); return b; }, order(col, o) { ordering = [col, !(o && o.ascending === false)]; return b; }, limit() { return b; }, maybeSingle() { single = 'maybe'; return b; }, single() { single = 'one'; return b; },
       upsert(p) { op = 'upsert'; payload = p; return b; }, insert(p) { op = 'insert'; payload = p; return b; },
       then(res, rej) { return new Promise(r => setTimeout(r, 5)).then(run).then(res, rej); } };
     return b;

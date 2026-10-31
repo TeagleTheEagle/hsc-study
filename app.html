@@ -296,6 +296,7 @@ button,.act,.mainnav button,.subjgrid button,label.btnlike{touch-action:manipula
 .rep .gain{color:var(--good-deep);font-weight:700} .rep .loss{color:var(--warn);font-weight:700} .rep .steps{font-variant-numeric:tabular-nums;white-space:nowrap}
 .trend{display:grid;gap:.45rem;margin-top:.4rem} .trend .wk{display:grid;grid-template-columns:7.5rem 1fr 7rem;gap:.6rem;align-items:center} .tbar{height:12px;background:var(--surface-2);border-radius:6px;overflow:hidden} .tbar span{display:block;height:100%;background:var(--accent)} .tbar span.cards{background:var(--good)}
 .rep .openq{min-height:36px;padding:.2rem .7rem;font-size:.9rem}
+.lbscope{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.3rem 0 .5rem}
 .savestat{font-size:.85rem;color:var(--muted);padding:.1rem .55rem;border-radius:999px;background:var(--surface-2)} .savestat.ok{color:var(--good-deep);background:var(--good-soft)} .savestat.warn{color:var(--mid);background:var(--mid-soft)} .savestat.bad{color:var(--warn);background:var(--warn-soft)}
 .evid{margin:.2rem 0 .2rem .6rem;padding-left:.6rem;border-left:3px solid var(--good);font-style:italic;color:var(--muted)} .lowconf{background:var(--mid-soft);border-radius:10px;padding:.5rem .8rem;font-size:.95rem} .nextact{background:var(--accent-soft);border-radius:10px;padding:.5rem .8rem} .nextact b{color:var(--accent)}
 .lb{display:grid;gap:.4rem}
@@ -4466,11 +4467,11 @@ function confetti(){
 
 // ---------- header ----------
 // Five sections. A mode belongs to one section; 'test' belongs to Practice when it is the exam-style test.
-const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress',report:'progress'};
+const SECTION_OF={home:'today',today:'today',diag:'today',subjects:'subjects',flash:'subjects',learn:'subjects',match:'subjects',test:'subjects',guide:'practice',practice:'practice',papers:'practice',ratio:'practice',library:'library',editset:'library',stats:'progress',mistakes:'progress',report:'progress',class:'progress'};
 function sectionOf(m){ if(m==='test'&&isBiz()&&(S.testKind||'exam')==='exam') return 'practice'; return SECTION_OF[m]||'today'; }
 const SECTION_DEFAULT={today:'home',subjects:'subjects',practice:'practice',library:'library',progress:'stats'};
 // Every mode has an address, so links can be shared and the Back button works.
-const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes',report:'#report'};
+const HASH_OF={home:'#home',today:'#today',diag:'#check',subjects:'#subjects',flash:'#cards',learn:'#learn',match:'#match',test:'#test',practice:'#practice',papers:'#papers',ratio:'#ratio',guide:'#guide',library:'#library',editset:'#set',stats:'#stats',mistakes:'#mistakes',report:'#report',class:'#class'};
 function hashFor(m){ if(m==='test') return (isBiz()&&(S.testKind||'exam')==='exam')?'#test':'#test-cards'; if(m==='papers'&&S.pp.paper) return '#papers/'+S.pp.paper+(S.pp.item?'/'+S.pp.item:''); return HASH_OF[m]||'#home'; }
 function modeOfHash(h){ h=String(h||'').replace(/^#/,''); if(!h||h.startsWith('import=')) return null; const [head,...rest]=h.split('/'); if(head==='test-cards') return {mode:'test',kind:'cards'}; if(head==='test') return {mode:'test',kind:'exam'}; if(head==='papers') return {mode:'papers',paper:rest[0]||null,item:rest[1]||null}; const m=Object.keys(HASH_OF).find(k=>HASH_OF[k]==='#'+head); return m?{mode:m}:null; }
 function applyHash(h){ const x=modeOfHash(h); if(!x) return false; S.mode=x.mode; if(x.kind) S.testKind=x.kind; if(x.mode==='papers'){ S.pp.paper=x.paper&&PBY[x.paper]?x.paper:null; S.pp.item=S.pp.paper&&x.item?x.item:null; } return true; }
@@ -5289,6 +5290,36 @@ function renderReport(){
   tr.append(tl); v.append(tr);
   v.append(el('p',{class:'small'},'AI marks are estimates against the official criteria, not NESA results. Nothing is shown as a band prediction.'));
 }
+// ---------- phase E2: classes ----------
+const LB={scope:'class'};
+function myClass(){ const c=ME&&ME.classCode; return (sync.state==='synced'&&c&&c!=='*')?c:''; }
+function inviteLink(code){ return location.origin+location.pathname+'?code='+encodeURIComponent(code); }
+async function renderClass(){
+  const v=$('#view'); v.innerHTML='';
+  const code=myClass(); const signed=sync.state==='synced';
+  const head=el('div',{class:'panel hero'}, el('div',{class:'lab'},'My class'), el('h2',{}, code?'Class '+code:'Your class'));
+  if(!signed){ head.append(el('p',{class:'small'},'Sign in to see your class. Everyone who signs up with the same class code is in it.'), el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('stats')},'Sign in'))); v.append(head); return; }
+  if(!code){ head.append(el('p',{class:'small'},'Your account has no class code, so there is no class view yet. Classmates who sign up with a class code see each other here.')); v.append(head); return; }
+  head.append(el('p',{class:'small'},'Everyone who signed up with code '+code+' is here. Share the invite link and classmates land on sign-up with the code filled in.'));
+  head.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:async()=>{ const link=inviteLink(code); try{ await navigator.clipboard.writeText(link); toast('Invite link copied.'); }catch(e){ window.prompt('Copy this invite link', link); } }},'Copy invite link'), el('button',{class:'ghost',onclick:()=>goMode('stats')},'Leaderboard and badges')));
+  v.append(head);
+  const box=el('div',{class:'panel',id:'classbox'}, el('p',{class:'small'},'Loading…')); v.append(box);
+  try{
+    const rows=await DBH.classScores(code); if(S.mode!=='class') return; box.innerHTML='';
+    const t=today(); const active=rows.filter(r=>r.updated_at&&dayOfMs(Date.parse(r.updated_at))===t).length;
+    const xp=rows.reduce((a,r)=>a+(r.xp||0),0), total=rows.reduce((a,r)=>a+(r.total||0),0), mastered=rows.reduce((a,r)=>a+(r.mastered||0),0);
+    box.append(el('h2',{},`${rows.length} member${rows.length===1?'':'s'}`), el('div',{class:'grid2'},
+      el('div',{class:'stat'}, el('b',{},String(active)), el('span',{},'studied today')),
+      el('div',{class:'stat'}, el('b',{},String(total)), el('span',{},'answers given, all together')),
+      el('div',{class:'stat'}, el('b',{},String(mastered)), el('span',{},'cards mastered, all together')),
+      el('div',{class:'stat'}, el('b',{},String(xp)), el('span',{},'class XP'))));
+    const list=el('div',{class:'lb'});
+    rows.forEach((r,i)=>{ const nm=(r.nick&&String(r.nick).trim())||'Someone'; const row=el('div',{class:'rowx'+(r.id===UID?' me':'')}, el('span',{class:'rk'},String(i+1)), el('span',{class:'nm'}), el('span',{}, `${r.xp||0} XP`, el('span',{class:'sub'},` · L${r.level||1}`)), el('span',{class:'sub'}, `🔥${r.streak||0} · ${r.mastered||0} mastered`)); row.querySelector('.nm').textContent=nm; list.append(row); });
+    if(!rows.length) list.append(el('p',{class:'small'},'No one in the class has scored yet. Answer a few cards and you will be first.'));
+    box.append(list);
+    if(!S.nick) box.append(el('p',{class:'small'},'Set a nickname under Stats so classmates know who you are.'));
+  }catch(e){ box.innerHTML=''; box.append(el('p',{class:'small'},'Could not load the class right now.')); }
+}
 function renderStats(){
   const v=$('#view'); v.innerHTML='';
   const lv=levelInfo();
@@ -5301,7 +5332,7 @@ function renderStats(){
       el('div',{class:'stat'}, el('b',{},String(S.streak)), el('span',{},`day streak · ${days} study day${days===1?'':'s'}`)),
       el('div',{class:'stat'}, el('b',{},`${known} / ${all}`), el('span',{},`cards marked got it · ${mastd} mastered`))),
     el('div',{class:'row'}, el('span',{class:'small'},'Daily goal:'), seg([[20,'20'],[30,'30'],[50,'50'],[80,'80']], S.goal, val=>{S.goal=val; save(); renderStrip(); renderStats();}))));
-  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>goMode('report')},'Marks report'), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
+  { const mN=mistakeQs().length+mistakeCards().length; v.append(el('div',{class:'row'}, el('button',{class:'primary',onclick:()=>goMode('mistakes')}, `Mistake notebook (${mN})`), el('button',{onclick:()=>goMode('report')},'Marks report'), el('button',{onclick:()=>goMode('class')},'My class'), el('button',{onclick:()=>{ TS=null; goMode('today'); }},'Today’s session'))); }
   const dueN=dueCards().length, week=CARDS.filter(c=>{ const r=rvOf(c); return !!r&&r.due>today()&&r.due<=dueDay(today(),7); }).length;
   v.append(el('div',{class:'panel'}, el('h2',{},'Spaced reviews'), el('div',{class:'grid2'}, el('div',{class:'stat'}, el('b',{},String(dueN)), el('span',{},'cards due today')), el('div',{class:'stat'}, el('b',{},String(week)), el('span',{},'due in the next 7 days'))), el('p',{class:'small'},'Each card you get right comes back later: after 1 day, then 3, then 7 and so on. A wrong answer brings it back today. Mastered means remembered on 3 separate days and not due again for at least a week.'), el('div',{class:'row'}, el('button',{class:'primary',disabled:dueN?null:'',onclick:()=>{ S.filter='due'; S.deck='all'; goMode('flash'); }}, dueN?`Review ${dueN} due now`:'Nothing due right now'))));
   v.append(retentionPanel());
@@ -5321,6 +5352,7 @@ function renderStats(){
     ac.append(el('p',{class:'small'},'Signed in'+(ME&&ME.name?' as '+ME.name:'')+'. Your progress is saved to your account and syncs to any device where you sign in.'), el('div',{class:'row'}, el('button',{class:'ghost',onclick:signOut},'Sign out')));
     const nick=el('input',{type:'text',id:'nickInput',maxlength:'24',placeholder:'Nickname for the leaderboard','aria-label':'Nickname'}); nick.value=S.nick||'';
     ac.append(el('div',{class:'inrow'}, nick, el('button',{onclick:()=>{ S.nick=nick.value.trim().slice(0,24); save(); clearTimeout(sync.timer); pushProgress(); toast('Nickname saved'); }},'Save nickname')));
+    if(myClass()) ac.append(el('div',{class:'row lbscope'}, seg([['class','My class'],['all','Everyone']], LB.scope, v=>{ LB.scope=v; renderStats(); }), el('button',{class:'ghost',onclick:()=>goMode('class')},'Class view →')));
     const lbBox=el('div',{class:'lb'}, el('p',{class:'small'},'Loading leaderboard…')); ac.append(lbBox); loadLeaderboard(lbBox);
     ac.append(feedbackBox());
   } else if(sync.state==='readonly'){
@@ -5918,7 +5950,7 @@ function renderGuide(){
 }
 
 // ---------- render ----------
-function render(){ { const vv=$('#view'); if(vv&&S.mode!=='report') vv.classList.remove('rep'); } if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag, report:renderReport})[S.mode](); if(S.mode==='home') placeInstallCard(); if(PWA.waiting&&!$('.toast.action')) updateToast(); }
+function render(){ { const vv=$('#view'); if(vv&&S.mode!=='report') vv.classList.remove('rep'); } if(!isBiz()&&(['ratio','guide'].includes(S.mode)||(S.mode==='papers'&&!hasExams()))) S.mode='home'; renderDecks(); renderStrip(); renderProgress(); ({library:renderLibrary, editset:renderEditSet, subjects:renderSubjects, practice:renderPractice, flash:renderFlash, learn:renderLearn, test:renderTest, match:renderMatch, ratio:renderRatio, stats:renderStats, papers:renderPapers, home:renderHome, guide:renderGuide, today:renderToday, mistakes:renderMistakes, diag:renderDiag, report:renderReport, class:renderClass})[S.mode](); if(S.mode==='home') placeInstallCard(); if(PWA.waiting&&!$('.toast.action')) updateToast(); }
 document.addEventListener('keydown',e=>{
   if(e.target.matches('input,textarea'))return;
   if(S.mode==='flash'){
@@ -6351,11 +6383,11 @@ function pushScore(force){
 }
 async function loadLeaderboard(box){
   try{
-    const snap=await DBH.collection('scores').orderBy('xp','desc').limit(20).get();
-    const rows=snap.docs.map(d=>({id:d.id, ...d.data()}));
+    const useClass=LB.scope==='class'&&!!myClass()&&!!DBH.classScores;
+    const rows=useClass?(await DBH.classScores(myClass())).slice(0,20):(await DBH.collection('scores').orderBy('xp','desc').limit(20).get()).docs.map(d=>({id:d.id, ...d.data()}));
     const ps=USERH?await USERH.profiles(rows.map(r=>r.id)):{};
     box.innerHTML='';
-    if(!rows.length){ box.append(el('p',{class:'small'},'No scores yet. Answer a few cards and you will be first on the board.')); return; }
+    if(!rows.length){ box.append(el('p',{class:'small'},useClass?'No one in your class has scored yet. Answer a few cards and you will be first.':'No scores yet. Answer a few cards and you will be first on the board.')); return; }
     rows.forEach((r,i)=>{ const nm=(r.nick&&String(r.nick).trim())||(ps[r.id]&&ps[r.id].name)||'Someone'; const row=el('div',{class:'rowx'+(r.id===UID?' me':'')}, el('span',{class:'rk'},String(i+1)), el('span',{class:'nm'}), el('span',{}, `${r.xp||0} XP`, el('span',{class:'sub'},` · L${r.level||1}`)), el('span',{class:'sub'}, `🔥${r.streak||0} · ${r.mastered||0} mastered`)); row.querySelector('.nm').textContent=nm+(r.id===UID?' (you)':''); box.append(row); });
   }catch(e){ box.innerHTML=''; box.append(el('p',{class:'small'},'Leaderboard could not load right now.')); }
 }
@@ -6393,12 +6425,13 @@ function supaShim(client, uid){
           const {data:w,error}=await client.from('progress').upsert({user_id:uid, doc:d, updated_at:new Date().toISOString()}).select('updated_at').single(); if(error) throw supaErr(error); sync.remoteAt=(w&&w.updated_at)||sync.remoteAt; }
       };
     },
+    async classScores(code){ const {data,error}=await client.from('scores').select('*').eq('class_code',code).order('xp',{ascending:false}).limit(200); if(error) throw supaErr(error); return (data||[]).map(r=>({id:r.user_id, ...r})); },
     collection(name){ let lim=20; const q={ orderBy(){ return q; }, limit(n){ lim=n; return q; }, async get(){ const {data,error}=await client.from('scores').select('*').order('xp',{ascending:false}).limit(lim); if(error) throw supaErr(error); return {docs:(data||[]).map(r=>({id:r.user_id, data:()=>r}))}; } }; return q; }
   };
 }
 async function startSync(session){
   sync.err=null; sync.retry=0; clearTimeout(sync.retryT);
-  UID=session.user.id; DBH=supaShim(SB,UID); ME={name:session.user.email||''}; USERH={profiles:async()=>({}), me:async()=>ME};
+  UID=session.user.id; DBH=supaShim(SB,UID); ME={name:session.user.email||'', classCode:String(((session.user.user_metadata||{}).class_code)||'').trim().toUpperCase()}; USERH={profiles:async()=>({}), me:async()=>ME};
   sync.state='loading'; renderAccount();
   const snap=await DBH.doc('data/users/'+UID+'/progress').get();
   if(snap.exists){ mergeRemote(snap.data()); try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
@@ -6501,6 +6534,7 @@ function offlinePanel(){
     offlineState(s).then(st=>{ row.lastChild.remove(); if(st==='builtin') row.append(el('span',{class:'offpill'},'Always available')); else if(st==='saved') row.append(el('span',{class:'offpill'},'Saved ✓')); else if(st==='none'){ const b=el('button',{class:'ghost',onclick:()=>saveOffline(s,b)},'Save'); row.append(b); } else row.append(el('span',{class:'small'},'Not supported in this browser')); }); }
   return p;
 }
+{ const qc=new URLSearchParams(location.search).get('code'); if(qc&&qc.trim()){ AUTH.code=qc.trim().toUpperCase(); AUTH.mode='up'; AUTH.open=true; } }
 render(); renderAccount(); initSync();
 document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden'){ clearTimeout(sync.timer); pushProgress(); } });
 </script>

@@ -186,3 +186,10 @@ Runs after the phase B script:
 Runs after the phase D script and before `tools/sw_version.py`:
 1. `python3 tools/phase_e1_patch.py app.html`: the `#report` view under Progress (`renderReport`, `reportRows`, `reportTopics`, `reportPapers`, `reportWeeks`, `reportText`), a mark time (`mt`) stamped in `awardXP`, the time kept on each previous attempt in `startRewrite`, and "Marks report" links on Today and Stats. Refuses to run twice.
 2. Checks: `node tools/check_phase_e1.mjs` against the local server on 8766.
+
+## Bands for Days, phase E2: classes (31 Oct 2026)
+
+Runs after phase E1 and before `tools/sw_version.py`:
+1. `python3 tools/phase_e2_patch.py app.html`: the class code from sign-up travels with the session (`ME.classCode`), the leaderboard shows My class by default with an Everyone toggle (`LB.scope`, `DBH.classScores`), the `#class` view (`renderClass`: members, totals, invite link), and `?code=` on the address pre-fills the sign-up form. Refuses to run twice.
+2. One-off in Supabase: `supabase-classes.sql` (adds `class_code` to `public.scores`, filled by a trigger from the sign-up metadata, and back-fills existing rows). Until it is run the class leaderboard is empty and the class view shows no members.
+3. Checks: `node tools/check_phase_e2.mjs` against the local server on 8766.
